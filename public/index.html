@@ -5,9 +5,15 @@
 .recent .hero{display:flex;align-items:center;gap:8px}.recent .items img{width:22px;height:22px}
 .hdr{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap}.hdr select{margin-left:auto}
 .empty{text-align:center;padding:40px 20px}.empty p{color:var(--muted)}
+.podium{display:grid;grid-template-columns:1fr 1.15fr 1fr;gap:14px;align-items:end;margin:18px 0 6px}@media(max-width:860px){.podium{grid-template-columns:1fr}}
+.pd{position:relative;text-align:center;padding:22px 14px 16px;border-radius:16px;background:var(--panel);border:1px solid var(--line);backdrop-filter:blur(12px);overflow:hidden;transition:transform .2s var(--ease)}.pd:hover{transform:translateY(-4px)}
+.pd::after{content:"";position:absolute;inset:0;background:radial-gradient(60% 50% at 50% 0%,rgba(232,199,106,.18),transparent 70%);pointer-events:none}.pd.first{padding-top:30px;border-color:rgba(232,199,106,.45);box-shadow:0 0 40px rgba(232,199,106,.12)}
+.pd .pos{position:absolute;top:10px;left:14px;font-family:Reaver;font-size:22px;color:var(--accent)}.pd img.av{width:72px;height:72px;border-radius:50%;border:3px solid var(--line2);box-shadow:0 8px 20px rgba(0,0,0,.6)}.pd.first img.av{width:92px;height:92px;border-color:var(--accent)}
+.pd .n{font-family:Reaver;font-size:18px;margin:8px 0 2px;letter-spacing:.03em}.pd .r{display:flex;justify-content:center;align-items:center;gap:8px;color:var(--muted);font-size:12px}.pd .kv{display:flex;justify-content:center;gap:16px;margin-top:10px}.pd .kv b{font-family:Reaver;font-size:18px;display:block}.pd .kv span{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 </style></head>
 <body><main>
 <div class="hdr"><h1>Leaderboard</h1><span class="muted" id="count"></span><select id="days"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option><option value="3650">All time</option></select></div>
+<div id="podium" class="podium"></div>
 <div id="out" class="card">Loading…</div>
 <h2>Recent games</h2><div id="recent" class="card recent">Loading…</div>
 </main>
@@ -20,6 +26,9 @@ async function load() {
     const [{ players }, hs] = await Promise.all([api(`/players/leaderboard?days=${$("#days").value}`), heroes()]);
     $("#count").textContent = players.length ? `${players.length} tracked` : "";
     if (!players.length) return out.replaceChildren(h("div", { class: "empty" }, h("h2", {}, "Nobody here yet"), h("p", {}, "Sign in through Steam to add yourself, then install the uploader so your games flow in."), h("a", { class: "dl", href: "/api/auth/steam/login" }, "Sign in through Steam")));
+    const top = players.slice(0, 3); const order = top.length === 3 ? [top[1], top[0], top[2]] : top;
+    $("#podium").replaceChildren(...await Promise.all(order.map(async (p) => { const i = players.indexOf(p); const wr = p.games ? p.wins / p.games : null; return h("a", { class: "pd" + (i === 0 ? " first" : ""), href: `/player.html?id=${p.account_id}` }, h("span", { class: "pos" }, `#${i + 1}`), p.avatar_url ? h("img", { class: "av", src: p.avatar_url, alt: "" }) : h("div", { class: "av" }), h("div", { class: "n" }, p.name), h("div", { class: "r" }, await rankBadge(p.mmr_rank), p.mmr_score != null ? String(Math.round(p.mmr_score)) : ""),
+      h("div", { class: "kv" }, h("div", {}, h("b", { class: wr == null ? "" : wr >= .5 ? "win" : "loss" }, wr == null ? "–" : pct(wr)), h("span", {}, "win rate")), h("div", {}, h("b", {}, String(p.games)), h("span", {}, "games")), h("div", {}, h("b", {}, fmt(p.souls_per_min)), h("span", {}, "spm")))); })));
     const rows = await Promise.all(players.map(async (p, i) => {
       const wr = p.games ? p.wins / p.games : null;
       return h("tr", {}, h("td", { class: "pos" }, String(i + 1)),
