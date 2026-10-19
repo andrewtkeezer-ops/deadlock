@@ -42,6 +42,25 @@ Before the first build, the D1 database and KV namespace must exist and their ID
 Set `ADMIN_TOKEN` and (optionally) `DEADLOCK_API_KEY` under the Worker's Settings → Variables and Secrets.
 Every push to `main` then redeploys.
 
+## Invite-only Google login (Cloudflare Access)
+
+Free for up to 50 users. One-time setup in the Cloudflare dashboard:
+
+1. Zero Trust → Settings → Authentication → add **Google** as a login method (needs a Google OAuth client; Cloudflare's
+   page walks through it). Optionally remove the default one-time-PIN method so only Google works.
+2. Zero Trust → Access → Applications → Add → Self-hosted. Domain: the Worker's hostname
+   (`deadlock-squad.<account>.workers.dev` or a custom domain). Policy: Allow → Include → **Everyone**
+   (the Worker does the real invite check — see below). Session: 1 month.
+3. Copy the app's **Application Audience (AUD) tag** and your team domain (`<team>.cloudflareaccess.com`) into
+   `wrangler.jsonc` → `ACCESS_AUD` and `ACCESS_TEAM_DOMAIN`. Set `SUPER_ADMIN_EMAIL` to you. Push.
+
+Now every visitor sees Google sign-in. Signed-in users whose email isn't in the `members` table get a 403 from every
+API call; the super admin is always allowed and auto-created. Invite people from **/admin.html** — they just sign in with
+the Google account you invited. With `ACCESS_*` empty (local dev) there is no auth and `x-admin-token` still works.
+
+Note: static HTML is served by Cloudflare's asset layer before the Worker runs, so uninvited-but-Google-signed-in users
+can load the page shells; all data comes from `/api/*`, which they can't reach.
+
 ## Adding friends
 
 1. Each friend installs the ingest tool (the **Setup** page has the one-line PowerShell command).
@@ -69,5 +88,3 @@ Every push to `main` then redeploys.
 - `public/match.html` dumps raw match metadata; render a proper scoreboard.
 - Drop a minimap at `public/img/map.png` for the heatmap; set `FLIP_Y` if it's upside down.
 - Live match tracking is a **paid** feature upstream (per-match billing), so it's intentionally not here.
-- No login. The admin token is the only gate; the site itself is readable by anyone with the URL.
-  Add Cloudflare Access (free for ≤50 users) in front of the Worker if you want it private.

@@ -22,8 +22,8 @@
 
 <div class="card">
 <h2 style="margin-top:0">Step 3 — add yourself to the squad</h2>
-<p>Needs the admin token (ask Andrew).</p>
-<input type="number" id="acc" placeholder="account_id"> <input type="text" id="nm" placeholder="Display name"> <input type="text" id="tok" placeholder="admin token"> <button class="primary" id="add">Add &amp; import</button>
+<p>Admins only — if you're not one, send Andrew your account_id.</p>
+<input type="number" id="acc" placeholder="account_id"> <input type="text" id="nm" placeholder="Display name"> <button class="primary" id="add">Add &amp; import</button>
 <p id="addout"></p>
 </div>
 </main>
@@ -38,7 +38,7 @@ $("#steamin").addEventListener("input", (e) => {
 });
 $("#add").addEventListener("click", async () => {
   const out = $("#addout"); out.textContent = "Importing…";
-  try { const r = await api("/admin/players", { method: "POST", headers: { "x-admin-token": $("#tok").value }, body: { account_id: Number($("#acc").value), name: $("#nm").value } });
+  try { const r = await api("/admin/players", { method: "POST", body: { account_id: Number($("#acc").value), name: $("#nm").value } });
     out.innerHTML = `<span class="ok">Added — imported ${r.matchesImported} matches.</span> <a href="/">Leaderboard</a>`; }
   catch (e) { out.innerHTML = `<span class="error">${e.message}</span>`; }
 });

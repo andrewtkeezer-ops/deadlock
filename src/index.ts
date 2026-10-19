@@ -8,17 +8,19 @@ import heroes from "./routes/heroes";
 import builds from "./routes/builds";
 import analytics from "./routes/analytics";
 import admin from "./routes/admin";
+import { requireMember, type Identity } from "./auth";
 
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono<{ Bindings: Env; Variables: { user?: Identity } }>();
 app.use("/api/*", cors());
+app.get("/api/health", (c) => c.json({ ok: true, now: Date.now() }));
+app.use("/api/*", requireMember);
+app.get("/api/me", (c) => c.json(c.get("user") ?? { email: "dev", role: "admin", unconfigured: true }));
 
 app.route("/api/players", players);
 app.route("/api/heroes", heroes);
 app.route("/api/builds", builds);
 app.route("/api/analytics", analytics);
 app.route("/api/admin", admin);
-
-app.get("/api/health", (c) => c.json({ ok: true, now: Date.now() }));
 
 app.onError((err, c) => {
   console.error(err);

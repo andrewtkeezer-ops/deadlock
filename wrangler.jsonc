@@ -10,7 +10,7 @@
 
   // Free tier: 5 GB storage, 5M reads/day. Run `npm run db:create` and paste the id here.
   "d1_databases": [
-    { "binding": "DB", "database_name": "deadlock-squad", "database_id": "REPLACE_WITH_D1_ID", "migrations_dir": "migrations" }
+    { "binding": "DB", "database_name": "deadlock-squad", "database_id": "b2e6a576-713d-4b71-b702-01d544897b5a", "migrations_dir": "migrations" }
   ],
 
   // Cache of upstream deadlock-api responses. Free tier: 100k reads/day, 1k writes/day.
@@ -26,7 +26,11 @@
     "DEADLOCK_ASSETS": "https://assets.deadlock-api.com",
     // Optional: free key from deadlock-api doubles the rate limit and gets queue priority.
     // Set as a secret instead: `wrangler secret put DEADLOCK_API_KEY`
-    "ADMIN_TOKEN": "change-me"
+    "ADMIN_TOKEN": "change-me",
+    // Cloudflare Access: set both to turn on invite-only Google login (see README).
+    "ACCESS_TEAM_DOMAIN": "",
+    "ACCESS_AUD": "",
+    "SUPER_ADMIN_EMAIL": "andrew@brandbutter.ca"
   },
 
   "observability": { "enabled": true }

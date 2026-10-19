@@ -6,6 +6,10 @@ export type Env = {
   DEADLOCK_ASSETS: string;
   DEADLOCK_API_KEY?: string;
   ADMIN_TOKEN: string;
+  // Cloudflare Access (Zero Trust). Leave empty for local dev → no auth.
+  ACCESS_TEAM_DOMAIN?: string;  // e.g. brandbutter.cloudflareaccess.com
+  ACCESS_AUD?: string;          // Application Audience (AUD) tag from the Access app
+  SUPER_ADMIN_EMAIL: string;
 };
 
 // Shape of one row from GET /v1/players/{account_id}/match-history.
