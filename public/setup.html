@@ -1,7 +1,7 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Setup · Deadlock Squad</title><link rel="stylesheet" href="/css/app.css"></head>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Setup · Soul Scribe</title><link rel="stylesheet" href="/css/app.css"></head>
 <body><main>
-<h1>Get your matches tracked</h1>
-<p>Valve doesn't publish a list of matches. A tracker needs each match's ID plus a one-time key (a "salt") that only <em>your</em> Steam client downloads. So every friend runs a tiny background tool once; after that, every game you play shows up here automatically, and it backfills your old games too.</p>
+<h1>Get your matches into Soul Scribe</h1>
+<p>Valve doesn't publish a list of matches. A tracker needs each match's ID plus a one-time key (a "salt") that only <em>your</em> Steam client downloads. So every friend runs a tiny background tool once; after that, every game you play shows up in Soul Scribe automatically, and it backfills your old games too.</p>
 
 <div class="card">
 <h2 style="margin-top:0">Step 1 — install the match uploader (Windows)</h2>
@@ -11,7 +11,7 @@
 <li>It installs to your user folder and starts on login. A small window lists each match it sends; close it, it keeps running in the background.</li>
 <li>Play Deadlock. Your new games are sent as you play, and old ones backfill over the next day or so.</li>
 </ol>
-<p class="muted">It uploads <strong>only</strong> match IDs, their salts and your public Steam account ID. Never your Steam login. Source: <a href="https://github.com/deadlock-api/deadlock-api-ingest" target="_blank" rel="noopener">github.com/deadlock-api/deadlock-api-ingest</a> (MIT, Rust).</p>
+<p class="muted">It only sends match IDs and your public Steam ID, never your Steam login. Open source.</p>
 <details><summary>Prefer a command line, or on Linux / Steam Deck?</summary>
 <p>Windows PowerShell:</p><pre>irm https://raw.githubusercontent.com/deadlock-api/deadlock-api-ingest/master/install-windows.ps1 | iex</pre>
 <p>Linux:</p><pre>curl -fsSL https://raw.githubusercontent.com/deadlock-api/deadlock-api-ingest/master/install-linux.sh | bash</pre>

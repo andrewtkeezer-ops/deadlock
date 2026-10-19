@@ -1,4 +1,4 @@
-# Deadlock Squad
+# Soul Scribe
 
 Private stats + build site for a friend group, running on Cloudflare's free tier.
 Data comes from the community [deadlock-api](https://deadlock-api.com) (free, MIT).

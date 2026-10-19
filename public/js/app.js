@@ -23,7 +23,7 @@ export async function heroName(id) { return (await heroes()).find((h) => h.id ==
 
 export function shell(active) {
   const links = [["/", "Leaderboard"], ["/heroes.html", "Heroes"], ["/counters.html", "Counters"], ["/heatmap.html", "Heatmap"], ["/builds.html", "Build wizard"], ["/setup.html", "Setup"], ["/admin.html", "Admin"]];
-  document.body.prepend(h("header", {}, h("span", { class: "brand" }, "DEADLOCK SQUAD"),
+  document.body.prepend(h("header", {}, h("a", { class: "brand", href: "/" }, h("img", { src: "/img/logo.svg", alt: "", class: "logo", onerror: (e) => e.target.remove() }), "SOUL SCRIBE"),
     h("nav", {}, ...links.map(([href, label]) => h("a", { href, class: href === active ? "active" : "" }, label))),
     h("span", { id: "whoami", class: "muted", style: "margin-left:auto;font-size:13px" })));
   api("/auth/steam/me").then((m) => {
