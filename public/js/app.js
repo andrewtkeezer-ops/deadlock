@@ -87,27 +87,72 @@ const ICONS = {
   book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4V4zM20 4h-7a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h8V4z"/></svg>',
   bag: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1 12H6L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>',
   gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
+  out: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/></svg>',
   shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg>',
 };
 export function shell(active) {
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  try { if (localStorage.getItem("ss.rail") === "collapsed") document.body.classList.add("rail-collapsed"); } catch {}
   if (!document.querySelector(".atmo")) {
     document.body.prepend(h("div", { class: "atmo" }, h("div", { class: "base" }), h("div", { class: "fog" }), h("div", { class: "grain" }), h("div", { class: "mark" }), h("div", { class: "vig" })));
     const page = h("div", { class: "page" }); const mains = [...document.body.querySelectorAll(":scope > main")]; mains.forEach((m) => { if (active !== "/heroes.html") m.classList.add("stagger"); page.append(m); }); document.body.append(page);
   }
   const links = [["/", "Leaderboard", "trophy"], ["/heroes.html", "Heroes", "hero"], ["/counters.html", "Draft", "swords"], ["/heatmap.html", "Map", "map"], ["/library.html", "Builds", "book"], ["/items.html", "Items", "bag"], ["/setup.html", "Setup", "gear"]];
   const mk = ([href, label, ic]) => { const a = h("a", { href, class: href === active ? "active" : "" }); a.innerHTML = `<span class="ic">${ICONS[ic]}</span><span class="lb">${label}</span>`; return a; };
-  const nav = h("nav", {}, ...links.map(mk));
+  const pill = h("span", { class: "pill" });
+  const nav = h("nav", {}, pill, ...links.map(mk));
+  const toggle = h("button", { class: "toggle", type: "button", title: "Collapse menu" }); toggle.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg><span>Collapse</span>`;
+  toggle.addEventListener("click", () => { const c = document.body.classList.toggle("rail-collapsed"); try { localStorage.setItem("ss.rail", c ? "collapsed" : "open"); } catch {} setTimeout(movePill, 350); });
   const who = h("div", { class: "who" });
-  const rail = h("aside", { class: "rail" }, h("a", { class: "brand", href: "/" }, h("img", { class: "mark", src: "/img/icon.png", alt: "" }), h("img", { class: "word", src: "/img/logo.webp", alt: "Soul Scribe" })), nav, who);
+  const rail = h("aside", { class: "rail" }, h("a", { class: "brand", href: "/", title: "Soul Scribe" }, h("img", { class: "mark", src: "/img/icon.png", alt: "" }), h("img", { class: "word", src: "/img/logo.webp", alt: "Soul Scribe" })), nav, toggle, who);
   document.body.prepend(rail);
+  // sliding active pill + hover preview + click ripple
+  function movePill(target) { const a = target || nav.querySelector("a.active"); if (!a) { pill.style.opacity = 0; return; } pill.style.top = a.offsetTop + "px"; pill.style.opacity = 1; }
+  requestAnimationFrame(() => movePill());
+  nav.addEventListener("mouseover", (e) => { const a = e.target.closest("a"); if (a) movePill(a); }); nav.addEventListener("mouseleave", () => movePill());
+  nav.addEventListener("click", (e) => { const a = e.target.closest("a"); if (!a || reduced) return; const r = a.getBoundingClientRect(), s = Math.max(r.width, r.height); a.append(h("span", { class: "rp", style: `width:${s}px;height:${s}px;left:${e.clientX - r.left - s / 2}px;top:${e.clientY - r.top - s / 2}px` })); });
   me().then(async (m) => {
-    if (m.role === "admin") nav.append(mk(["/admin.html", "Admin", "shield"]));
+    if (m.role === "admin") { nav.append(mk(["/admin.html", "Admin", "shield"])); movePill(); }
     if (m.account_id) {
       let p = null; try { p = (await api("/players")).find((x) => x.account_id === m.account_id); } catch {}
       const a = h("a", { href: `/player.html?id=${m.account_id}` }, p?.avatar_url ? h("img", { class: "av", src: p.avatar_url, alt: "" }) : h("span", { class: "av" }), h("span", { class: "nm" }, p?.name ?? "My profile", h("small", {}, "View profile")));
-      who.append(a); if (p?.mmr_rank) try { const b = await rankBadge(p.mmr_rank); b.style.height = "26px"; a.querySelector("small").replaceChildren(b, " ", p.mmr_score != null ? String(Math.round(p.mmr_score)) : ""); } catch {}
+      const out = h("a", { class: "out", href: "/api/auth/steam/logout", title: "Sign out" }); out.innerHTML = `<span class="ic">${ICONS.out}</span>`;
+      who.append(a, out); if (p?.mmr_rank) try { const b = await rankBadge(p.mmr_rank); b.style.height = "26px"; a.querySelector("small").replaceChildren(b, " ", p.mmr_score != null ? String(Math.round(p.mmr_score)) : ""); } catch {}
     } else who.append(h("a", { href: "/api/auth/steam/login", title: "Sign in through Steam" }, h("img", { class: "steam", src: "https://community.cloudflare.steamstatic.com/public/images/signinthroughsteam/sits_small.png", alt: "Sign in through Steam" })));
   }).catch(() => {});
+  if (!reduced) alive();
+}
+
+/** Site-wide "alive" layer: pointer spotlight + tilt on glass, scroll reveals, loading shimmer, ember particles, cursor halo. */
+function alive() {
+  const fine = matchMedia("(hover:hover) and (pointer:fine)").matches;
+  const SURF = ".card,.sec,.ab,.st,.tile,.hcard", TILT = ".ab,.st,.tile";
+  if (fine) {
+    const halo = h("div", { class: "halo" }); document.body.append(halo);
+    let hx = innerWidth / 2, hy = innerHeight / 2, tx = hx, ty = hy;
+    document.addEventListener("pointermove", (e) => {
+      tx = e.clientX; ty = e.clientY;
+      const s = e.target.closest?.(SURF); if (s) { const r = s.getBoundingClientRect(); s.style.setProperty("--mx", `${e.clientX - r.left}px`); s.style.setProperty("--my", `${e.clientY - r.top}px`);
+        if (s.matches(TILT)) { s.classList.add("tilt", "on"); const dx = (e.clientX - r.left) / r.width - .5, dy = (e.clientY - r.top) / r.height - .5; s.style.transform = `perspective(900px) rotateX(${(-dy * 6).toFixed(2)}deg) rotateY(${(dx * 8).toFixed(2)}deg) translateY(-3px)`; } }
+    }, { passive: true });
+    document.addEventListener("pointerout", (e) => { const s = e.target.closest?.(TILT); if (s && !s.contains(e.relatedTarget)) { s.classList.remove("on"); s.style.transform = ""; } }, { passive: true });
+    (function loop() { hx += (tx - hx) * .12; hy += (ty - hy) * .12; halo.style.transform = `translate3d(${hx}px,${hy}px,0)`; requestAnimationFrame(loop); })();
+  }
+  // scroll reveal for nested cards (top-level sections already stagger in)
+  const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { rootMargin: "0px 0px -8% 0px", threshold: .08 });
+  const watch = (root) => root.querySelectorAll?.(".ab,.st,.tile,.hcard,.card .card").forEach((el, i) => { if (el.classList.contains("rv")) return; el.classList.add("rv"); el.style.transitionDelay = `${Math.min(i, 8) * 45}ms`; io.observe(el); });
+  const shimmer = (root) => root.querySelectorAll?.("*").forEach((el) => { if (el.childElementCount === 0 && el.textContent.trim() === "Loading…") el.classList.add("ld"); });
+  const mo = new MutationObserver((ms) => ms.forEach((m) => { m.addedNodes.forEach((n) => { if (n.nodeType === 1) { watch(n); shimmer(n); if (n.classList?.contains("ld")) n.classList.remove("ld"); } }); if (m.type === "childList" && m.target.classList?.contains("ld") && m.target.textContent.trim() !== "Loading…") m.target.classList.remove("ld"); }));
+  const page = document.querySelector(".page"); watch(page); shimmer(page); mo.observe(page, { childList: true, subtree: true });
+  // embers
+  const cv = h("canvas"); document.querySelector(".atmo").append(cv); const ctx = cv.getContext("2d"); let W, H, P = [];
+  const size = () => { W = cv.width = innerWidth; H = cv.height = innerHeight; }; size(); addEventListener("resize", size);
+  const spawn = () => ({ x: Math.random() * W, y: H + 10, r: .8 + Math.random() * 1.8, vx: (Math.random() - .5) * .25, vy: -(.15 + Math.random() * .35), a: 0, life: 0, max: 600 + Math.random() * 600, g: Math.random() < .35 });
+  for (let i = 0; i < 34; i++) { const p = spawn(); p.y = Math.random() * H; p.life = Math.random() * p.max; P.push(p); }
+  let last = 0; (function tick(t) { if (document.hidden) { requestAnimationFrame(tick); return; } const dt = Math.min(32, t - last) / 16; last = t; ctx.clearRect(0, 0, W, H);
+    for (let i = 0; i < P.length; i++) { const p = P[i]; p.life += dt; p.x += p.vx * dt + Math.sin((t / 1000 + i) * .7) * .15; p.y += p.vy * dt; const k = p.life / p.max; p.a = Math.sin(Math.PI * Math.min(1, k)) * .7; if (k >= 1 || p.y < -10) P[i] = spawn();
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 7); ctx.fillStyle = p.g ? `rgba(120,230,160,${p.a})` : `rgba(240,205,120,${p.a})`; ctx.shadowBlur = 8; ctx.shadowColor = ctx.fillStyle; ctx.fill(); }
+    requestAnimationFrame(tick); })(0);
 }
 /** Count-up animation for a number element. */
 export function countUp(el, to, { decimals = 0, suffix = "", ms = 700 } = {}) { const start = performance.now(); const from = 0; const step = (t) => { const k = Math.min(1, (t - start) / ms); const v = from + (to - from) * (1 - Math.pow(1 - k, 3)); el.textContent = v.toFixed(decimals).replace(/\B(?=(\d{3})+(?!\d))/g, ",") + suffix; if (k < 1) requestAnimationFrame(step); }; requestAnimationFrame(step); return el; }

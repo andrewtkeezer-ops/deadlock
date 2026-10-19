@@ -1,37 +1,92 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Hero · Soul Scribe</title><link rel="icon" type="image/png" href="/img/favicon.png"><link rel="stylesheet" href="/css/app.css">
 <style>
-.hero-head{position:relative;border-radius:14px;overflow:hidden;min-height:260px;border:1px solid var(--line);background:#0a0b0f center/cover no-repeat;margin-bottom:20px}
-.hero-head::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(14,15,19,.92) 0%,rgba(14,15,19,.4) 60%,rgba(14,15,19,.15) 100%)}
-.hero-head .art{position:absolute;right:0;top:0;bottom:0;max-width:45%;object-fit:contain;object-position:right bottom;z-index:1}
-.hero-head .info{position:relative;z-index:2;padding:28px;max-width:55%}.hero-head .name{height:56px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.8))}
-.tag{display:inline-block;background:#1f6fd0;color:#fff;font-weight:700;font-size:12px;padding:3px 9px;border-radius:3px;margin-right:6px;text-transform:uppercase}
-.stat{display:inline-block;margin-right:18px}.stat b{display:block;font-size:22px;font-family:Reaver}.stat span{color:var(--muted);font-size:12px;text-transform:uppercase}
-.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:800px){.cols{grid-template-columns:1fr}.hero-head .info{max-width:100%;padding:18px}.hero-head .art{opacity:.3;max-width:100%}.hero-head .name{height:40px}}
-.items img{width:26px;height:26px;border-radius:4px;margin:1px}
-.hrow{display:flex;align-items:center;gap:8px}.hrow img{width:28px;height:28px;border-radius:4px}
-.abil{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}.ab{background:#0f1118;border:1px solid var(--line);border-radius:10px;padding:12px}
-.ab .top{display:flex;gap:10px;align-items:center;margin-bottom:8px}.ab .top img{width:48px;height:48px;border-radius:8px;background:#000}.ab .top b{display:block;font-family:Reaver;font-size:16px}.ab .top span{color:var(--muted);font-size:12px;text-transform:uppercase}
-.ab .nums{display:flex;gap:12px;color:var(--muted);font-size:12px;margin:6px 0}.ab p{font-size:13px;margin:6px 0;color:#dcd9cf}.ab .highlight{color:var(--accent);font-weight:600}
-.ab .tier{font-size:12px;color:var(--muted);border-top:1px dashed var(--line);padding-top:4px;margin-top:4px}.ab .tier b{color:var(--spirit);margin-right:4px}
-.starters{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}.st{background:#0f1118;border:1px solid var(--line);border-radius:10px;padding:12px;border-top:3px solid var(--line);display:flex;flex-direction:column;gap:8px}
-.st.weapon{border-top-color:var(--weapon)}.st.spirit{border-top-color:var(--spirit)}.st.vitality{border-top-color:var(--vitality)}.st.balanced{border-top-color:var(--accent)}
-.st .lean{font-family:Reaver;text-transform:uppercase;letter-spacing:.05em;font-size:13px}.st.weapon .lean{color:var(--weapon)}.st.spirit .lean{color:var(--spirit)}.st.vitality .lean{color:var(--vitality)}.st.balanced .lean{color:var(--accent)}
-.st b{font-size:14px;line-height:1.2}.st .fav{color:var(--muted);font-size:12px}.st .ph{font-size:11px;color:var(--muted);margin-top:4px}.st .items img{width:24px;height:24px}.st .mix{display:flex;height:6px;border-radius:3px;overflow:hidden}.st .mix i{display:block}
-.st button{margin-top:auto}
+/* ---- per-hero theming: --hero is set from the hero's style colour at runtime ---- */
+main{--hero:var(--accent);--hero-soft:color-mix(in srgb,var(--hero) 18%,transparent);--hero-glow:color-mix(in srgb,var(--hero) 45%,transparent);position:relative;z-index:1;max-width:1280px}
+.herobg{position:absolute;inset:0;z-index:0;pointer-events:none;background:var(--bgimg) center top/cover no-repeat;opacity:.28;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 520px,rgba(0,0,0,.35) 1100px,transparent 1700px);mask-image:linear-gradient(180deg,#000 0,#000 520px,rgba(0,0,0,.35) 1100px,transparent 1700px)}
+.herobg::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,var(--bg) 0%,transparent 35%,transparent 100%)}
+.back{display:inline-flex;align-items:center;gap:6px;color:var(--accent);font-weight:600;font-size:14px;margin-bottom:8px}.back:hover{color:var(--cream)}
+
+/* ---- header ---- */
+.hero-head{position:relative;min-height:380px;margin:0 0 18px;padding:26px 0 10px;display:flex;align-items:flex-end}
+.hero-head .art{position:absolute;right:-20px;top:-60px;height:520px;max-width:60%;object-fit:contain;object-position:right top;z-index:0;pointer-events:none;filter:drop-shadow(0 20px 60px rgba(0,0,0,.6));-webkit-mask-image:linear-gradient(180deg,#000 55%,transparent 98%),linear-gradient(90deg,transparent 0,#000 25%);-webkit-mask-composite:source-in;mask-image:linear-gradient(180deg,#000 55%,transparent 98%),linear-gradient(90deg,transparent 0,#000 25%);mask-composite:intersect}
+.hero-head .info{position:relative;z-index:2;max-width:620px}
+.hero-head .eyebrow{letter-spacing:.3em;font-size:12px;color:#c9c4b4;text-shadow:0 1px 4px #000}
+.hero-head .name{display:block;height:92px;max-width:100%;filter:drop-shadow(0 4px 14px rgba(0,0,0,.9));margin:4px 0 8px}
+.hero-head h1{font-size:72px;margin:0 0 8px;text-shadow:0 4px 14px rgba(0,0,0,.9)}
+.hero-head .role{font-size:18px;color:var(--cream);margin:0 0 14px;text-shadow:0 1px 6px #000}
+.hero-head .tags{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 18px}.hero-head .tag{border:1px solid rgba(255,255,255,.28);background:rgba(10,11,16,.55);backdrop-filter:blur(6px);color:#e4e0d2;font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:6px 12px;border-radius:7px}
+.hero-head .cta{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.hero-head .cta a.dl{display:inline-flex;align-items:center;gap:10px;padding:11px 20px;font-size:15px}.hero-head .cta a.dl .chev{font-size:18px;line-height:1}
+.hero-head .cta .btn{background:rgba(10,11,16,.6);border-color:rgba(255,255,255,.18)}.hero-head .cta .btn svg{width:16px;height:16px}
+.hero-head .stats{display:flex;gap:22px;margin-top:18px}.hero-head .stat b{display:block;font-family:Reaver;font-size:22px;letter-spacing:.02em;text-shadow:0 2px 8px #000}.hero-head .stat span{color:var(--muted);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+
+/* ---- section panels ---- */
+.sec{position:relative;background:rgba(14,16,22,.72);border:1px solid var(--line);border-radius:16px;padding:18px 20px 20px;margin:0 0 16px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 14px 40px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.05);overflow:hidden}
+.sec>h2{margin:0 0 14px;display:flex;align-items:center;gap:14px;font-size:18px;color:var(--cream)}.sec>h2::after{content:"";order:1;height:1px;width:60px;flex:none;background:linear-gradient(90deg,var(--hero),transparent)}
+.sec>h2 .sub{order:2;font:400 12px/1.3 Radiance;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;flex:1;margin-left:4px}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}.cols .sec{margin:0}.cols{margin-bottom:16px}
+
+/* ---- abilities ---- */
+.abil{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.ab{position:relative;background:rgba(10,11,16,.7);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;transition:transform .2s var(--ease),box-shadow .2s,border-color .2s}
+.ab:hover{transform:translateY(-3px);border-color:var(--hero-glow);box-shadow:0 18px 40px rgba(0,0,0,.5),0 0 0 1px var(--hero-soft)}
+.ab .art{position:relative;height:120px;background:#000 var(--art) center 20%/cover no-repeat;filter:saturate(.7)}.ab .art::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,var(--hero-soft),rgba(10,11,16,.35) 50%,rgba(10,11,16,1) 100%),radial-gradient(60% 80% at 50% 50%,var(--hero-glow),transparent 70%);mix-blend-mode:normal}
+.ab .n{position:absolute;left:12px;top:12px;width:26px;height:26px;border-radius:50%;background:rgba(10,11,16,.85);border:1px solid rgba(255,255,255,.35);display:grid;place-items:center;font:700 12px Reaver;color:#fff;z-index:2}
+.ab .icon{position:absolute;left:14px;bottom:-26px;width:56px;height:56px;border-radius:50%;background:#0a0b10;border:2px solid rgba(255,255,255,.2);display:grid;place-items:center;z-index:2;box-shadow:0 8px 24px rgba(0,0,0,.6),0 0 24px var(--hero-soft)}.ab .icon img{width:36px;height:36px;filter:drop-shadow(0 0 6px rgba(255,255,255,.4))}
+.ab .body{padding:34px 16px 16px;display:flex;flex-direction:column;gap:8px;flex:1}
+.ab .ttl{padding-left:64px;margin-top:-32px;min-height:40px;display:flex;flex-direction:column;justify-content:center}.ab .ttl b{font-family:Reaver;font-size:16px;letter-spacing:.02em;line-height:1.1}.ab .ttl span{color:var(--muted);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+.ab .nums{display:flex;gap:12px;flex-wrap:wrap;color:#cfd3e6;font-size:12px}.ab .nums span{display:inline-flex;align-items:center;gap:4px}.ab .nums svg{width:13px;height:13px;color:var(--muted)}
+.ab p{font-size:13px;margin:0;color:#dcd9cf;line-height:1.45}.ab .highlight,.highlight{color:var(--hero);font-weight:600}
+.ab .tiers{margin-top:auto;border-top:1px solid var(--line);padding-top:10px;display:grid;grid-template-columns:30px 1fr;gap:8px 10px;font-size:12.5px;color:#cfd3e6;align-items:start}.ab .tiers b{font-family:Reaver;color:var(--cream);font-size:13px;letter-spacing:.04em;padding-top:1px}.ab .tiers .highlight{color:var(--hero)}
+.ab .tiers div{line-height:1.4}
+
+/* ---- squad / matchups ---- */
+.squad table td{padding:8px 6px;border:0}.squad img.av{width:34px;height:34px;border-radius:50%;border:2px solid var(--line2);vertical-align:middle;margin-right:10px}.squad td:first-child a{font-weight:700;color:var(--accent)}
+.sbuilds{min-height:96px}.sbuilds .fade{position:absolute;right:-10px;top:-10px;bottom:-10px;width:55%;background:var(--art) right center/cover no-repeat;opacity:.45;filter:grayscale(1) contrast(1.1);-webkit-mask-image:linear-gradient(90deg,transparent,#000 50%);mask-image:linear-gradient(90deg,transparent,#000 50%);pointer-events:none}
+.sbuilds .plus{position:absolute;right:18px;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;border:2px solid var(--accent);display:grid;place-items:center;color:var(--accent);font-size:26px;line-height:1;background:rgba(10,11,16,.7);z-index:2;transition:background .15s,color .15s}.sbuilds .plus:hover{background:var(--accent);color:#1a1200}
+.sbuilds .list{position:relative;z-index:1;max-width:70%}.sbuilds .row{padding:8px 0;border-bottom:1px solid var(--line)}.sbuilds .row:last-child{border:0}.sbuilds .row .items img{width:24px;height:24px;border-radius:4px;margin:1px}
+.sbuilds .proven{position:relative;z-index:1;border:1px solid var(--accent);background:rgba(232,199,106,.08);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:13px;max-width:70%}
+.mu{position:relative}.mu .fade{position:absolute;right:-10px;top:-10px;bottom:-10px;width:40%;background:var(--art) right 30%/cover no-repeat;opacity:.5;filter:grayscale(1);-webkit-mask-image:linear-gradient(90deg,transparent,#000 70%);mask-image:linear-gradient(90deg,transparent,#000 70%);pointer-events:none}
+.mu .rows{position:relative;z-index:1;display:grid;grid-template-columns:34px 110px 1fr 56px;gap:8px 12px;align-items:center;max-width:78%}
+.mu .rows img{width:34px;height:34px;border-radius:7px;background:#000}.mu .rows a{font-weight:600;color:#e4e0d2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mu .rows a:hover{color:var(--cream)}
+.mu .bar{height:9px;border-radius:5px;background:rgba(255,255,255,.07)}.mu .bar i{display:block;height:100%;border-radius:5px;transition:width .7s var(--ease)}
+.mu.bad .bar i{background:linear-gradient(90deg,#ff5f55,var(--loss));box-shadow:0 0 12px rgba(229,87,79,.45)}.mu.good .bar i{background:linear-gradient(90deg,#43c777,#7cf0a6);box-shadow:0 0 12px rgba(95,211,138,.45)}
+.mu .pct{text-align:right;font-family:Reaver;font-size:14px;letter-spacing:.02em}.mu.bad .pct{color:var(--loss)}.mu.good .pct{color:var(--win)}
+
+/* ---- builds ---- */
+.starters{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.st{--lc:var(--accent);position:relative;background:rgba(10,11,16,.75);border:1px solid color-mix(in srgb,var(--lc) 55%,transparent);border-radius:14px;padding:14px 14px 14px;display:flex;flex-direction:column;gap:9px;box-shadow:0 10px 30px rgba(0,0,0,.35),0 0 0 1px color-mix(in srgb,var(--lc) 10%,transparent) inset;transition:transform .2s var(--ease),box-shadow .2s}
+.st:hover{transform:translateY(-3px);box-shadow:0 20px 44px rgba(0,0,0,.5),0 0 24px color-mix(in srgb,var(--lc) 25%,transparent)}
+.st.weapon{--lc:var(--weapon)}.st.spirit{--lc:var(--spirit)}.st.vitality{--lc:var(--vitality)}.st.balanced{--lc:var(--accent)}
+.st .lean{align-self:flex-start;font-family:Reaver;text-transform:uppercase;letter-spacing:.1em;font-size:11px;color:var(--lc);border:1px solid var(--lc);border-radius:5px;padding:3px 8px;background:color-mix(in srgb,var(--lc) 12%,transparent)}
+.st b.title{font-family:Reaver;font-size:17px;letter-spacing:.02em;line-height:1.15}.st .fav{color:var(--muted);font-size:12px;margin-top:-6px}
+.st .mix{display:flex;height:6px;border-radius:3px;overflow:hidden;background:rgba(255,255,255,.06)}.st .mix i{display:block}
+.st .cats{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;align-items:center;font-size:12px;color:#cfd3e6}.st .cats .items{display:flex;flex-wrap:wrap;gap:2px}.st .cats .items img{width:26px;height:26px;border-radius:5px;margin:0}
+.st .act{margin-top:auto;display:flex;gap:8px;padding-top:6px}.st .act button.add{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:10px;background:var(--lc);color:#0d0a02;border:0;border-radius:10px;padding:11px 14px;font-weight:700;font-size:14px;box-shadow:0 8px 22px color-mix(in srgb,var(--lc) 35%,transparent)}.st .act button.add:hover{filter:brightness(1.08)}
+.st .act button.add .pl{width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.25);display:grid;place-items:center;font-size:16px;line-height:1}
+.st .act a.more{display:grid;place-items:center;width:44px;border-radius:10px;border:1px solid var(--line2);background:rgba(255,255,255,.05);color:var(--text);font-weight:700;letter-spacing:.1em}.st .act a.more:hover{background:rgba(255,255,255,.12)}
+.st .empty{color:var(--muted);font-size:13px}
+details.sec{padding:0}details.sec summary{list-style:none;cursor:pointer;padding:14px 20px;font-weight:700;font-size:14px;display:flex;align-items:center;gap:10px;color:var(--text)}details.sec summary::-webkit-details-marker{display:none}details.sec summary::before{content:"›";font-size:20px;line-height:1;color:var(--accent);transition:transform .2s;display:inline-block}details[open].sec summary::before{transform:rotate(90deg)}
+details.sec .inner{padding:0 20px 20px}details.sec p{margin:0;color:#cfd3e6;max-width:80ch}
+
+@media(max-width:1100px){.abil{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:860px){.hero-head{min-height:300px}.hero-head .art{height:360px;top:-30px;max-width:70%;opacity:.55}.hero-head .name{height:60px}.hero-head h1{font-size:46px}.cols{grid-template-columns:1fr}.mu .rows{max-width:100%;grid-template-columns:30px 90px 1fr 50px}.mu .fade,.sbuilds .fade{display:none}.sbuilds .list,.sbuilds .proven{max-width:100%}.sbuilds .plus{position:static;transform:none;margin-top:10px}}
+@media(max-width:560px){.abil{grid-template-columns:1fr}.starters{grid-template-columns:1fr}.hero-head .stats{gap:14px}}
 </style></head>
 <body><main>
-<p><a href="/heroes.html">← All heroes</a></p>
-<div id="head" class="hero-head"></div>
-<div class="card"><h2 style="margin-top:0">Abilities</h2><div id="abilities" class="abil">Loading…</div></div>
+<a class="back" href="/heroes.html">← All heroes</a>
+<header id="head" class="hero-head"></header>
+<section class="sec"><h2>Abilities</h2><div id="abilities" class="abil">Loading…</div></section>
 <div class="cols">
-<div class="card"><h2 style="margin-top:0">Your squad on this hero</h2><div id="squad" class="muted">Loading…</div></div>
-<div class="card"><h2 style="margin-top:0">Squad builds</h2><div id="sbuilds" class="muted">Loading…</div></div>
-<div class="card"><h2 style="margin-top:0">Struggles against</h2><div id="counters">Loading…</div></div>
-<div class="card"><h2 style="margin-top:0">Best teammates</h2><div id="synergy">Loading…</div></div>
+<section class="sec squad"><h2>Your squad on this hero</h2><div id="squad" class="muted">Loading…</div></section>
+<section class="sec sbuilds"><h2>Squad builds</h2><div class="fade"></div><div id="sbuilds" class="list muted">Loading…</div></section>
 </div>
-<div class="card" id="builds"><h2 style="margin-top:0">Starter builds <span class="muted" style="font-size:13px">the most-favourited community build for each playstyle, from the in-game library. Add one to your builds and adjust it.</span></h2><div id="starters" class="starters">Loading…</div></div>
-<details class="card"><summary>More community builds</summary><div id="cbuilds" style="margin-top:10px">Loading…</div></details>
-<details class="card"><summary>Lore</summary><p id="lore" class="muted"></p></details>
+<div class="cols">
+<section class="sec mu bad"><h2>Struggles against</h2><div class="fade"></div><div id="counters" class="rows">Loading…</div></section>
+<section class="sec mu good"><h2>Best teammates</h2><div class="fade"></div><div id="synergy" class="rows">Loading…</div></section>
+</div>
+<section class="sec" id="builds"><h2>Starter builds <span class="sub">The most-favourited community build for each playstyle, from the in-game library. Add one to your builds and adjust it.</span></h2><div id="starters" class="starters">Loading…</div></section>
+<details class="sec"><summary>More community builds</summary><div class="inner"><div id="cbuilds">Loading…</div></div></details>
+<details class="sec"><summary>Lore</summary><div class="inner"><p id="lore" class="muted"></p></div></details>
 </main>
 <script type="module">
 import { api, h, $, pct, ago, heroes, itemImg, abilityTooltip, withTipBuilder, shell, showError } from "/js/app.js";
@@ -40,33 +95,66 @@ const id = +new URLSearchParams(location.search).get("id");
 const [hs, items] = await Promise.all([heroes(), api("/library/items")]); const x = hs.find((y) => y.id === id); const item = (i) => items.find((y) => y.id === i);
 if (!x) { $("#head").textContent = "Unknown hero"; throw new Error("no hero"); }
 document.title = `${x.name} · Soul Scribe`;
-const head = $("#head"); head.style.backgroundImage = x.images.background ? `url(${x.images.background})` : "";
-head.replaceChildren(x.images.gloat ? h("img", { class: "art", src: x.images.gloat, alt: "" }) : "", h("div", { class: "info" }, x.images.name ? h("img", { class: "name", src: x.images.name, alt: x.name }) : h("h1", {}, x.name),
-  h("div", { style: "margin:8px 0" }, ...(x.tags || []).map((t) => h("span", { class: "tag" }, t))), h("div", { id: "stats", style: "margin:12px 0" }), h("p", {}, x.description?.role || ""),
-  h("p", {}, h("a", { class: "dl", style: "padding:8px 14px;font-size:14px", href: `/editor.html?hero=${x.id}` }, "New build for " + x.name), " ", h("a", { href: `/counters.html?hero=${x.id}`, style: "margin-left:12px" }, "Full matchups"), " ", h("a", { href: `/heatmap.html?hero=${x.id}`, style: "margin-left:12px" }, "Heatmap"))));
+
+// ---- theme the page with this hero's own art + colour ----
+const main = $("main"), art = x.images.gloat || x.images.card || x.images.vertical, bg = x.images.background;
+if (x.color && /^#?[0-9a-f]{6}$/i.test(x.color)) main.style.setProperty("--hero", x.color.startsWith("#") ? x.color : "#" + x.color);
+if (art) main.style.setProperty("--art", `url(${art})`);
+if (bg) { main.style.setProperty("--bgimg", `url(${bg})`); $(".page").prepend(h("div", { class: "herobg", style: `--bgimg:url(${bg})` })); }
+
+const ICON = { swords: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 21l6-6M21 3l-9 9M14 5l5 5M3 3l9 9M19 21l-6-6M10 5L5 10"/></svg>', map: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/></svg>', clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>', timer: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 2h4M12 8v5M5 13a7 7 0 1 0 14 0 7 7 0 0 0-14 0z"/></svg>', range: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 12h16M7 8l-3 4 3 4M17 8l3 4-3 4"/></svg>' };
+const svg = (k) => { const s = document.createElement("span"); s.innerHTML = ICON[k]; return s.firstChild; };
+const typeLabel = (x.hero_type || "").replace(/^E?Hero_?Type_?/i, "").replace(/_/g, " ").trim();
+const head = $("#head");
+head.replaceChildren(art ? h("img", { class: "art", src: art, alt: "" }) : "",
+  h("div", { class: "info" }, typeLabel ? h("div", { class: "eyebrow" }, typeLabel) : "",
+    x.images.name ? h("img", { class: "name", src: x.images.name, alt: x.name }) : h("h1", {}, x.name),
+    h("p", { class: "role" }, x.description?.role || ""),
+    h("div", { class: "tags" }, ...(x.tags || []).map((t) => h("span", { class: "tag" }, t))),
+    h("div", { class: "cta" }, h("a", { class: "dl", href: `/editor.html?hero=${x.id}` }, "New build for " + x.name, h("span", { class: "chev" }, "›")),
+      h("a", { class: "btn", href: `/counters.html?hero=${x.id}` }, svg("swords"), "Full matchups"), h("a", { class: "btn", href: `/heatmap.html?hero=${x.id}` }, svg("map"), "Heatmap")),
+    h("div", { id: "stats", class: "stats" })));
 $("#lore").textContent = x.description?.lore || "";
-const hrow = (hid, right) => { const hh = hs.find((y) => y.id === hid); return h("div", { class: "hrow", style: "padding:4px 0;border-bottom:1px solid var(--line)" }, hh?.images?.icon ? h("img", { src: hh.images.icon }) : "", h("a", { href: `/hero.html?id=${hid}`, style: "flex:1" }, hh?.name ?? hid), right); };
+
 (async () => { try { const rows = await api(`/heroes/stats?min_unix_timestamp=${Math.floor(Date.now() / 1000) - 14 * 86400}`); const s = rows.find((r) => r.hero_id === id);
   $("#stats").replaceChildren(h("div", { class: "stat" }, h("b", {}, s ? pct(s.win_rate) : "–"), h("span", {}, "win rate · 14d")), h("div", { class: "stat" }, h("b", {}, s ? pct(s.pick_rate) : "–"), h("span", {}, "pick rate")), h("div", { class: "stat" }, h("b", {}, s ? s.matches.toLocaleString() : "–"), h("span", {}, "matches"))); } catch {} })();
+
+// ---- abilities ----
+const html = (t) => { const d = document.createElement("span"); d.innerHTML = (t || "").replace(/<(?!\/?span)[^>]*>/g, ""); return d; };
 (async () => { try { const abs = await api(`/heroes/${id}/abilities`);
-  const html = (t) => { const d = document.createElement("span"); d.innerHTML = (t || "").replace(/<(?!\/?span)[^>]*>/g, ""); return d; };
-  $("#abilities").replaceChildren(...abs.map((a) => h("div", { class: "ab" }, h("div", { class: "top" }, a.image ? withTipBuilder(h("img", { src: a.image, alt: "" }), () => abilityTooltip(a)) : "", h("div", {}, h("b", {}, a.name), h("span", {}, a.key === "ultimate" ? "Ultimate" : `Ability ${a.key}`))),
-    h("div", { class: "nums" }, a.cooldown ? h("span", {}, `⟳ ${a.cooldown}s`) : "", a.duration ? h("span", {}, `⏱ ${a.duration}s`) : "", a.range ? h("span", {}, `↔ ${a.range}m`) : "", a.charges ? h("span", {}, `×${a.charges}`) : ""),
-    h("p", {}, html(a.description)), ...a.tiers.map((t, i) => h("div", { class: "tier" }, h("b", {}, `T${i + 1}`), html(t)))))); } catch (e) { showError($("#abilities"), e); } })();
+  $("#abilities").replaceChildren(...abs.map((a, i) => h("div", { class: "ab" },
+    h("div", { class: "art" }, h("span", { class: "n" }, String(i + 1)), h("div", { class: "icon" }, a.image ? withTipBuilder(h("img", { src: a.image, alt: "" }), () => abilityTooltip(a)) : "")),
+    h("div", { class: "body" }, h("div", { class: "ttl" }, h("b", {}, a.name), h("span", {}, a.key === "ultimate" ? "Ultimate" : `Ability ${a.key}`)),
+      h("div", { class: "nums" }, a.cooldown ? h("span", {}, svg("clock"), `${a.cooldown}s`) : "", a.duration ? h("span", {}, svg("timer"), `${a.duration}s`) : "", a.range ? h("span", {}, svg("range"), `${a.range}m`) : "", a.charges ? h("span", {}, `×${a.charges}`) : ""),
+      h("p", {}, html(a.description)),
+      a.tiers?.length ? h("div", { class: "tiers" }, ...a.tiers.flatMap((t, j) => [h("b", {}, `T${j + 1}`), h("div", {}, html(t))])) : "")))); } catch (e) { showError($("#abilities"), e); } })();
+
+// ---- matchups ----
+const barW = (wr) => Math.max(8, Math.min(100, ((wr - 0.3) / 0.4) * 100)).toFixed(0) + "%";
+const murow = (hid, wr) => { const hh = hs.find((y) => y.id === hid); return [hh?.images?.icon ? h("img", { src: hh.images.icon, alt: "" }) : h("span", {}), h("a", { href: `/hero.html?id=${hid}` }, hh?.name ?? hid), h("div", { class: "bar" }, h("i", { style: `width:${barW(wr)}` })), h("span", { class: "pct" }, pct(wr))]; };
 (async () => { try { const m = await api(`/heroes/${id}/matchups`);
-  $("#counters").replaceChildren(...m.counters.slice(0, 6).map((r) => hrow(r.hero_id, h("span", { class: "num loss" }, pct(r.win_rate)))));
-  $("#synergy").replaceChildren(...m.synergies.slice(0, 6).map((r) => hrow(r.hero_id, h("span", { class: "num win" }, pct(r.win_rate))))); } catch (e) { showError($("#counters"), e); } })();
+  $("#counters").replaceChildren(...m.counters.slice(0, 6).flatMap((r) => murow(r.hero_id, r.win_rate)));
+  $("#synergy").replaceChildren(...m.synergies.slice(0, 6).flatMap((r) => murow(r.hero_id, r.win_rate))); } catch (e) { showError($("#counters"), e); } })();
+
+// ---- squad ----
 (async () => { try { const rows = await api(`/heroes/${id}/squad`);
-  $("#squad").replaceChildren(rows.length ? h("table", {}, h("tbody", {}, ...rows.map((r) => h("tr", {}, h("td", {}, r.avatar_url ? h("img", { src: r.avatar_url, width: 24, height: 24, style: "border-radius:50%;vertical-align:middle;margin-right:6px" }) : "", h("a", { href: `/player.html?id=${r.account_id}` }, r.name)), h("td", { class: "num" }, `${r.games} games`), h("td", { class: "num " + (r.wins / r.games >= .5 ? "win" : "loss") }, pct(r.wins / r.games)), h("td", { class: "num" }, `${r.k.toFixed(1)}/${r.d.toFixed(1)}/${r.a.toFixed(1)}`), h("td", { class: "num muted" }, `${Math.round(r.spm || 0)} spm`))))) : h("span", {}, `Nobody in the squad has played ${x.name} yet.`)); } catch (e) { showError($("#squad"), e); } })();
-(async () => { try { const bb = await api(`/heroes/${id}/best-build`); if (!bb || !bb.builds.length) return; const top = bb.builds.find((b) => b.games_using) ; if (!top) return;
-  $("#sbuilds").prepend(h("div", { class: "card", style: "margin:0 0 10px;border-color:var(--accent)" }, h("strong", {}, "Squad's proven build: "), h("a", { href: `/editor.html?id=${top.id}` }, top.title), h("span", { class: "muted" }, ` — used in ${top.games_using} of ${bb.sample_games} recent squad games, ${pct(top.win_rate)} win rate`))); } catch {} })();
+  $("#squad").replaceChildren(rows.length ? h("table", {}, h("tbody", {}, ...rows.map((r) => h("tr", {}, h("td", {}, r.avatar_url ? h("img", { class: "av", src: r.avatar_url }) : "", h("a", { href: `/player.html?id=${r.account_id}` }, r.name)), h("td", { class: "num muted" }, `${r.games} game${r.games === 1 ? "" : "s"}`), h("td", { class: "num " + (r.wins / r.games >= .5 ? "win" : "loss") }, pct(r.wins / r.games)), h("td", { class: "num" }, `${r.k.toFixed(1)}/${r.d.toFixed(1)}/${r.a.toFixed(1)}`), h("td", { class: "num muted" }, `${Math.round(r.spm || 0)} spm`))))) : h("span", {}, `Nobody in the squad has played ${x.name} yet.`)); } catch (e) { showError($("#squad"), e); } })();
+(async () => { try { const bb = await api(`/heroes/${id}/best-build`); if (!bb || !bb.builds.length) return; const top = bb.builds.find((b) => b.games_using); if (!top) return;
+  $("#sbuilds").parentElement.insertBefore(h("div", { class: "proven" }, h("strong", {}, "Squad's proven build: "), h("a", { href: `/editor.html?id=${top.id}` }, top.title), h("span", { class: "muted" }, ` — used in ${top.games_using} of ${bb.sample_games} recent squad games, ${pct(top.win_rate)} win rate`)), $("#sbuilds")); } catch {} })();
 (async () => { try { const b = await api(`/library?hero_id=${id}`);
-  $("#sbuilds").replaceChildren(b.length ? h("div", {}, ...b.map((r) => h("div", { style: "padding:6px 0;border-bottom:1px solid var(--line)" }, h("a", { href: `/editor.html?id=${r.id}` }, h("strong", {}, r.title)), h("span", { class: "muted" }, ` by ${r.author_name ?? r.author}`), h("div", { class: "items" }, ...r.preview.map((i) => item(i)?.image ? h("img", { src: item(i).image, title: item(i).name }) : ""))))) : h("span", {}, "No squad builds yet. ", h("a", { href: `/editor.html?hero=${id}` }, "Make one."))); } catch (e) { showError($("#sbuilds"), e); } })();
+  $("#sbuilds").classList.remove("muted");
+  $("#sbuilds").replaceChildren(b.length ? b.map((r) => h("div", { class: "row" }, h("a", { href: `/editor.html?id=${r.id}` }, h("strong", {}, r.title)), h("span", { class: "muted" }, ` by ${r.author_name ?? r.author}`), h("div", { class: "items" }, ...r.preview.map((i) => item(i)?.image ? h("img", { src: item(i).image, title: item(i).name }) : "")))) : h("span", { class: "muted" }, "No squad builds yet. ", h("a", { href: `/editor.html?hero=${id}` }, "Make one.")));
+  $("#sbuilds").parentElement.append(h("a", { class: "plus", href: `/editor.html?hero=${id}`, title: "New squad build" }, "+")); } catch (e) { showError($("#sbuilds"), e); } })();
+
+// ---- builds ----
 const mixBar = (share) => h("div", { class: "mix" }, h("i", { style: `width:${share.weapon * 100}%;background:var(--weapon)` }), h("i", { style: `width:${share.spirit * 100}%;background:var(--spirit)` }), h("i", { style: `width:${share.vitality * 100}%;background:var(--vitality)` }));
 async function importBuild(b, btn) { btn.disabled = true; btn.textContent = "Copying…"; try { const r = await api("/library/import", { method: "POST", body: { hero_id: id, ingame_build_id: b.id } }); location.href = `/editor.html?id=${r.id}`; } catch (e) { btn.disabled = false; btn.textContent = e.message.includes("Sign in") ? "Sign in through Steam first" : "Add to my builds"; } }
-const buildCard = (lean, b) => h("div", { class: "st " + lean }, h("div", { class: "lean" }, b?.lean_label ?? ""), b ? [h("b", {}, b.name), h("div", { class: "fav" }, `★ ${b.favorites.toLocaleString()} favourites · ${b.item_count} items · updated ${ago(b.updated)}`), mixBar(b.share),
-  ...b.categories.slice(0, 4).map((cat) => h("div", {}, h("div", { class: "ph" }, cat.name), h("div", { class: "items" }, ...cat.items.slice(0, 12).map((i) => itemImg(item(i), 24))))),
-  h("button", { class: "primary", onclick: (e) => importBuild(b, e.target) }, "Add to my builds")] : h("span", { class: "muted" }, "No clear build of this type in the top 40."));
+const LEAN = { weapon: "Weapon / Gun", spirit: "Spirit", vitality: "Survivability", balanced: "Balanced" };
+const buildCard = (lean, b) => h("div", { class: "st " + lean }, h("div", { class: "lean" }, b?.lean_label ?? LEAN[lean] ?? lean),
+  b ? [h("b", { class: "title" }, b.name), h("div", { class: "fav" }, `+${b.favorites.toLocaleString()} favourites · ${b.item_count} items · updated ${ago(b.updated)}`), mixBar(b.share),
+    h("div", { class: "cats" }, ...b.categories.slice(0, 4).flatMap((cat) => [h("span", {}, cat.name), h("div", { class: "items" }, ...cat.items.slice(0, 12).map((i) => itemImg(item(i), 26)))])),
+    h("div", { class: "act" }, h("button", { class: "add", onclick: (e) => importBuild(b, e.currentTarget) }, h("span", { class: "pl" }, "+"), "Add to my builds"))]
+    : h("span", { class: "empty" }, "No clear build of this type in the top 40."));
 (async () => { try { const st = await api(`/heroes/${id}/starter-builds`); $("#starters").replaceChildren(...["weapon", "spirit", "vitality", "balanced"].map((k) => buildCard(k, st[k]))); } catch (e) { showError($("#starters"), e); } })();
 (async () => { try { const b = await api(`/heroes/${id}/builds`);
   $("#cbuilds").replaceChildren(h("div", { class: "starters" }, ...b.slice(0, 12).map((r) => buildCard(r.lean, r)))); } catch (e) { showError($("#cbuilds"), e); } })();
