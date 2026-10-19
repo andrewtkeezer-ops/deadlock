@@ -23,7 +23,14 @@ code,pre{background:#0a0b0f;border:1px solid var(--line);border-radius:6px;paddi
 .slider{display:grid;grid-template-columns:160px 1fr 30px;align-items:center;gap:10px;margin:6px 0}
 .bar{height:8px;background:#262a38;border-radius:4px;overflow:hidden}.bar>i{display:block;height:100%;background:var(--accent)}
 .error{color:var(--loss)}.ok{color:var(--win)}
-@media (max-width:640px){header{flex-wrap:wrap}main{padding:16px}}
+/* ---- phones ---- */
+@media (max-width:720px){
+  header{flex-wrap:wrap;gap:8px;padding:8px 12px}header .logo{height:30px}header nav{order:3;width:100%;overflow-x:auto;white-space:nowrap;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none}header nav::-webkit-scrollbar{display:none}header nav a{padding:6px 8px;font-size:13px}header .who{margin-left:auto}
+  main{padding:14px 12px}h1{font-size:22px}.card{padding:12px}
+  table{display:block;overflow-x:auto;white-space:nowrap}th,td{padding:6px 8px;font-size:13px}
+  .grid{grid-template-columns:1fr}
+  .itip{width:240px}
+}
 a.dl{display:inline-block;background:var(--accent);color:#1a1200;font-weight:700;padding:12px 20px;border-radius:8px;font-size:16px}a.dl:hover{text-decoration:none;filter:brightness(1.08)}
 .itip{z-index:1000;width:280px;background:#15171f;border:1px solid var(--line);border-top:3px solid var(--accent);border-radius:8px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.6);pointer-events:none;font-size:13px}
 .itip.weapon{border-top-color:var(--weapon)}.itip.spirit{border-top-color:var(--spirit)}.itip.vitality{border-top-color:var(--vitality)}
