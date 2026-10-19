@@ -9,15 +9,11 @@
 <div class="steps">
 <div class="step" id="s1"><div class="n"><span>1</span></div><div class="card"><h2>Sign in through Steam</h2><p>This tells us which Steam account is yours. We never see your password; Steam hands back only your public ID. Your match history imports straight away.</p>
 <p id="s1a"><a href="/api/auth/steam/login"><img src="https://community.cloudflare.steamstatic.com/public/images/signinthroughsteam/sits_01.png" alt="Sign in through Steam" style="height:35px"></a></p><p id="s1s" class="status muted"></p></div></div>
-<div class="step" id="s2"><div class="n"><span>2</span></div><div class="card"><h2>Install the match uploader (Windows)</h2>
+<div class="step" id="s2"><div class="n"><span>2</span></div><div class="card"><h2>Install the match uploader</h2>
 <p>Valve doesn't publish match lists. A tracker needs each match's ID plus a key only <em>your</em> Steam client receives, so a small background tool sends them as you play and backfills your old games.</p>
 <p><a class="dl" href="https://github.com/deadlock-api/deadlock-api-ingest/releases/latest/download/deadlock-api-ingest-setup.exe">Download installer (.exe, ~32 MB)</a></p>
 <ol><li>Run <code>deadlock-api-ingest-setup.exe</code>. If Windows warns, choose <strong>More info → Run anyway</strong>.</li><li>It installs for your user only and starts on login. Close the status window; it keeps running.</li><li>Play. New games appear within minutes; older games backfill over a day or so.</li></ol>
 <p class="muted" style="font-size:13px">Sends only match IDs and your public Steam ID, never your Steam login. Open source.</p>
-<details><summary class="muted">Command line, Linux / Steam Deck, or run only while the game is open</summary>
-<p>Windows PowerShell:</p><pre>irm https://raw.githubusercontent.com/deadlock-api/deadlock-api-ingest/master/install-windows.ps1 | iex</pre>
-<p>Linux:</p><pre>curl -fsSL https://raw.githubusercontent.com/deadlock-api/deadlock-api-ingest/master/install-linux.sh | bash</pre>
-<p>Game-only mode: download <code>deadlock-api-ingest-windows-latest.exe</code> from the releases page and set Deadlock's Steam launch option to <code>"C:\Users\YOU\AppData\Local\deadlock-api-ingest\deadlock-api-ingest.exe" -- %command%</code></p></details>
 <p id="s2s" class="status muted"></p></div></div>
 <div class="step" id="s3"><div class="n"><span>3</span></div><div class="card"><h2>Play, then check the leaderboard</h2><p>The site re-syncs everyone hourly, and the uploader nudges it right after each game. Your <a id="mylink" href="/">profile</a> shows your rank, heroes and matches; <a href="/library.html">Builds</a> is where you keep and share builds.</p><p id="s3s" class="status muted"></p></div></div>
 </div>
@@ -28,6 +24,6 @@ shell("/setup.html");
 const st = new URLSearchParams(location.search).get("steam");
 if (st) $("#s1s").innerHTML = st === "failed" ? '<span class="error">Steam sign-in could not be verified. Try again.</span>' : "Steam sign-in was cancelled.";
 try { const m = await me(); if (m.account_id) { $("#s1").classList.add("done"); const p = (await api("/players")).find((x) => x.account_id === m.account_id); $("#s1a").hidden = true; $("#s1s").textContent = `Signed in as ${p?.name ?? m.account_id}.`; $("#mylink").href = `/player.html?id=${m.account_id}`;
-  const d = await api(`/players/${m.account_id}`); if (d.ingest?.active) { $("#s2").classList.add("done"); $("#s2s").textContent = `Uploader active. Last upload ${ago(Math.floor(new Date(d.ingest.last_upload_at).getTime() / 1000) || d.ingest.last_upload_at)}.`; } else $("#s2s").textContent = "Uploader not detected yet. It can take a few minutes after install.";
+  const d = await api(`/players/${m.account_id}`); if (d.ingest?.active) { $("#s2").classList.add("done"); $("#s2s").textContent = `Uploader active. Last upload ${ago(d.ingest.last_upload_at)}.`; } else $("#s2s").textContent = "Uploader not detected yet. It can take a few minutes after install.";
   if (d.matches.length) { $("#s3").classList.add("done"); $("#s3s").textContent = `${d.matches.length} matches tracked.`; } } } catch {}
 </script></body></html>
