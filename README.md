@@ -28,6 +28,20 @@ npm run deploy                     # → https://deadlock-squad.<you>.workers.de
 Optional: a free API key from deadlock-api doubles the rate limit and gets queue priority —
 `npx wrangler secret put DEADLOCK_API_KEY`.
 
+## Deploying from GitHub (Workers Builds)
+
+Repo: https://github.com/andrewtkeezer-ops/deadlock. In the Cloudflare dashboard → Workers & Pages → Create →
+**Import a repository** → pick `deadlock`, then:
+
+- Build command: `npx wrangler d1 migrations apply deadlock-squad --remote` (runs schema migrations on every deploy)
+- Deploy command: `npx wrangler deploy`
+- Root directory: `/`
+
+Before the first build, the D1 database and KV namespace must exist and their IDs must be in `wrangler.jsonc`
+(create them in the dashboard under Storage & Databases, or with `wrangler d1 create` / `wrangler kv namespace create`).
+Set `ADMIN_TOKEN` and (optionally) `DEADLOCK_API_KEY` under the Worker's Settings → Variables and Secrets.
+Every push to `main` then redeploys.
+
 ## Adding friends
 
 1. Each friend installs the ingest tool (the **Setup** page has the one-line PowerShell command).
