@@ -1,50 +1,55 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Build editor · Soul Scribe</title><link rel="icon" type="image/png" href="/img/favicon.png"><link rel="apple-touch-icon" href="/img/icon.png"><link rel="stylesheet" href="/css/app.css">
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Build editor · Soul Scribe</title><link rel="icon" type="image/png" href="/img/favicon.png"><link rel="stylesheet" href="/css/app.css">
 <style>
-.ed{display:grid;grid-template-columns:1fr 320px;gap:16px}@media(max-width:800px){.ed{grid-template-columns:1fr}}
-.phase{margin-bottom:12px}.phase h3{margin:0 0 6px;display:flex;gap:8px;align-items:center}.phase h3 input{flex:1}
-.mods{display:flex;flex-wrap:wrap;gap:6px;min-height:44px;padding:6px;border:1px dashed var(--line);border-radius:8px}
-.mod{display:flex;align-items:center;gap:6px;background:#1f2230;border-radius:6px;padding:4px 6px;font-size:13px}.mod img{width:28px;height:28px;border-radius:4px}.mod button{padding:0 6px;line-height:1.4}
-.picker{position:sticky;top:70px;max-height:80vh;overflow:auto}.pick{display:flex;align-items:center;gap:8px;padding:4px;border-radius:6px;cursor:pointer}.pick:hover{background:#1d2030}.pick img{width:30px;height:30px;border-radius:4px}.pick .cost{margin-left:auto;color:var(--muted);font-size:12px}
-.note{width:110px;background:transparent;border:0;border-bottom:1px solid var(--line);color:var(--muted);font-size:12px}
+main{max-width:1300px}
+.top{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.top img.hero{width:48px;height:62px;object-fit:cover;border-radius:8px}.top input#title{flex:1;min-width:200px;font-size:16px}
+.ed{display:grid;grid-template-columns:1fr 340px;gap:16px}@media(max-width:900px){.ed{grid-template-columns:1fr}.picker{position:static;max-height:none}}
+.phase{margin-bottom:12px;border-left:4px solid var(--line)}.phase.target{border-left-color:var(--accent)}.phase h3{margin:0 0 6px;display:flex;gap:8px;align-items:center;cursor:pointer}.phase h3 input{flex:1;font-family:Reaver;font-size:15px;text-transform:uppercase}.phase h3 .souls{color:var(--muted);font-size:12px;font-family:Radiance;text-transform:none}
+.mods{display:flex;flex-wrap:wrap;gap:8px;min-height:56px;padding:8px;border:1px dashed var(--line);border-radius:8px}.mods.over{border-color:var(--accent);background:#1c1f13}
+.mod{display:flex;align-items:center;gap:6px;background:#1f2230;border-radius:8px;padding:4px 6px;font-size:13px;cursor:grab;border:1px solid transparent}.mod.weapon{border-color:var(--weapon)}.mod.spirit{border-color:var(--spirit)}.mod.vitality{border-color:var(--vitality)}.mod img{width:34px;height:34px;border-radius:6px}.mod.dragging{opacity:.4}
+.mod .note{width:100px;background:transparent;border:0;border-bottom:1px solid var(--line);color:var(--muted);font-size:12px}.mod .x{padding:0 6px;line-height:1.4;color:var(--muted)}
+.picker{position:sticky;top:70px;max-height:82vh;overflow:auto}.pick{display:flex;align-items:center;gap:8px;padding:5px;border-radius:6px;cursor:pointer}.pick:hover{background:#1d2030}.pick img{width:32px;height:32px;border-radius:4px}.pick .cost{margin-left:auto;color:var(--muted);font-size:12px}
+.seg{display:flex;gap:4px;margin:6px 0}.seg button{flex:1;font-size:12px;padding:5px}
+.tot{display:flex;gap:16px;align-items:baseline}.tot b{font-family:Reaver;font-size:20px}
 </style></head>
 <body><main>
 <p><a href="/library.html">← Build library</a></p>
-<div class="card"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-<select id="hero"></select> <input type="text" id="title" placeholder="Build name" style="flex:1;min-width:200px"> <button class="primary" id="save">Save</button> <button id="fork" hidden>Fork a copy</button> <button id="del" hidden>Delete</button> <span id="msg"></span></div>
-<p><input type="text" id="desc" placeholder="Description / how to play it (optional)" style="width:100%"></p>
-<p id="owner" class="muted"></p></div>
+<div class="card"><div class="top"><img class="hero" id="heroimg" alt=""><select id="hero"></select><input type="text" id="title" placeholder="Build name"><button class="primary" id="save">Save</button><button id="fork" hidden>Fork a copy</button><button id="del" hidden>Delete</button><span id="msg"></span></div>
+<p style="margin:10px 0 0"><input type="text" id="desc" placeholder="How to play it (optional)" style="width:100%"></p>
+<div class="tot" style="margin-top:10px"><b id="total">0</b><span class="muted">souls total</span><span id="owner" class="muted" style="margin-left:auto"></span></div></div>
 <div class="ed">
 <div id="phases"></div>
-<div class="card picker"><input type="text" id="search" placeholder="Search items…" style="width:100%"> <div style="margin:6px 0"><label><input type="radio" name="slot" value="" checked> All</label> <label><input type="radio" name="slot" value="weapon"> Weapon</label> <label><input type="radio" name="slot" value="vitality"> Vitality</label> <label><input type="radio" name="slot" value="spirit"> Spirit</label></div>
-<p class="muted" style="font-size:12px">Click an item to add it to the phase marked <strong>+</strong> (click a phase title to target it).</p><div id="items"></div></div>
+<div class="card picker"><input type="text" id="search" placeholder="Search items…" style="width:100%"><div class="seg"><button data-slot="" class="primary">All</button><button data-slot="weapon">Weapon</button><button data-slot="vitality">Vitality</button><button data-slot="spirit">Spirit</button></div>
+<p class="muted" style="font-size:12px;margin:4px 0 8px">Click an item to add it to the highlighted phase. Drag items between phases to reorder.</p><div id="items"></div></div>
 </div></main>
 <script type="module">
-import { api, h, $, heroes, withTip, heroIcon, shell } from "/js/app.js";
+import { api, h, $, fmt, heroes, items, me, withTip, shell } from "/js/app.js";
 shell("/library.html");
 const qs = new URLSearchParams(location.search); const id = qs.get("id");
-const [hs, items, me, cats] = await Promise.all([heroes(), api("/library/items"), api("/auth/steam/me"), api("/library/categories")]);
+const [hs, its, who, cats] = await Promise.all([heroes(), items(), me(), api("/library/categories")]);
 hs.forEach((x) => $("#hero").append(new Option(x.name, x.id)));
-const item = (i) => items.find((x) => x.id === i);
+const item = (i) => its.find((x) => x.id === i);
 let build = { hero_id: +qs.get("hero") || hs[0].id, title: "", description: "", details: { mod_categories: cats.map((name) => ({ name, mods: [] })) }, account_id: null };
-let target = 0, mine = true;
-if (id) { build = await api(`/library/${id}`); mine = me.account_id && me.account_id === build.account_id; }
+let target = 0, mine = true, slotFilter = "";
+if (id) { build = await api(`/library/${id}`); mine = who.account_id && who.account_id === build.account_id; }
 else if (qs.get("from") === "wizard") { try { const w = JSON.parse(sessionStorage.getItem("wizardBuild") || "null"); if (w) { build.hero_id = w.hero_id; build.title = w.title || ""; const byTier = (lo, hi) => w.order.filter((i) => i.tier >= lo && i.tier <= hi).map((i) => ({ ability_id: i.item_id, annotation: null })); build.details.mod_categories[0].mods = byTier(1, 1); build.details.mod_categories[1].mods = byTier(2, 2); build.details.mod_categories[2].mods = byTier(3, 4); } } catch {} }
 if (!id && qs.get("item") && item(+qs.get("item"))) build.details.mod_categories[0].mods.push({ ability_id: +qs.get("item"), annotation: null });
 $("#hero").value = build.hero_id; $("#title").value = build.title; $("#desc").value = build.description || "";
-if (id) { $("#owner").textContent = mine ? "Your build." : `By ${build.author_name ?? build.author}. You can view it, or fork a copy to edit.`; $("#fork").hidden = false; $("#del").hidden = !mine; $("#save").hidden = !mine; }
-if (!me.account_id) $("#owner").textContent = "Sign in through Steam (top right) to save builds.";
-function render() { $("#phases").replaceChildren(...build.details.mod_categories.map((cat, ci) => h("div", { class: "card phase" },
-  h("h3", { onclick: () => { target = ci; render(); } }, h("span", {}, target === ci ? "+ " : ""), mine || !id ? h("input", { type: "text", value: cat.name, onchange: (e) => (cat.name = e.target.value), onclick: (e) => e.stopPropagation() }) : cat.name),
-  h("div", { class: "mods" }, ...cat.mods.map((m, mi) => h("div", { class: "mod" }, item(m.ability_id)?.image ? withTip(h("img", { src: item(m.ability_id).image, alt: item(m.ability_id).name }), item(m.ability_id)) : "", h("span", {}, item(m.ability_id)?.name ?? m.ability_id),
-    h("input", { class: "note", placeholder: "note", value: m.annotation || "", onchange: (e) => (m.annotation = e.target.value || null) }),
-    h("button", { title: "move left", onclick: () => { if (mi > 0) { [cat.mods[mi - 1], cat.mods[mi]] = [cat.mods[mi], cat.mods[mi - 1]]; render(); } } }, "‹"),
-    h("button", { title: "move right", onclick: () => { if (mi < cat.mods.length - 1) { [cat.mods[mi + 1], cat.mods[mi]] = [cat.mods[mi], cat.mods[mi + 1]]; render(); } } }, "›"),
-    h("button", { title: "remove", onclick: () => { cat.mods.splice(mi, 1); render(); } }, "×")))),
-  h("div", { class: "muted", style: "font-size:12px;margin-top:6px" }, `${cat.mods.reduce((s, m) => s + (item(m.ability_id)?.cost || 0), 0).toLocaleString()} souls`)))); }
-function renderPicker() { const q = $("#search").value.toLowerCase(), slot = document.querySelector('input[name=slot]:checked').value, heroId = +$("#hero").value;
-  const rows = items.filter((i) => (!slot || i.slot === slot) && (!q || i.name.toLowerCase().includes(q)) && (!i.heroes?.length || i.heroes.includes(heroId))).sort((a, b) => (a.slot ?? "").localeCompare(b.slot ?? "") || a.tier - b.tier || a.name.localeCompare(b.name));
-  $("#items").replaceChildren(...rows.map((i) => withTip(h("div", { class: "pick", onclick: () => { build.details.mod_categories[target].mods.push({ ability_id: i.id, annotation: null }); render(); } }, i.image ? h("img", { src: i.image }) : "", h("span", {}, i.name, " ", h("span", { class: "chip " + i.slot, style: "font-size:10px;padding:0 5px" }, `T${i.tier}`)), h("span", { class: "cost" }, i.cost)), i))); }
-$("#search").oninput = renderPicker; document.querySelectorAll('input[name=slot]').forEach((r) => (r.onchange = renderPicker)); $("#hero").onchange = renderPicker;
+const canEdit = () => mine || !id;
+if (id) { $("#owner").textContent = mine ? "Your build" : `By ${build.author_name ?? build.author} · view only, fork to edit`; $("#fork").hidden = false; $("#del").hidden = !mine; $("#save").hidden = !mine; }
+if (!who.account_id) $("#owner").textContent = "Sign in through Steam (top right) to save builds.";
+const heroImg = () => { $("#heroimg").src = hs.find((y) => y.id === +$("#hero").value)?.images?.card || ""; }; heroImg();
+let drag = null;
+function render() { let total = 0;
+  $("#phases").replaceChildren(...build.details.mod_categories.map((cat, ci) => { const souls = cat.mods.reduce((s, m) => s + (item(m.ability_id)?.cost || 0), 0); total += souls;
+    const mods = h("div", { class: "mods", ondragover: (e) => { e.preventDefault(); mods.classList.add("over"); }, ondragleave: () => mods.classList.remove("over"), ondrop: (e) => { e.preventDefault(); mods.classList.remove("over"); if (!drag) return; const [fc, fi] = drag; const [mv] = build.details.mod_categories[fc].mods.splice(fi, 1); let idx = cat.mods.length; const after = e.target.closest(".mod"); if (after) idx = [...mods.children].indexOf(after); if (fc === ci && fi < idx) idx--; cat.mods.splice(idx, 0, mv); drag = null; render(); } },
+      ...cat.mods.map((m, mi) => { const it = item(m.ability_id); const el = h("div", { class: "mod " + (it?.slot || ""), draggable: canEdit() ? "true" : "false", ondragstart: () => { drag = [ci, mi]; el.classList.add("dragging"); }, ondragend: () => el.classList.remove("dragging") },
+        it?.image ? withTip(h("img", { src: it.image, alt: it.name }), it) : "", h("span", {}, it?.name ?? m.ability_id), canEdit() ? h("input", { class: "note", placeholder: "note", value: m.annotation || "", onchange: (e) => (m.annotation = e.target.value || null) }) : (m.annotation ? h("span", { class: "muted", style: "font-size:12px" }, m.annotation) : ""), canEdit() ? h("button", { class: "x", title: "remove", onclick: () => { cat.mods.splice(mi, 1); render(); } }, "×") : ""); return el; }));
+    return h("div", { class: "card phase" + (target === ci ? " target" : "") }, h("h3", { onclick: () => { target = ci; render(); } }, canEdit() ? h("input", { type: "text", value: cat.name, onchange: (e) => (cat.name = e.target.value), onclick: (e) => e.stopPropagation() }) : h("span", { style: "flex:1;font-family:Reaver;text-transform:uppercase" }, cat.name), h("span", { class: "souls" }, `${fmt(souls)} souls`)), mods); }));
+  $("#total").textContent = fmt(total); }
+function renderPicker() { const q = $("#search").value.toLowerCase(), heroId = +$("#hero").value;
+  const rows = its.filter((i) => (!slotFilter || i.slot === slotFilter) && (!q || i.name.toLowerCase().includes(q) || (i.stats || []).some((s) => s.label.toLowerCase().includes(q))) && (!i.heroes?.length || i.heroes.includes(heroId))).sort((a, b) => (a.slot ?? "").localeCompare(b.slot ?? "") || a.tier - b.tier || a.name.localeCompare(b.name));
+  $("#items").replaceChildren(...rows.map((i) => withTip(h("div", { class: "pick", onclick: () => { if (!canEdit()) return; build.details.mod_categories[target].mods.push({ ability_id: i.id, annotation: null }); render(); } }, i.image ? h("img", { src: i.image, alt: "" }) : "", h("span", {}, i.name, " ", h("span", { class: "chip " + i.slot, style: "font-size:10px;padding:0 5px" }, `T${i.tier}`)), h("span", { class: "cost" }, fmt(i.cost))), i))); }
+$("#search").oninput = renderPicker; document.querySelectorAll("[data-slot]").forEach((b) => (b.onclick = () => { slotFilter = b.dataset.slot; document.querySelectorAll("[data-slot]").forEach((x) => (x.className = x === b ? "primary" : "")); renderPicker(); })); $("#hero").onchange = () => { heroImg(); renderPicker(); };
 render(); renderPicker();
 const payload = () => ({ hero_id: +$("#hero").value, title: $("#title").value, description: $("#desc").value, details: build.details });
 $("#save").onclick = async () => { const msg = $("#msg"); try { if (id && mine) { await api(`/library/${id}`, { method: "PUT", body: payload() }); msg.className = "ok"; msg.textContent = "Saved."; } else { const r = await api("/library", { method: "POST", body: payload() }); location.href = `/editor.html?id=${r.id}`; } } catch (e) { msg.className = "error"; msg.textContent = e.message; } };
