@@ -82,17 +82,17 @@ r.post("/wizard", async (c) => {
       contributes: Object.fromEntries(Object.entries(s).filter(([, v]) => v > 0)) };
   }).sort((a, b) => b.score - a.score);
 
-  // Greedy purchase order: 4 slots per category (weapon/vitality/spirit), cheapest tiers first, stay under budget.
+  // Pick the best-scoring items first (4 slots per category, within budget, ignore filler below a score floor),
+  // then present them in a sensible purchase order: cheap tiers early, expensive late.
   const slots: Record<string, number> = { weapon: 4, vitality: 4, spirit: 4 };
-  const order: typeof scored = [];
+  const picked: typeof scored = [];
   let spent = 0;
-  for (const tier of [1, 2, 3, 4]) {
-    for (const item of scored) {
-      if (item.tier !== tier || !item.slot || !slots[item.slot] || item.score <= 0) continue;
-      if (spent + item.cost > budget) continue;
-      order.push(item); spent += item.cost; slots[item.slot]--;
-    }
+  for (const item of scored) {
+    if (!item.slot || !slots[item.slot] || item.score < 0.05) continue;
+    if (spent + item.cost > budget) continue;
+    picked.push(item); spent += item.cost; slots[item.slot]--;
   }
+  const order = [...picked].sort((a, b) => (a.tier ?? 0) - (b.tier ?? 0) || a.cost - b.cost || b.score - a.score);
   return c.json({ hero_id: body.hero_id, budget, spent, order, ranked: scored.slice(0, 60) });
 });
 
