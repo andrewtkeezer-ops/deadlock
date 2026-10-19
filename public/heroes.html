@@ -13,7 +13,7 @@ main{max-width:1400px}
 .stage .name{height:64px;max-width:100%;filter:drop-shadow(0 2px 6px rgba(0,0,0,.8))}.stage h2.name{font-family:Reaver;font-size:48px;margin:0;text-transform:uppercase}
 .tags{margin:10px 0}.tag{display:inline-block;background:#1f6fd0;color:#fff;font-weight:700;font-size:12px;padding:3px 9px;border-radius:3px;margin-right:6px;text-transform:uppercase;letter-spacing:.04em}
 .stat{display:inline-block;margin-right:18px}.stat b{display:block;font-size:22px;font-family:Reaver}.stat span{color:var(--muted);font-size:12px;text-transform:uppercase}
-.stage p{line-height:1.5;color:#dcd9cf}.stage .actions a{margin-right:14px}
+.stage p{line-height:1.5;color:#dcd9cf}.abrow{display:flex;gap:8px;margin:10px 0;min-height:52px}.abrow img{width:52px;height:52px;border-radius:50%;border:2px solid #2a2f44;background:#000}.abrow img:hover{border-color:var(--accent)}.stage .actions a{margin-right:14px}
 .meta{margin-top:28px}
 </style></head>
 <body><main>
@@ -29,10 +29,12 @@ const hs = await heroes(); let stats = new Map(); let active = null;
 const roleOf = (x) => x.hero_type ? x.hero_type.replace(/_/g, " ") : "";
 function stage(x) { active = x; document.querySelectorAll(".hc").forEach((el) => el.classList.toggle("active", +el.dataset.id === x.id));
   const st = stats.get(x.id); const el = $("#stage"); el.style.backgroundImage = x.images.background ? `url(${x.images.background})` : "";
+  api(`/heroes/${x.id}/abilities`).then((abs) => { if (active?.id !== x.id) return; const row = $("#abrow"); if (row) row.replaceChildren(...abs.map((a) => h("img", { src: a.image, title: `${a.name}: ${(a.quip || "").replace(/<[^>]+>/g, "")}`, alt: a.name }))); }).catch(() => {});
   el.replaceChildren(x.images.gloat ? h("img", { class: "art", src: x.images.gloat, alt: "" }) : "",
     h("div", { class: "info" }, x.images.name ? h("img", { class: "name", src: x.images.name, alt: x.name }) : h("h2", { class: "name" }, x.name),
       h("div", { class: "tags" }, ...(x.tags || []).map((t) => h("span", { class: "tag" }, t))),
       h("div", { style: "margin:14px 0" }, h("div", { class: "stat" }, h("b", {}, st ? pct(st.win_rate) : "–"), h("span", {}, "win rate")), h("div", { class: "stat" }, h("b", {}, st ? pct(st.pick_rate) : "–"), h("span", {}, "pick rate")), h("div", { class: "stat" }, h("b", {}, "●".repeat(x.complexity || 1) + "○".repeat(3 - (x.complexity || 1))), h("span", {}, "complexity")), x.gun_tag ? h("div", { class: "stat" }, h("b", {}, x.gun_tag), h("span", {}, "weapon")) : ""),
+      h("div", { class: "abrow", id: "abrow" }),
       x.description?.role ? h("p", {}, x.description.role) : "", x.description?.playstyle ? h("p", { class: "muted" }, x.description.playstyle) : "",
       h("p", { class: "actions" }, h("a", { class: "dl", style: "padding:9px 16px;font-size:14px", href: `/hero.html?id=${x.id}` }, "Open hero page"), h("a", { href: `/counters.html?hero=${x.id}` }, "Matchups"), h("a", { href: `/editor.html?hero=${x.id}` }, "New build"), h("a", { href: `/heatmap.html?hero=${x.id}` }, "Heatmap")))); }
 $("#grid").replaceChildren(...hs.map((x) => h("div", { class: "hc", "data-id": x.id, onmouseenter: () => stage(x), onclick: () => (location.href = `/hero.html?id=${x.id}`) }, h("img", { src: x.images.card || x.images.icon, alt: x.name, loading: "lazy" }), h("div", { class: "wr" }, x.name))));

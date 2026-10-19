@@ -132,6 +132,21 @@ export class DeadlockApi {
           gloat: h.images?.hero_card_gloat_webp ?? h.images?.hero_card_gloat, critical: h.images?.hero_card_critical_webp, vertical: h.images?.top_bar_vertical_image_webp,
           background: h.images?.background_image_webp ?? h.images?.background_image, name: h.images?.name_image } })));
   }
+  /** A hero's four signature abilities with icon, description, upgrade tiers and key numbers. */
+  async heroAbilities(heroId: number) {
+    const raw = await this.asset<RawHero & { items?: Record<string, string> }>(`/v1/assets/heroes/${heroId}`, undefined, 86400);
+    const slots = ["signature1", "signature2", "signature3", "signature4"] as const;
+    const out = await Promise.all(slots.map(async (slot, i) => {
+      const cls = raw.items?.[slot]; if (!cls) return null;
+      const a = await this.asset<RawAbility>(`/v1/assets/items/${cls}`, undefined, 86400).catch(() => null); if (!a) return null;
+      const num = (k: string) => { const v = a.properties?.[k]?.value; const n = typeof v === "string" ? parseFloat(v) : Number(v); return Number.isFinite(n) && n !== 0 ? n : undefined; };
+      return { slot: i + 1, key: i === 3 ? "ultimate" : `${i + 1}`, name: a.name, type: a.ability_type, image: a.image_webp ?? a.image,
+        description: a.description?.desc, quip: a.description?.quip, tiers: [a.description?.t1_desc, a.description?.t2_desc, a.description?.t3_desc].filter(Boolean),
+        cooldown: num("AbilityCooldown"), duration: num("AbilityDuration"), range: num("AbilityCastRange"), charges: num("AbilityCharges"), radius: num("Radius"),
+        upgrades: (a.upgrades ?? []).map((u) => u.property_upgrades?.map((pu) => `${pu.name} ${typeof pu.bonus === "number" && pu.bonus > 0 ? "+" : ""}${pu.bonus}`) ?? []) };
+    }));
+    return out.filter(Boolean);
+  }
   /** Ranks, game colours, fonts and the official map, trimmed for the front end. */
   uiAssets() {
     return this.asset<UiAssets>(`/v1/assets/map`, undefined, 86400).then(async (map) => {
@@ -178,6 +193,8 @@ type RawHero = { id: number; name: string; class_name: string; player_selectable
   hero_type?: string; gun_tag?: string; colors?: { style_hex?: string }; description?: { role?: string; playstyle?: string; lore?: string }; images?: Record<string, string | undefined> };
 export type HeroAsset = { id: number; name: string; class_name: string; player_selectable?: boolean; disabled?: boolean; in_development?: boolean; tags: string[]; complexity?: number;
   hero_type?: string; gun_tag?: string; color?: string; description: { role?: string; playstyle?: string; lore?: string }; images: Record<string, string | undefined> };
+type RawAbility = { id: number; name: string; ability_type?: string; image?: string; image_webp?: string; properties?: Record<string, { value?: number | string } | undefined>;
+  description?: { desc?: string; quip?: string; t1_desc?: string; t2_desc?: string; t3_desc?: string }; upgrades?: { property_upgrades?: { name: string; bonus: number | string }[] }[] };
 type RawRank = { tier: number; name: string; color: string; images?: Record<string, string | undefined> };
 export type UiAssets = {
   radius: number; images: Record<string, string>; objective_positions: Record<string, { left_relative: number; top_relative: number }>;

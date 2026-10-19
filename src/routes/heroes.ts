@@ -65,6 +65,9 @@ r.get("/suggest", async (c) => {
   return c.json({ allies, enemies, suggestions: out });
 });
 
+/** The hero's four abilities (icons, descriptions, tiers, numbers). */
+r.get("/:id/abilities", async (c) => c.json(await new DeadlockApi(c.env).heroAbilities(Number(c.req.param("id")))));
+
 /** Top community builds for a hero straight from the in-game build library. */
 r.get("/:id/builds", async (c) => {
   const id = Number(c.req.param("id"));

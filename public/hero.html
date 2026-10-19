@@ -9,10 +9,15 @@
 .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:800px){.cols{grid-template-columns:1fr}}
 .items img{width:26px;height:26px;border-radius:4px;margin:1px}
 .hrow{display:flex;align-items:center;gap:8px}.hrow img{width:28px;height:28px;border-radius:4px}
+.abil{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}.ab{background:#0f1118;border:1px solid var(--line);border-radius:10px;padding:12px}
+.ab .top{display:flex;gap:10px;align-items:center;margin-bottom:8px}.ab .top img{width:48px;height:48px;border-radius:8px;background:#000}.ab .top b{display:block;font-family:Reaver;font-size:16px}.ab .top span{color:var(--muted);font-size:12px;text-transform:uppercase}
+.ab .nums{display:flex;gap:12px;color:var(--muted);font-size:12px;margin:6px 0}.ab p{font-size:13px;margin:6px 0;color:#dcd9cf}.ab .highlight{color:var(--accent);font-weight:600}
+.ab .tier{font-size:12px;color:var(--muted);border-top:1px dashed var(--line);padding-top:4px;margin-top:4px}.ab .tier b{color:var(--spirit);margin-right:4px}
 </style></head>
 <body><main>
 <p><a href="/heroes.html">← All heroes</a></p>
 <div id="head" class="hero-head"></div>
+<div class="card"><h2 style="margin-top:0">Abilities</h2><div id="abilities" class="abil">Loading…</div></div>
 <div class="cols">
 <div class="card"><h2 style="margin-top:0">Your squad on this hero</h2><div id="squad" class="muted">Loading…</div></div>
 <div class="card"><h2 style="margin-top:0">Squad builds</h2><div id="sbuilds" class="muted">Loading…</div></div>
@@ -37,6 +42,11 @@ $("#lore").textContent = x.description?.lore || "";
 const hrow = (hid, right) => { const hh = hs.find((y) => y.id === hid); return h("div", { class: "hrow", style: "padding:4px 0;border-bottom:1px solid var(--line)" }, hh?.images?.icon ? h("img", { src: hh.images.icon }) : "", h("a", { href: `/hero.html?id=${hid}`, style: "flex:1" }, hh?.name ?? hid), right); };
 (async () => { try { const rows = await api(`/heroes/stats?min_unix_timestamp=${Math.floor(Date.now() / 1000) - 14 * 86400}`); const s = rows.find((r) => r.hero_id === id);
   $("#stats").replaceChildren(h("div", { class: "stat" }, h("b", {}, s ? pct(s.win_rate) : "–"), h("span", {}, "win rate · 14d")), h("div", { class: "stat" }, h("b", {}, s ? pct(s.pick_rate) : "–"), h("span", {}, "pick rate")), h("div", { class: "stat" }, h("b", {}, s ? s.matches.toLocaleString() : "–"), h("span", {}, "matches"))); } catch {} })();
+(async () => { try { const abs = await api(`/heroes/${id}/abilities`);
+  const html = (t) => { const d = document.createElement("span"); d.innerHTML = (t || "").replace(/<(?!\/?span)[^>]*>/g, ""); return d; };
+  $("#abilities").replaceChildren(...abs.map((a) => h("div", { class: "ab" }, h("div", { class: "top" }, a.image ? h("img", { src: a.image, alt: "" }) : "", h("div", {}, h("b", {}, a.name), h("span", {}, a.key === "ultimate" ? "Ultimate" : `Ability ${a.key}`))),
+    h("div", { class: "nums" }, a.cooldown ? h("span", {}, `⟳ ${a.cooldown}s`) : "", a.duration ? h("span", {}, `⏱ ${a.duration}s`) : "", a.range ? h("span", {}, `↔ ${a.range}m`) : "", a.charges ? h("span", {}, `×${a.charges}`) : ""),
+    h("p", {}, html(a.description)), ...a.tiers.map((t, i) => h("div", { class: "tier" }, h("b", {}, `T${i + 1}`), html(t)))))); } catch (e) { showError($("#abilities"), e); } })();
 (async () => { try { const m = await api(`/heroes/${id}/matchups`);
   $("#counters").replaceChildren(...m.counters.slice(0, 6).map((r) => hrow(r.hero_id, h("span", { class: "num loss" }, pct(r.win_rate)))));
   $("#synergy").replaceChildren(...m.synergies.slice(0, 6).map((r) => hrow(r.hero_id, h("span", { class: "num win" }, pct(r.win_rate))))); } catch (e) { showError($("#counters"), e); } })();
