@@ -31,7 +31,4 @@ import { api, $, shell } from "/js/app.js";
 shell("/setup.html");
 const st = new URLSearchParams(location.search).get("steam");
 if (st) $("#steammsg").innerHTML = st === "failed" ? '<span class="error">Steam sign-in could not be verified. Try again.</span>' : "Steam sign-in was cancelled.";
-    out.innerHTML = `<span class="ok">Added — imported ${r.matchesImported} matches.</span> <a href="/">Leaderboard</a>`; }
-  catch (e) { out.innerHTML = `<span class="error">${e.message}</span>`; }
-});
 </script></body></html>
