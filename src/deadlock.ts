@@ -18,20 +18,42 @@ export class DeadlockApi {
     return h;
   }
 
-  /** GET with KV cache. ttl in seconds. */
+  /**
+   * GET with KV cache. ttl in seconds.
+   * - `*_unix_timestamp` filters are rounded down to the hour so "last 14 days" is the same cache key for an hour.
+   * - A stale copy is kept for 7 days and served when upstream is busy (503/429), instead of waiting on Retry-After.
+   */
   async get<T>(path: string, query: Record<string, string | number | undefined> = {}, ttl = 300): Promise<T> {
     const url = new URL(path, this.env.DEADLOCK_API);
-    for (const [k, v] of Object.entries(query)) if (v !== undefined && v !== "") url.searchParams.set(k, String(v));
+    for (const [k, v] of Object.entries(query)) {
+      if (v === undefined || v === "") continue;
+      url.searchParams.set(k, k.endsWith("unix_timestamp") ? String(Math.floor(Number(v) / 3600) * 3600) : String(v));
+    }
     const key = `api:${url.pathname}${url.search}`;
+    const staleKey = `stale:${key}`;
 
     if (ttl > 0) {
       const hit = await this.env.CACHE.get(key, "json");
       if (hit !== null) return hit as T;
     }
 
-    const data = await this.fetchWithRetry<T>(url.toString());
-    if (ttl > 0) await this.env.CACHE.put(key, JSON.stringify(data), { expirationTtl: Math.max(60, ttl) });
-    return data;
+    try {
+      const data = await this.fetchWithRetry<T>(url.toString());
+      if (ttl > 0) {
+        const body = JSON.stringify(data);
+        await Promise.all([
+          this.env.CACHE.put(key, body, { expirationTtl: Math.max(60, ttl) }),
+          this.env.CACHE.put(staleKey, body, { expirationTtl: 7 * 86400 }),
+        ]);
+      }
+      return data;
+    } catch (e) {
+      if (ttl > 0 && e instanceof ApiError && (e.status === 503 || e.status === 429)) {
+        const stale = await this.env.CACHE.get(staleKey, "json");
+        if (stale !== null) { console.warn("serving stale for", key); return stale as T; }
+      }
+      throw e;
+    }
   }
 
   /**
@@ -52,7 +74,7 @@ export class DeadlockApi {
     const res = await fetch(url, { headers: this.headers() });
     if (res.status === 503 || res.status === 429) {
       const wait = Number(res.headers.get("retry-after") ?? "2");
-      if (attempt >= 2 || wait > 20) throw new ApiError(res.status, `upstream busy (retry-after ${wait}s): ${url}`);
+      if (attempt >= 1 || wait > 4) throw new ApiError(res.status, `upstream busy (retry-after ${wait}s): ${url}`);
       await new Promise((r) => setTimeout(r, wait * 1000));
       return this.fetchWithRetry<T>(url, attempt + 1);
     }
