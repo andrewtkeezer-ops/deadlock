@@ -1,7 +1,7 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Heatmap · Soul Scribe</title><link rel="stylesheet" href="/css/app.css"></head>
 <body><main><h1>Danger zones</h1>
 <p class="muted">Where players of a hero get kills (green) and die (red), from all tracked matches. Hero: <select id="hero"><option value="">All heroes</option></select> Show: <select id="mode"><option value="deaths">Deaths</option><option value="kills">Kills</option><option value="net">Kills − deaths</option></select> First <input type="number" id="maxmin" value="0" min="0" style="width:70px"> min (0 = whole game)</p>
-<div class="card" style="text-align:center"><canvas id="map" width="768" height="768" style="max-width:100%;background:#0a0b0f;border-radius:8px"></canvas><details class="muted"><summary>Calibration</summary>
+<div class="card" style="text-align:center"><canvas id="map" width="768" height="768" style="max-width:100%;background:#0a0b0f;border-radius:50%"></canvas><details class="muted"><summary>Calibration</summary>
 <div class="slider"><label>World extent</label><input type="range" id="calExt" min="8000" max="14000" step="64" value="11264"><span id="calExtV">11264</span></div>
 <div class="slider"><label>Offset X</label><input type="range" id="calOx" min="-2000" max="2000" step="32" value="0"><span id="calOxV">0</span></div>
 <div class="slider"><label>Offset Y</label><input type="range" id="calOy" min="-2000" max="2000" step="32" value="0"><span id="calOyV">0</span></div>
@@ -21,7 +21,7 @@ async function draw() { const c = $("#map").getContext("2d"); c.clearRect(0, 0, 
     // World coords on a 128-unit grid, drawn over the (square) minimap. Calibration panel below tunes the fit.
     const k = cal(); const span = 2 * k.ext; const cell = Math.ceil(768 * d.step / span) + 1;
     for (const p of d.cells) { const v = mode === "deaths" ? p.deaths / d.maxDeaths : mode === "kills" ? p.kills / d.maxKills : (p.kills - p.deaths) / Math.max(d.maxKills, d.maxDeaths);
-      if (!v) continue; const a = Math.min(1, Math.abs(v) ** 0.6); c.fillStyle = (mode === "deaths" || (mode === "net" && v < 0)) ? `rgba(217,85,79,${a})` : `rgba(95,191,122,${a})`;
+      if (!v) continue; const a = 0.75 * Math.min(1, Math.abs(v) ** 0.8); c.fillStyle = (mode === "deaths" || (mode === "net" && v < 0)) ? `rgba(217,85,79,${a})` : `rgba(95,191,122,${a})`;
       let [wx, wy] = k.swap ? [p.y, p.x] : [p.x, p.y]; wx += k.ox; wy += k.oy;
       let px = (wx + k.ext) / span * 768, py = (wy + k.ext) / span * 768; if (k.flipY) py = 768 - py; if (k.flipX) px = 768 - px;
       c.fillRect(px, py, cell, cell); } }
