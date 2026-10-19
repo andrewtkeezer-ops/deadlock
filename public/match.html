@@ -1,11 +1,37 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Match · Soul Scribe</title><link rel="icon" type="image/png" href="/img/favicon.png"><link rel="apple-touch-icon" href="/img/icon.png"><link rel="stylesheet" href="/css/app.css"></head>
-<body><main><h1>Match <span id="mid"></span></h1><div id="out" class="card">Loading…</div>
-<p class="muted">TODO: render the 12-player scoreboard, items bought (with timings) and ability order from the metadata JSON below. Field names are in <code>match_info.players[]</code>.</p>
-<pre id="raw"></pre></main>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Match · Soul Scribe</title><link rel="icon" type="image/png" href="/img/favicon.png"><link rel="stylesheet" href="/css/app.css">
+<style>
+.teams{display:grid;gap:16px}.team h2{margin:0 0 8px;display:flex;gap:10px;align-items:baseline}.team.win h2{color:var(--win)}.team.loss h2{color:var(--loss)}
+.sb td,.sb th{padding:6px 8px;white-space:nowrap}.sb .hero img{width:34px;height:34px;border-radius:6px;vertical-align:middle;margin-right:8px}.sb .items img{width:24px;height:24px;border-radius:4px;margin-right:2px;vertical-align:middle}
+.sb tr.me td{background:#23261a}.mvp{color:var(--accent);font-size:11px;margin-left:6px}.sb{overflow:auto;display:block}
+.sum{display:flex;gap:24px;flex-wrap:wrap;color:var(--muted)}
+</style></head>
+<body><main><h1 id="title">Match</h1><p id="sum" class="sum"></p>
+<div id="teams" class="teams"><div class="card">Loading…</div></div>
+<details class="muted" style="margin-top:16px"><summary>Raw data</summary><pre id="raw"></pre></details></main>
 <script type="module">
-import { api, $, shell, showError } from "/js/app.js";
+import { api, h, $, dur, heroes, shell, showError } from "/js/app.js";
 shell("/");
-const id = new URLSearchParams(location.search).get("id"); $("#mid").textContent = id;
-try { const m = await api(`/players/match/${id}`); $("#out").textContent = `Loaded. ${m.match_info?.players?.length ?? "?"} players, duration ${m.match_info?.duration_s ?? "?"}s.`; $("#raw").textContent = JSON.stringify(m, null, 2).slice(0, 20000); }
-catch (e) { showError($("#out"), e); }
+const id = new URLSearchParams(location.search).get("id");
+try {
+  const [m, hs, items, tracked] = await Promise.all([api(`/players/match/${id}`), heroes(), api("/library/items"), api("/players")]);
+  const mi = m.match_info; const hero = (x) => hs.find((y) => y.id === x), item = (x) => items.find((y) => y.id === x);
+  const names = new Map((await api(`/players/steam-names?ids=${mi.players.map((p) => p.account_id).join(",")}`)).map((p) => [p.account_id, p]));
+  const friends = new Set(tracked.map((p) => p.account_id));
+  $("#title").textContent = `Match ${mi.match_id}`;
+  const won = (t) => mi.winning_team === t;
+  $("#sum").replaceChildren(h("span", {}, new Date(mi.start_time * 1000).toLocaleString()), h("span", {}, `Length ${dur(mi.duration_s)}`), h("span", {}, `Avg rank: Amber ${mi.average_badge_team0 ?? "–"} · Sapphire ${mi.average_badge_team1 ?? "–"}`), mi.banned_hero_ids?.length ? h("span", {}, `Bans: ${mi.banned_hero_ids.map((x) => hero(x)?.name).join(", ")}`) : "");
+  const last = (p) => p.stats?.[p.stats.length - 1] ?? {};
+  const finalItems = (p) => { const held = new Map(); for (const it of p.items ?? []) { if (!item(it.item_id)) continue; if (it.sold_time_s) held.delete(it.item_id); else held.set(it.item_id, it); } return [...held.values()].slice(0, 12); };
+  const row = (p) => { const s = last(p), n = names.get(p.account_id); return h("tr", { class: friends.has(p.account_id) ? "me" : "" },
+    h("td", { class: "hero" }, hero(p.hero_id)?.images?.icon ? h("img", { src: hero(p.hero_id).images.icon }) : "", hero(p.hero_id)?.name ?? p.hero_id),
+    h("td", {}, friends.has(p.account_id) ? h("a", { href: `/player.html?id=${p.account_id}` }, n?.name ?? p.account_id) : (n?.name ?? String(p.account_id)), p.mvp_rank === 1 ? h("span", { class: "mvp" }, "MVP") : ""),
+    h("td", { class: "num" }, String(p.level)), h("td", { class: "num" }, `${p.kills}/${p.deaths}/${p.assists}`), h("td", { class: "num" }, p.net_worth.toLocaleString()),
+    h("td", { class: "num" }, `${p.last_hits}/${p.denies}`), h("td", { class: "num" }, (s.player_damage ?? 0).toLocaleString()), h("td", { class: "num" }, (s.player_damage_taken ?? 0).toLocaleString()), h("td", { class: "num" }, ((s.player_healing ?? 0) + (s.teammate_healing ?? 0)).toLocaleString()),
+    h("td", { class: "items" }, ...finalItems(p).map((it) => item(it.item_id)?.image ? h("img", { src: item(it.item_id).image, title: `${item(it.item_id).name} @ ${dur(it.game_time_s)}` }) : ""))); };
+  const table = (t, label) => { const ps = mi.players.filter((p) => p.team === t).sort((a, b) => a.player_slot - b.player_slot); const k = ps.reduce((s, p) => s + p.kills, 0);
+    return h("div", { class: "card team " + (won(t) ? "win" : "loss") }, h("h2", {}, label, h("span", { class: "muted", style: "font-size:14px" }, won(t) ? "Victory" : "Defeat", ` · ${k} kills · ${ps.reduce((s, p) => s + p.net_worth, 0).toLocaleString()} souls`)),
+      h("table", { class: "sb" }, h("thead", {}, h("tr", {}, ...["Hero", "Player", "Lvl", "K/D/A", "Souls", "LH/DN", "Dmg", "Taken", "Healing", "Final items"].map((x) => h("th", {}, x)))), h("tbody", {}, ...ps.map(row)))); };
+  $("#teams").replaceChildren(table(0, "Amber Hand"), table(1, "Sapphire Flame"));
+  $("#raw").textContent = JSON.stringify(m, null, 1).slice(0, 30000);
+} catch (e) { showError($("#teams"), e); }
 </script></body></html>

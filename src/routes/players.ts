@@ -58,6 +58,14 @@ r.get("/match/:matchId", async (c) => {
   return c.json(meta);
 });
 
+/** Steam names/avatars for a set of account ids (match scoreboards). ?ids=1,2,3 */
+r.get("/steam-names", async (c) => {
+  const ids = (c.req.query("ids") ?? "").split(",").map(Number).filter(Boolean).slice(0, 24);
+  if (!ids.length) return c.json([]);
+  const profiles = await new DeadlockApi(c.env).steamProfiles(ids).catch(() => []);
+  return c.json(profiles.map((p) => ({ account_id: p.account_id, name: p.personaname, avatar: p.avatar })));
+});
+
 /** Global leaderboard passthrough (cached 1h). */
 r.get("/global/:region", async (c) => {
   const region = c.req.param("region") as "NAmerica";
