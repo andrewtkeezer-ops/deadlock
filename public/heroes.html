@@ -3,7 +3,7 @@
 main{max-width:none;padding:0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
 .topbar{display:flex;align-items:center;gap:14px;padding:18px 28px 12px;position:relative;z-index:5}.topbar h1{margin:0;font-size:28px}.topbar .sp{flex:1}.topbar .hint{color:var(--muted);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
 .filters{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.filters .chipb{padding:4px 10px;font-size:12px}
-.select{flex:1;display:grid;grid-template-columns:minmax(440px,34%) 1fr;gap:0;min-height:0}
+.select{flex:1;display:grid;grid-template-columns:minmax(440px,34%) 1fr;gap:0;min-height:0;overflow:hidden}.gridwrap{position:relative;z-index:2}
 /* grid of all heroes, no scrolling */
 .gridwrap{padding:4px 18px 22px 28px;display:flex;flex-direction:column;min-height:0}
 .grid-h{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;flex:1;min-height:0;align-content:start}
@@ -13,9 +13,10 @@ main{max-width:none;padding:0;height:100vh;display:flex;flex-direction:column;ov
 .hc .wr{position:absolute;left:0;right:0;bottom:0;font-size:9px;text-align:center;background:linear-gradient(transparent,rgba(0,0,0,.9));padding:12px 0 2px;letter-spacing:.06em;text-transform:uppercase;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hc.dimmed{opacity:.25;filter:grayscale(.9)}
 /* stage */
-.stage{position:relative;overflow:hidden;isolation:isolate;--tint:#4174bb;border-left:1px solid var(--line);min-height:0}
-.stage .bg{position:absolute;inset:-3%;background:center/cover no-repeat;filter:saturate(1.15) brightness(.85);transform:scale(1.03);opacity:0}
-.stage .tint{position:absolute;inset:0;background:radial-gradient(50% 70% at 70% 50%,color-mix(in srgb,var(--tint) 40%,transparent),transparent 72%),linear-gradient(90deg,rgba(7,8,12,.96) 0%,rgba(7,8,12,.7) 30%,rgba(7,8,12,.25) 55%,rgba(7,8,12,.35) 100%),linear-gradient(0deg,rgba(7,8,12,.95) 0%,rgba(7,8,12,.3) 25%,transparent 50%)}
+.stage{position:relative;overflow:visible;isolation:isolate;--tint:#4174bb;min-height:0;margin-left:-140px;padding-left:140px}
+.stage .bg,.stage .tint,.stage .sweep{-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 34%,#000 100%),linear-gradient(180deg,transparent 0,#000 12%,#000 88%,transparent 100%);-webkit-mask-composite:source-in;mask-image:linear-gradient(90deg,transparent 0,#000 34%,#000 100%),linear-gradient(180deg,transparent 0,#000 12%,#000 88%,transparent 100%);mask-composite:intersect}
+.stage .bg{position:absolute;inset:0;background:center/cover no-repeat;filter:saturate(1.15) brightness(.8);transform:scale(1.03);opacity:0}
+.stage .tint{position:absolute;inset:0;background:radial-gradient(50% 70% at 70% 50%,color-mix(in srgb,var(--tint) 40%,transparent),transparent 72%),linear-gradient(90deg,rgba(7,8,12,.85) 0%,rgba(7,8,12,.55) 35%,rgba(7,8,12,.2) 60%,rgba(7,8,12,.3) 100%),linear-gradient(0deg,rgba(7,8,12,.9) 0%,rgba(7,8,12,.25) 28%,transparent 50%)}
 .stage .sweep{position:absolute;inset:0;z-index:2;pointer-events:none;background:linear-gradient(100deg,transparent 35%,rgba(255,255,255,.14) 50%,transparent 65%);transform:translateX(-120%);opacity:0}
 .stage .layout{position:relative;z-index:3;height:100%;display:grid;grid-template-columns:1fr auto;gap:24px;padding:28px 36px 28px 32px;align-items:center}
 .cardwrap{perspective:1200px;align-self:center;padding-right:8px}
@@ -31,7 +32,7 @@ main{max-width:none;padding:0;height:100vh;display:flex;flex-direction:column;ov
 .stage p.role{color:#dcd9cf;max-width:48ch;line-height:1.55;margin:0 0 6px}
 .actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}.btn.lock.on{background:rgba(232,199,106,.22);border-color:var(--accent);color:var(--accent)}
 @media(max-width:1100px){.stage .layout{grid-template-columns:1fr;align-items:start;overflow:auto}.cardwrap{display:none}.select{grid-template-columns:minmax(360px,40%) 1fr}}
-@media(max-width:860px){main{height:auto;overflow:visible}.select{grid-template-columns:1fr}.grid-h{grid-template-columns:repeat(6,1fr)}.stage{min-height:70vh;border-left:0}.topbar{padding:14px 14px 8px;flex-wrap:wrap}.stage .layout{padding:18px 14px}.stage .name{height:52px}}
+@media(max-width:860px){main{height:auto;overflow:visible}.select{grid-template-columns:1fr}.grid-h{grid-template-columns:repeat(6,1fr)}.stage{min-height:70vh;margin-left:0;padding-left:0}.topbar{padding:14px 14px 8px;flex-wrap:wrap}.stage .layout{padding:18px 14px}.stage .name{height:52px}}
 </style></head>
 <body><main>
 <div class="topbar"><h1>Select hero</h1><span class="hint">Hover to preview · click to lock · double-click to open</span><span class="sp"></span>
