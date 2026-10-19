@@ -63,6 +63,11 @@ can load the page shells; all data comes from `/api/*`, which they can't reach.
 
 ## Adding friends
 
+Easiest: each friend opens **Setup** and clicks **Sign in through Steam** (OpenID: no API key, no password seen by us).
+That adds them as a tracked player, imports their history, and links their Google member row if Access is on.
+Admins can also search Steam names / paste profile URLs on **/admin.html**.
+
+
 1. Each friend installs the ingest tool (the **Setup** page has the one-line PowerShell command).
    Without it, their matches are mostly invisible to every tracker, not just this one.
 2. Setup page → paste Steam profile URL → it converts to `account_id` → "Add & import" (needs the admin token).

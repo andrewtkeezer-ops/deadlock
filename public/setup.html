@@ -14,26 +14,17 @@
 </div>
 
 <div class="card">
-<h2 style="margin-top:0">Step 2 — find your Steam account ID</h2>
-<p>Paste your Steam profile URL or SteamID64 and we'll convert it:</p>
-<input type="text" id="steamin" placeholder="https://steamcommunity.com/profiles/7656119… or 7656119…" style="width:100%"> <p id="steamout" class="muted"></p>
-<p class="muted">Vanity URLs (<code>/id/yourname</code>) can't be converted without a Steam API key — open your profile, click "Edit profile" and the numeric ID is shown, or use steamid.io.</p>
-</div>
-
-<div class="card">
-<h2 style="margin-top:0">Step 3 — get added to the squad</h2>
-<p>Tell Andrew your Steam display name (or send the profile link) — he adds you from the <a href="/admin.html">Admin</a> page and your matches import right away. Your account_id from Step 2 is only a fallback if search can't find you.</p>
+<h2 style="margin-top:0">Step 2 — sign in through Steam</h2>
+<p>This just tells us which Steam account is yours. We never see your password; Steam only hands back your public ID. Your matches import right away.</p>
+<p><a href="/api/auth/steam/login"><img src="https://community.cloudflare.steamstatic.com/public/images/signinthroughsteam/sits_01.png" alt="Sign in through Steam" style="height:35px"></a></p>
+<p id="steammsg" class="muted"></p>
 </div>
 </main>
 <script type="module">
 import { api, $, shell } from "/js/app.js";
 shell("/setup.html");
-const BASE = 76561197960265728n;
-$("#steamin").addEventListener("input", (e) => {
-  const m = e.target.value.match(/7656119\d{10}/); const out = $("#steamout");
-  if (!m) return (out.textContent = "");
-  const acc = BigInt(m[0]) - BASE; out.innerHTML = `account_id = <strong>${acc}</strong>`; $("#acc").value = String(acc);
-});
+const st = new URLSearchParams(location.search).get("steam");
+if (st) $("#steammsg").innerHTML = st === "failed" ? '<span class="error">Steam sign-in could not be verified. Try again.</span>' : "Steam sign-in was cancelled.";
     out.innerHTML = `<span class="ok">Added — imported ${r.matchesImported} matches.</span> <a href="/">Leaderboard</a>`; }
   catch (e) { out.innerHTML = `<span class="error">${e.message}</span>`; }
 });

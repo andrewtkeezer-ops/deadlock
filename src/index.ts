@@ -8,6 +8,7 @@ import heroes from "./routes/heroes";
 import builds from "./routes/builds";
 import analytics from "./routes/analytics";
 import admin from "./routes/admin";
+import steam from "./routes/steam";
 import { requireMember, type Identity } from "./auth";
 
 const app = new Hono<{ Bindings: Env; Variables: { user?: Identity } }>();
@@ -21,6 +22,7 @@ app.route("/api/heroes", heroes);
 app.route("/api/builds", builds);
 app.route("/api/analytics", analytics);
 app.route("/api/admin", admin);
+app.route("/api/auth/steam", steam);
 
 app.onError((err, c) => {
   console.error(err);

@@ -11,7 +11,7 @@ async function load() {
   const out = $("#out");
   try {
     const [{ players }, hs] = await Promise.all([api(`/players/leaderboard?days=${$("#days").value}`), heroes()]);
-    if (!players.length) return out.replaceChildren(h("p", {}, "No one is tracked yet. Head to ", h("a", { href: "/setup.html" }, "Setup"), "."));
+    if (!players.length) return out.replaceChildren(h("p", {}, "No one is tracked yet. ", h("a", { href: "/api/auth/steam/login" }, "Sign in through Steam"), " to add yourself."));
     out.replaceChildren(h("table", {}, h("thead", {}, h("tr", {}, ...["#", "Player", "MMR", "Rank", "Games", "Win %", "K / D / A", "Souls/min", "Last played", "Synced"].map((t) => h("th", {}, t)))),
       h("tbody", {}, ...players.map((p, i) => h("tr", {},
         h("td", {}, String(i + 1)), h("td", {}, p.avatar_url ? h("img", { src: p.avatar_url, width: 24, height: 24, style: "border-radius:4px;vertical-align:middle;margin-right:8px" }) : "", h("a", { href: `/player.html?id=${p.account_id}` }, p.name)),
