@@ -1,27 +1,55 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Player · Soul Scribe</title><link rel="icon" type="image/png" href="/img/favicon.png"><link rel="apple-touch-icon" href="/img/icon.png"><link rel="stylesheet" href="/css/app.css"></head>
-<body><main><h1 id="name">Player</h1><p id="sub" class="muted"></p>
-<h2>Heroes</h2><div id="heroes" class="card">Loading…</div>
-<h2>MMR history</h2><div class="card"><canvas id="mmr" width="1000" height="220" style="width:100%"></canvas></div>
-<h2>Recent matches</h2><div id="matches" class="card">Loading…</div></main>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Player · Soul Scribe</title><link rel="icon" type="image/png" href="/img/favicon.png"><link rel="stylesheet" href="/css/app.css">
+<style>
+.phead{display:flex;gap:20px;align-items:center;flex-wrap:wrap}.phead .av{width:84px;height:84px;border-radius:12px;border:2px solid var(--line)}.phead h1{margin:0}
+.phead .rank{display:flex;align-items:center;gap:10px}.phead .rank b{font-family:Reaver;font-size:22px;display:block}.phead .rank span{color:var(--muted);font-size:12px;text-transform:uppercase}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:16px 0}.tile{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px}.tile b{font-family:Reaver;font-size:24px;display:block}.tile span{color:var(--muted);font-size:12px;text-transform:uppercase}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:900px){.cols{grid-template-columns:1fr}}
+.hrows .r{display:grid;grid-template-columns:36px 1fr 70px 110px 90px;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line)}.hrows .r .bar{height:6px}
+.matches td{vertical-align:middle}.matches .hero{display:flex;align-items:center;gap:8px}
+.banner{border-color:var(--accent)}
+</style></head>
+<body><main>
+<div class="card phead" id="head">Loading…</div>
+<div id="banner"></div>
+<div class="tiles" id="tiles"></div>
+<div class="cols">
+<div class="card"><h2 style="margin-top:0">Heroes</h2><div id="heroes" class="hrows">Loading…</div></div>
+<div class="card"><h2 style="margin-top:0">MMR history</h2><canvas id="mmr" width="900" height="260" style="width:100%"></canvas><p id="mmrnote" class="muted"></p></div>
+</div>
+<div class="card"><h2 style="margin-top:0">Recent matches</h2><div id="matches" class="matches">Loading…</div></div>
+<div class="card"><h2 style="margin-top:0">Builds</h2><div id="builds" class="muted">Loading…</div></div>
+</main>
 <script type="module">
-import { api, h, $, pct, ago, dur, heroes, shell, showError } from "/js/app.js";
+import { api, h, $, pct, ago, dur, fmt, heroes, rankBadge, heroIcon, items, itemImg, shell, showError } from "/js/app.js";
 shell("/");
 const qs = new URLSearchParams(location.search); const id = qs.get("id");
-if (qs.has("welcome")) $("#sub").insertAdjacentHTML("beforebegin", `<p class="ok">You are in. Imported ${qs.get("welcome")} matches so far. <a href="/setup.html">Install the match uploader</a> and the rest backfill over the next day.</p>`);
 try {
-  const [d, hs] = await Promise.all([api(`/players/${id}`), heroes()]); const name = (x) => hs.find((y) => y.id === x)?.name ?? x;
-  $("#name").textContent = d.player.name;
-  if (d.ingest && !d.ingest.active) $("#sub").insertAdjacentHTML("afterend", `<p class="card" style="border-color:var(--accent)"><strong>Match uploader not detected</strong> ${d.ingest.last_upload_at ? "(last upload " + new Date(d.ingest.last_upload_at).toLocaleDateString() + ")" : "(never run)"}. Only games someone else uploaded will show here. <a href="/setup.html">Install it</a> to get all your matches.</p>`);
-  else if (d.ingest) $("#sub").textContent += ` · uploader active (last upload ${new Date(d.ingest.last_upload_at).toLocaleString()})`; $("#sub").textContent = `MMR ${d.player.mmr_score?.toFixed(0) ?? "–"} · rank ${d.player.mmr_rank ?? "–"} · synced ${ago(d.player.last_sync_at)}`;
-  $("#heroes").replaceChildren(h("table", {}, h("thead", {}, h("tr", {}, ...["Hero", "Games", "Win %", "Avg K/D/A"].map((t) => h("th", {}, t)))),
-    h("tbody", {}, ...d.heroes.map((r) => h("tr", {}, h("td", {}, name(r.hero_id)), h("td", { class: "num" }, String(r.games)), h("td", { class: "num" }, pct(r.wins / r.games)), h("td", { class: "num" }, `${r.k.toFixed(1)}/${r.d.toFixed(1)}/${r.a.toFixed(1)}`))))));
-  $("#matches").replaceChildren(h("table", {}, h("thead", {}, h("tr", {}, ...["When", "Hero", "Result", "K/D/A", "Souls", "LH/DN", "Length", ""].map((t) => h("th", {}, t)))),
-    h("tbody", {}, ...d.matches.map((m) => h("tr", {}, h("td", {}, ago(m.start_time)), h("td", {}, name(m.hero_id)), h("td", { class: m.won ? "win" : "loss" }, m.won ? "Win" : "Loss"),
-      h("td", { class: "num" }, `${m.kills}/${m.deaths}/${m.assists}`), h("td", { class: "num" }, m.net_worth.toLocaleString()), h("td", { class: "num" }, `${m.last_hits}/${m.denies}`), h("td", {}, dur(m.duration_s)), h("td", {}, h("a", { href: `/match.html?id=${m.match_id}` }, "details")))))));
-  // tiny MMR line chart
-  const c = $("#mmr").getContext("2d"), pts = d.mmr.filter((p) => p.score != null);
-  if (pts.length > 1) { const xs = pts.map((p) => p.ts), ys = pts.map((p) => p.score), [x0, x1] = [Math.min(...xs), Math.max(...xs)], [y0, y1] = [Math.min(...ys) - 10, Math.max(...ys) + 10];
-    c.strokeStyle = "#e4b94f"; c.lineWidth = 2; c.beginPath(); pts.forEach((p, i) => { const x = 10 + (p.ts - x0) / (x1 - x0 || 1) * 980, y = 210 - (p.score - y0) / (y1 - y0) * 200; i ? c.lineTo(x, y) : c.moveTo(x, y); }); c.stroke(); }
-  else { c.fillStyle = "#8f93a3"; c.font = "16px system-ui"; c.fillText("MMR history builds up after a few hourly syncs.", 20, 110); }
-} catch (e) { showError($("#heroes"), e); }
+  const [d, hs, assets] = await Promise.all([api(`/players/${id}`), heroes(), api("/assets")]);
+  const p = d.player; document.title = `${p.name} · Soul Scribe`;
+  const tier = p.mmr_rank ? Math.floor(p.mmr_rank / 10) : 0; const rinfo = assets.ranks.find((r) => r.tier === tier);
+  $("#head").replaceChildren(p.avatar_url ? h("img", { class: "av", src: p.avatar_url, alt: "" }) : "", h("div", { style: "flex:1" }, h("h1", {}, p.name), h("div", { class: "muted" }, `Synced ${ago(p.last_sync_at)}`, d.ingest?.active ? ` · uploader active, last upload ${ago(Math.floor(new Date(d.ingest.last_upload_at).getTime() / 1000) || d.ingest.last_upload_at)}` : "")),
+    h("div", { class: "rank" }, await rankBadge(p.mmr_rank, "large"), h("div", {}, h("b", {}, rinfo ? `${rinfo.name} ${p.mmr_rank % 10 || ""}` : "Unranked"), h("span", {}, p.mmr_score != null ? `MMR ${Math.round(p.mmr_score)}` : "needs more games"))));
+  if (qs.has("welcome")) $("#banner").append(h("div", { class: "card banner" }, h("strong", {}, "You're in. "), `Imported ${qs.get("welcome")} matches so far. `, h("a", { href: "/setup.html" }, "Install the match uploader"), " to get the rest."));
+  if (d.ingest && !d.ingest.active) $("#banner").append(h("div", { class: "card banner" }, h("strong", {}, "Match uploader not detected"), d.ingest.last_upload_at ? ` (last upload ${new Date(d.ingest.last_upload_at).toLocaleDateString()})` : " (never run)", ". Only games someone else uploaded show here. ", h("a", { href: "/setup.html" }, "Install it"), " to get all your matches."));
+  const ms = d.matches; const games = ms.length, wins = ms.filter((m) => m.won).length;
+  const sum = (k) => ms.reduce((s, m) => s + m[k], 0);
+  let streak = 0; for (const m of ms) { if (streak === 0) streak = m.won ? 1 : -1; else if ((streak > 0) === !!m.won) streak += m.won ? 1 : -1; else break; }
+  $("#tiles").replaceChildren(h("div", { class: "tile" }, h("b", {}, String(games)), h("span", {}, "recent games")), h("div", { class: "tile" }, h("b", { class: wins / games >= .5 ? "win" : "loss" }, pct(games ? wins / games : null)), h("span", {}, "win rate")),
+    h("div", { class: "tile" }, h("b", {}, games ? ((sum("kills") + sum("assists")) / Math.max(1, sum("deaths"))).toFixed(2) : "–"), h("span", {}, "KDA")), h("div", { class: "tile" }, h("b", {}, games ? `${(sum("kills") / games).toFixed(1)} / ${(sum("deaths") / games).toFixed(1)} / ${(sum("assists") / games).toFixed(1)}` : "–"), h("span", {}, "avg K / D / A")),
+    h("div", { class: "tile" }, h("b", {}, fmt(games ? ms.reduce((s, m) => s + m.net_worth * 60 / Math.max(1, m.duration_s), 0) / games : null)), h("span", {}, "souls / min")), h("div", { class: "tile" }, h("b", { class: streak > 0 ? "win" : streak < 0 ? "loss" : "" }, streak ? `${Math.abs(streak)}${streak > 0 ? "W" : "L"}` : "–"), h("span", {}, "streak")));
+  const maxG = Math.max(1, ...d.heroes.map((r) => r.games));
+  $("#heroes").replaceChildren(...(d.heroes.length ? d.heroes.map((r) => { const hx = hs.find((x) => x.id === r.hero_id); const wr = r.wins / r.games; return h("div", { class: "r" }, heroIcon(hx, 34), h("a", { href: `/hero.html?id=${r.hero_id}` }, hx?.name ?? r.hero_id), h("span", { class: "num muted" }, `${r.games} g`), h("div", {}, h("span", { class: wr >= .5 ? "win" : "loss" }, pct(wr)), h("div", { class: "bar" }, h("i", { style: `width:${r.games / maxG * 100}%` }))), h("span", { class: "num muted", style: "font-size:12px" }, `${r.k.toFixed(1)}/${r.d.toFixed(1)}/${r.a.toFixed(1)}`)); }) : [h("span", { class: "muted" }, "No games yet.")]));
+  const its = await items();
+  $("#matches").replaceChildren(h("table", {}, h("thead", {}, h("tr", {}, ...["When", "Hero", "Result", "K/D/A", "Souls", "LH/DN", "Lvl", "Length", ""].map((t) => h("th", {}, t)))),
+    h("tbody", {}, ...ms.map((m) => { const hx = hs.find((x) => x.id === m.hero_id); return h("tr", {}, h("td", { class: "muted" }, ago(m.start_time)), h("td", {}, h("div", { class: "hero" }, heroIcon(hx), h("a", { href: `/hero.html?id=${m.hero_id}` }, hx?.name ?? m.hero_id))), h("td", { class: m.won ? "win" : "loss" }, m.won ? "Win" : "Loss"),
+      h("td", { class: "num" }, `${m.kills}/${m.deaths}/${m.assists}`), h("td", { class: "num" }, fmt(m.net_worth)), h("td", { class: "num" }, `${m.last_hits}/${m.denies}`), h("td", { class: "num" }, m.hero_level ?? "–"), h("td", {}, dur(m.duration_s)), h("td", {}, h("a", { href: `/match.html?id=${m.match_id}` }, "scoreboard"))); }))));
+  // MMR chart
+  const c = $("#mmr").getContext("2d"), pts = d.mmr.filter((x) => x.score != null);
+  if (pts.length > 1) { const xs = pts.map((x) => x.ts), ys = pts.map((x) => x.score), x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys) - 5, y1 = Math.max(...ys) + 5;
+    c.strokeStyle = "#262a38"; c.lineWidth = 1; for (let i = 0; i <= 4; i++) { const y = 20 + i * 55; c.beginPath(); c.moveTo(40, y); c.lineTo(890, y); c.stroke(); c.fillStyle = "#8f93a3"; c.font = "12px Radiance"; c.fillText(Math.round(y1 - (y1 - y0) * i / 4), 2, y + 4); }
+    c.strokeStyle = "#e4b94f"; c.lineWidth = 2.5; c.beginPath(); pts.forEach((pt, i) => { const x = 40 + (pt.ts - x0) / (x1 - x0 || 1) * 850, y = 240 - (pt.score - y0) / (y1 - y0) * 220; i ? c.lineTo(x, y) : c.moveTo(x, y); }); c.stroke();
+    $("#mmrnote").textContent = `${pts.length} snapshots since ${new Date(x0 * 1000).toLocaleDateString()}`; }
+  else $("#mmrnote").textContent = "MMR history builds up after a few hourly syncs.";
+  try { const b = await api(`/library?account_id=${id}`); $("#builds").replaceChildren(b.length ? h("div", { class: "grid" }, ...b.map((r) => { const hx = hs.find((x) => x.id === r.hero_id); return h("div", { class: "card", style: "margin:0" }, h("div", { style: "display:flex;gap:8px;align-items:center" }, heroIcon(hx, 32), h("a", { href: `/editor.html?id=${r.id}` }, h("strong", {}, r.title))), h("div", { style: "margin-top:6px" }, ...r.preview.map((i) => itemImg(its.find((x) => x.id === i), 22)))); })) : h("span", {}, "No saved builds yet.")); } catch {}
+} catch (e) { showError($("#head"), e); }
 </script></body></html>
