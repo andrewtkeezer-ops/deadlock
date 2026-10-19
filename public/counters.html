@@ -1,28 +1,42 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Counters · Soul Scribe</title><link rel="icon" type="image/png" href="/img/favicon.png"><link rel="apple-touch-icon" href="/img/icon.png"><link rel="stylesheet" href="/css/app.css"></head>
-<body><main><h1>Who should I pick?</h1>
-<div class="card"><p>Add the heroes already locked in. Suggestions score each remaining hero by synergy with your allies plus win rate against the enemies.</p>
-<div style="display:flex;gap:20px;flex-wrap:wrap"><div><strong>Allies</strong><br><select id="ally"></select> <button id="addAlly">+</button><div id="allies"></div></div>
-<div><strong>Enemies</strong><br><select id="enemy"></select> <button id="addEnemy">+</button><div id="enemies"></div></div></div>
-<p><button class="primary" id="go">Suggest</button></p></div>
-<div id="out" class="card muted">Pick some heroes, then Suggest.</div>
-<h2 id="mtitle"></h2><div id="matchups"></div></main>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Counters · Soul Scribe</title><link rel="icon" type="image/png" href="/img/favicon.png"><link rel="stylesheet" href="/css/app.css">
+<style>
+.board{display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:start}@media(max-width:800px){.board{grid-template-columns:1fr}}
+.team{border-radius:12px;padding:14px;border:1px solid var(--line)}.team.ally{background:linear-gradient(180deg,#1a2416,#171922);border-color:#2f5a2a}.team.enemy{background:linear-gradient(180deg,#2a1818,#171922);border-color:#5a2a2a}
+.team h3{margin:0 0 10px;font-family:Reaver;text-transform:uppercase;letter-spacing:.04em}.slots{display:flex;gap:8px;flex-wrap:wrap;min-height:70px}
+.slot{width:64px;height:64px;border-radius:8px;border:2px dashed #3a3f55;display:flex;align-items:center;justify-content:center;color:#3a3f55;font-size:24px;cursor:pointer;background:#0f1118;position:relative}.slot img{width:100%;height:100%;object-fit:cover;border-radius:6px}.slot.filled{border-style:solid;border-color:var(--accent)}.slot .x{position:absolute;top:-8px;right:-8px;background:#000;border-radius:50%;width:20px;height:20px;font-size:12px;line-height:20px;text-align:center;color:#fff}
+.vs{font-family:Reaver;font-size:28px;color:var(--muted);align-self:center;padding:30px 0}
+.picker{display:grid;grid-template-columns:repeat(auto-fill,minmax(54px,1fr));gap:6px;margin-top:10px}.picker img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;cursor:pointer;border:2px solid transparent;opacity:.9}.picker img:hover{border-color:var(--accent);opacity:1}.picker img.taken{opacity:.25;pointer-events:none}
+.sug .r{display:grid;grid-template-columns:40px 1fr 90px 90px 90px 60px;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line)}.sug .r:first-child{color:var(--accent)}
+.mu{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}.mu .r{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--line)}
+</style></head>
+<body><main>
+<h1>Draft helper</h1><p class="muted">Fill in the heroes already locked on each side; Soul Scribe ranks what's left by synergy with your team and win rate against theirs. <span id="pickingFor"></span></p>
+<div class="board">
+<div class="team ally"><h3>Your team</h3><div class="slots" id="allySlots"></div></div>
+<div class="vs">VS</div>
+<div class="team enemy"><h3>Enemy team</h3><div class="slots" id="enemySlots"></div></div>
+</div>
+<div class="card"><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><strong>Add to:</strong> <button id="toAlly" class="primary">Your team</button> <button id="toEnemy">Enemy team</button> <input type="text" id="q" placeholder="Filter heroes…" style="margin-left:auto"></div><div id="picker" class="picker"></div></div>
+<div class="card"><h2 style="margin-top:0">Suggested picks</h2><div id="out" class="sug muted">Add at least one hero.</div></div>
+<div id="matchups"></div>
+</main>
 <script type="module">
-import { api, h, $, pct, heroes, shell, showError } from "/js/app.js";
+import { api, h, $, pct, heroes, heroIcon, shell, showError } from "/js/app.js";
 shell("/counters.html");
-const hs = await heroes(); const opt = (sel) => hs.forEach((x) => sel.append(h("option", { value: x.id }, x.name))); opt($("#ally")); opt($("#enemy"));
-const picks = { allies: [], enemies: [] };
-const render = () => ["allies", "enemies"].forEach((k) => $("#" + k).replaceChildren(...picks[k].map((id) => h("span", { class: "chip", onclick: () => { picks[k] = picks[k].filter((x) => x !== id); render(); } }, hs.find((x) => x.id === id).name + " ×"))));
-$("#addAlly").onclick = () => { const id = +$("#ally").value; if (picks.allies.length < 5 && !picks.allies.includes(id)) picks.allies.push(id); render(); };
-$("#addEnemy").onclick = () => { const id = +$("#enemy").value; if (picks.enemies.length < 6 && !picks.enemies.includes(id)) picks.enemies.push(id); render(); };
-$("#go").onclick = async () => { const out = $("#out"); out.textContent = "Thinking…";
-  try { const r = await api(`/heroes/suggest?allies=${picks.allies}&enemies=${picks.enemies}`);
-    out.className = "card"; out.replaceChildren(h("table", {}, h("thead", {}, h("tr", {}, ...["Hero", "Score", "Synergy w/ allies", "Win vs enemies", "Data points"].map((t) => h("th", {}, t)))),
-      h("tbody", {}, ...r.suggestions.slice(0, 15).map((s) => h("tr", {}, h("td", {}, h("a", { href: `?hero=${s.hero_id}` }, s.name)), h("td", { class: "num" }, (s.score * 100).toFixed(1)), h("td", { class: "num" }, pct(s.synergy)), h("td", { class: "num" }, pct(s.counter)), h("td", { class: "num" }, String(s.samples))))))); }
-  catch (e) { showError(out, e); } };
-// single-hero matchup tables (?hero=ID)
-const hero = new URLSearchParams(location.search).get("hero");
-if (hero) { try { const m = await api(`/heroes/${hero}/matchups`); $("#mtitle").textContent = `${m.name}: matchups`;
-  const tbl = (title, rows, cls) => h("div", { class: "card" }, h("h3", { style: "margin-top:0" }, title), h("table", {}, h("tbody", {}, ...rows.slice(0, 12).map((r) => h("tr", {}, h("td", {}, r.name), h("td", { class: "num " + cls(r) }, pct(r.win_rate)), h("td", { class: "num muted" }, `${r.matches} games`))))));
-  $("#matchups").replaceChildren(h("div", { class: "grid" }, tbl(`${m.name} struggles against`, m.counters, (r) => r.win_rate < .5 ? "loss" : "win"), tbl(`${m.name} beats`, [...m.counters].reverse(), (r) => r.win_rate < .5 ? "loss" : "win"), tbl(`Best teammates for ${m.name}`, m.synergies, () => "win"))); }
-  catch (e) { showError($("#matchups"), e); } }
+const hs = await heroes(); const picks = { allies: [], enemies: [] }; let side = "allies";
+const hx = (id) => hs.find((x) => x.id === id);
+function renderSlots() { for (const [k, el, n] of [["allies", $("#allySlots"), 6], ["enemies", $("#enemySlots"), 6]]) el.replaceChildren(...Array.from({ length: n }, (_, i) => { const id = picks[k][i]; return id ? h("div", { class: "slot filled", title: hx(id)?.name }, h("img", { src: hx(id)?.images?.card || hx(id)?.images?.icon, alt: "" }), h("span", { class: "x", onclick: () => { picks[k].splice(i, 1); render(); } }, "×")) : h("div", { class: "slot", onclick: () => { side = k; $("#toAlly").className = side === "allies" ? "primary" : ""; $("#toEnemy").className = side === "enemies" ? "primary" : ""; } }, "+"); })); }
+function renderPicker() { const q = $("#q").value.toLowerCase(); const taken = new Set([...picks.allies, ...picks.enemies]);
+  $("#picker").replaceChildren(...hs.filter((x) => !q || x.name.toLowerCase().includes(q)).map((x) => h("img", { src: x.images?.card || x.images?.icon, title: x.name, alt: x.name, class: taken.has(x.id) ? "taken" : "", onclick: () => { if (picks[side].length < 6) { picks[side].push(x.id); render(); } } }))); }
+async function suggest() { const out = $("#out"); if (!picks.allies.length && !picks.enemies.length) { out.className = "sug muted"; out.textContent = "Add at least one hero."; return; } out.textContent = "Thinking…";
+  try { const r = await api(`/heroes/suggest?allies=${picks.allies}&enemies=${picks.enemies}`); out.className = "sug";
+    out.replaceChildren(h("div", { class: "r muted", style: "font-size:12px;text-transform:uppercase" }, h("span"), h("span", {}, "Hero"), h("span", {}, "Score"), h("span", {}, "With allies"), h("span", {}, "Vs enemies"), h("span", {}, "Data")),
+      ...r.suggestions.slice(0, 12).map((s) => h("div", { class: "r" }, heroIcon(hx(s.hero_id), 36), h("a", { href: `/hero.html?id=${s.hero_id}` }, s.name), h("b", {}, (s.score * 100).toFixed(1)), h("span", { class: s.synergy >= .5 ? "win" : "loss" }, pct(s.synergy)), h("span", { class: s.counter >= .5 ? "win" : "loss" }, pct(s.counter)), h("span", { class: "muted" }, String(s.samples))))); } catch (e) { showError(out, e); } }
+function render() { renderSlots(); renderPicker(); suggest(); $("#pickingFor").textContent = `Adding to: ${side === "allies" ? "your team" : "enemy team"}.`; }
+$("#toAlly").onclick = () => { side = "allies"; $("#toAlly").className = "primary"; $("#toEnemy").className = ""; render(); }; $("#toEnemy").onclick = () => { side = "enemies"; $("#toEnemy").className = "primary"; $("#toAlly").className = ""; render(); }; $("#q").oninput = renderPicker;
+render();
+const pre = new URLSearchParams(location.search).get("hero");
+if (pre) { try { const m = await api(`/heroes/${pre}/matchups`); const row = (r, cls) => h("div", { class: "r" }, heroIcon(hx(r.hero_id)), h("a", { href: `/hero.html?id=${r.hero_id}`, style: "flex:1" }, r.name), h("span", { class: "num " + cls(r) }, pct(r.win_rate)), h("span", { class: "muted", style: "font-size:12px" }, `${r.matches}`));
+  const tbl = (title, rows, cls) => h("div", { class: "card", style: "margin:0" }, h("h3", { style: "margin-top:0" }, title), ...rows.slice(0, 10).map((r) => row(r, cls)));
+  $("#matchups").replaceChildren(h("h2", {}, `${m.name} matchups`), h("div", { class: "mu" }, tbl(`${m.name} struggles against`, m.counters, (r) => "loss"), tbl(`${m.name} beats`, [...m.counters].reverse(), (r) => "win"), tbl(`Best teammates for ${m.name}`, m.synergies, () => "win"))); } catch (e) { showError($("#matchups"), e); } }
 </script></body></html>
