@@ -61,7 +61,7 @@ export class DeadlockApi {
    * `trim` lets us drop tooltip/description bulk before caching — the full item list is several MB.
    */
   async asset<T>(path: string, trim?: (raw: unknown) => T, ttl = 86400): Promise<T> {
-    const key = `asset:v2:${path}`;
+    const key = `asset:v3:${path}`;
     const hit = await this.env.CACHE.get(key, "json");
     if (hit !== null) return hit as T;
     const raw = await this.fetchWithRetry<unknown>(new URL(path, this.env.DEADLOCK_API).toString());
