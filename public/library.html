@@ -4,7 +4,7 @@
 <p id="signin" class="muted" hidden>Sign in through Steam (top right) to make and keep your own builds.</p>
 <div id="list" class="grid"></div></main>
 <script type="module">
-import { api, h, $, ago, heroes, shell, showError } from "/js/app.js";
+import { api, h, $, ago, heroes, itemImg, shell, showError } from "/js/app.js";
 shell("/library.html");
 const [hs, items, players, me, who] = await Promise.all([heroes(), api("/library/items"), api("/players"), api("/auth/steam/me"), api("/me")]);
 let tab = me.account_id ? "mine" : "squad"; if (!me.account_id) $("#signin").hidden = false;
@@ -20,10 +20,10 @@ async function load() { const el = $("#list"); try {
   const rows = await api(`/library?${q}`);
   if (!rows.length) return el.replaceChildren(h("p", { class: "muted" }, tab === "mine" ? "You haven't saved a build yet." : "Nobody has saved a build yet."));
   el.replaceChildren(...rows.map((b) => h("div", { class: "card", style: "margin:0;display:flex;flex-direction:column;gap:8px" },
-    h("div", { style: "display:flex;gap:10px;align-items:center" }, hero(b.hero_id)?.images?.icon ? h("img", { src: hero(b.hero_id).images.icon, width: 40, height: 40, style: "border-radius:6px" }) : "",
+    h("div", { style: "display:flex;gap:10px;align-items:center" }, hero(b.hero_id)?.images?.card ? h("img", { src: hero(b.hero_id).images.card, width: 44, height: 58, style: "border-radius:6px;object-fit:cover" }) : "",
       h("div", {}, h("a", { href: `/editor.html?id=${b.id}` }, h("strong", {}, b.title)), h("div", { class: "muted", style: "font-size:13px" }, `${hero(b.hero_id)?.name ?? "?"} · ${b.author_name ?? b.author}${b.ingame_build_id ? " · in game" : ""}`))),
     b.description ? h("div", { class: "muted", style: "font-size:13px" }, b.description.slice(0, 140)) : "",
-    h("div", { style: "display:flex;flex-wrap:wrap;gap:3px" }, ...b.preview.map((id) => item(id)?.image ? h("img", { src: item(id).image, title: item(id).name, width: 26, height: 26, style: "border-radius:4px" }) : "")),
+    h("div", { style: "display:flex;flex-wrap:wrap;gap:3px" }, ...b.preview.map((id) => itemImg(item(id), 26))),
     h("div", { class: "muted", style: "font-size:12px;display:flex;justify-content:space-between" }, h("span", {}, `${b.item_count} items · updated ${ago(b.updated_at || b.created_at)}`),
       h("span", {}, h("a", { href: `/editor.html?id=${b.id}` }, me.account_id === b.account_id ? "edit" : "view / fork"), " · ", h("a", { href: "#", onclick: async (e) => { e.preventDefault(); await api(`/library/${b.id}/vote`, { method: "POST" }); load(); } }, `▲ ${b.votes}`)))))); } catch (e) { showError(el, e); } }
 $("#hero").onchange = $("#author").onchange = load; setTab(tab);

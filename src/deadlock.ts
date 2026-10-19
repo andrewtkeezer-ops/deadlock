@@ -61,7 +61,7 @@ export class DeadlockApi {
    * `trim` lets us drop tooltip/description bulk before caching — the full item list is several MB.
    */
   async asset<T>(path: string, trim?: (raw: unknown) => T, ttl = 86400): Promise<T> {
-    const key = `asset:v3:${path}`;
+    const key = `asset:v4:${path}`;
     const hit = await this.env.CACHE.get(key, "json");
     if (hit !== null) return hit as T;
     const raw = await this.fetchWithRetry<unknown>(new URL(path, this.env.DEADLOCK_API).toString());
@@ -166,7 +166,11 @@ export class DeadlockApi {
         .filter((i) => i.type === "upgrade" && i.shopable && !i.disabled)
         .map((i) => ({ id: i.id, name: i.name, class_name: i.class_name, type: i.type, item_slot_type: i.item_slot_type, item_tier: i.item_tier, cost: i.cost,
           shopable: i.shopable, disabled: i.disabled, image: i.shop_image_webp ?? i.image_webp ?? i.image, is_active_item: i.is_active_item,
-          heroes: i.heroes ?? [],
+          heroes: i.heroes ?? [], activation: i.activation, component_items: i.component_items ?? [],
+          description: i.description?.desc ?? i.description?.active ?? i.description?.passive ?? undefined,
+          // Labelled stats the in-game tooltip shows, e.g. { label: "Weapon Damage", value: "+14%" }
+          stats: Object.entries(i.properties ?? {}).filter(([, v]) => v?.label && parseFloat(String(v?.value ?? "0")))
+            .map(([k, v]) => ({ key: k, label: String(v!.label), value: `${parseFloat(String(v!.value)) > 0 && !String(v!.value).startsWith("-") ? "+" : ""}${v!.value}${v!.postfix ?? ""}`, elevated: (i.tooltip_sections ?? []).some((t) => t.section_attributes?.some((a) => a.elevated_properties?.includes(k))) })),
           properties: Object.fromEntries(Object.entries(i.properties ?? {}).map(([k, v]) => [k, parseFloat(String(v?.value ?? "0")) || 0]).filter(([, n]) => n !== 0)) })));
   }
 }
@@ -203,5 +207,8 @@ export type UiAssets = {
 };
 type RawItem = { id: number; name: string; class_name: string; type: string; item_slot_type?: "weapon" | "vitality" | "spirit"; item_tier?: number; cost?: number;
   shopable?: boolean; disabled?: boolean; is_active_item?: boolean; heroes?: number[]; image?: string; image_webp?: string; shop_image_webp?: string;
-  properties?: Record<string, { value?: number | string } | undefined> };
-export type ItemAsset = Omit<RawItem, "properties"> & { properties: Record<string, number> };
+  activation?: string; component_items?: string[]; description?: { desc?: string; active?: string; passive?: string };
+  tooltip_sections?: { section_type?: string; section_attributes?: { properties?: string[]; elevated_properties?: string[] }[] }[];
+  properties?: Record<string, { value?: number | string; label?: string; postfix?: string } | undefined> };
+export type ItemAsset = Omit<RawItem, "properties" | "description" | "tooltip_sections"> & { properties: Record<string, number>; description?: string;
+  stats: { key: string; label: string; value: string; elevated: boolean }[] };

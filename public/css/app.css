@@ -25,3 +25,9 @@ code,pre{background:#0a0b0f;border:1px solid var(--line);border-radius:6px;paddi
 .error{color:var(--loss)}.ok{color:var(--win)}
 @media (max-width:640px){header{flex-wrap:wrap}main{padding:16px}}
 a.dl{display:inline-block;background:var(--accent);color:#1a1200;font-weight:700;padding:12px 20px;border-radius:8px;font-size:16px}a.dl:hover{text-decoration:none;filter:brightness(1.08)}
+.itip{z-index:1000;width:280px;background:#15171f;border:1px solid var(--line);border-top:3px solid var(--accent);border-radius:8px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.6);pointer-events:none;font-size:13px}
+.itip.weapon{border-top-color:var(--weapon)}.itip.spirit{border-top-color:var(--spirit)}.itip.vitality{border-top-color:var(--vitality)}
+.itip .t{display:flex;gap:10px;align-items:center;margin-bottom:8px}.itip .t img{width:44px;height:44px;border-radius:6px}.itip .t b{font-family:Reaver;font-size:15px}.itip .t .muted{font-size:11px}
+.itip .act{display:inline-block;background:#2a2f44;color:#cfd3e6;font-size:10px;padding:1px 6px;border-radius:3px;margin-bottom:6px;letter-spacing:.06em}
+.itip .st{padding:2px 0}.itip .st .v{color:var(--win);font-weight:600;min-width:52px;display:inline-block}.itip .st.big{font-size:15px}.itip .st.big .v{color:var(--accent)}
+.itip .desc{margin-top:8px;color:#cfd3e6;border-top:1px solid var(--line);padding-top:6px}.itip .desc .highlight{color:var(--accent);font-weight:600}

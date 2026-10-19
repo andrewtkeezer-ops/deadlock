@@ -28,7 +28,7 @@ function sanitize(d: unknown): Details {
 }
 
 /** All shop items for the editor's picker (cached asset, trimmed). */
-r.get("/items", async (c) => c.json((await new DeadlockApi(c.env).items()).map((i) => ({ id: i.id, name: i.name, slot: i.item_slot_type, tier: i.item_tier, cost: i.cost, image: i.image, heroes: i.heroes, active: i.is_active_item }))));
+r.get("/items", async (c) => c.json((await new DeadlockApi(c.env).items()).map((i) => ({ id: i.id, name: i.name, class_name: i.class_name, slot: i.item_slot_type, tier: i.item_tier, cost: i.cost, image: i.image, heroes: i.heroes, active: i.is_active_item, activation: i.activation, components: i.component_items, description: i.description, stats: i.stats }))));
 
 r.get("/categories", (c) => c.json(DEFAULT_CATEGORIES));
 

@@ -19,7 +19,7 @@
 <p class="muted" style="font-size:12px">Click an item to add it to the phase marked <strong>+</strong> (click a phase title to target it).</p><div id="items"></div></div>
 </div></main>
 <script type="module">
-import { api, h, $, heroes, shell } from "/js/app.js";
+import { api, h, $, heroes, withTip, heroIcon, shell } from "/js/app.js";
 shell("/library.html");
 const qs = new URLSearchParams(location.search); const id = qs.get("id");
 const [hs, items, me, cats] = await Promise.all([heroes(), api("/library/items"), api("/auth/steam/me"), api("/library/categories")]);
@@ -29,12 +29,13 @@ let build = { hero_id: +qs.get("hero") || hs[0].id, title: "", description: "", 
 let target = 0, mine = true;
 if (id) { build = await api(`/library/${id}`); mine = me.account_id && me.account_id === build.account_id; }
 else if (qs.get("from") === "wizard") { try { const w = JSON.parse(sessionStorage.getItem("wizardBuild") || "null"); if (w) { build.hero_id = w.hero_id; build.title = w.title || ""; const byTier = (lo, hi) => w.order.filter((i) => i.tier >= lo && i.tier <= hi).map((i) => ({ ability_id: i.item_id, annotation: null })); build.details.mod_categories[0].mods = byTier(1, 1); build.details.mod_categories[1].mods = byTier(2, 2); build.details.mod_categories[2].mods = byTier(3, 4); } } catch {} }
+if (!id && qs.get("item") && item(+qs.get("item"))) build.details.mod_categories[0].mods.push({ ability_id: +qs.get("item"), annotation: null });
 $("#hero").value = build.hero_id; $("#title").value = build.title; $("#desc").value = build.description || "";
 if (id) { $("#owner").textContent = mine ? "Your build." : `By ${build.author_name ?? build.author}. You can view it, or fork a copy to edit.`; $("#fork").hidden = false; $("#del").hidden = !mine; $("#save").hidden = !mine; }
 if (!me.account_id) $("#owner").textContent = "Sign in through Steam (top right) to save builds.";
 function render() { $("#phases").replaceChildren(...build.details.mod_categories.map((cat, ci) => h("div", { class: "card phase" },
   h("h3", { onclick: () => { target = ci; render(); } }, h("span", {}, target === ci ? "+ " : ""), mine || !id ? h("input", { type: "text", value: cat.name, onchange: (e) => (cat.name = e.target.value), onclick: (e) => e.stopPropagation() }) : cat.name),
-  h("div", { class: "mods" }, ...cat.mods.map((m, mi) => h("div", { class: "mod" }, item(m.ability_id)?.image ? h("img", { src: item(m.ability_id).image, title: item(m.ability_id).name }) : "", h("span", {}, item(m.ability_id)?.name ?? m.ability_id),
+  h("div", { class: "mods" }, ...cat.mods.map((m, mi) => h("div", { class: "mod" }, item(m.ability_id)?.image ? withTip(h("img", { src: item(m.ability_id).image, alt: item(m.ability_id).name }), item(m.ability_id)) : "", h("span", {}, item(m.ability_id)?.name ?? m.ability_id),
     h("input", { class: "note", placeholder: "note", value: m.annotation || "", onchange: (e) => (m.annotation = e.target.value || null) }),
     h("button", { title: "move left", onclick: () => { if (mi > 0) { [cat.mods[mi - 1], cat.mods[mi]] = [cat.mods[mi], cat.mods[mi - 1]]; render(); } } }, "‹"),
     h("button", { title: "move right", onclick: () => { if (mi < cat.mods.length - 1) { [cat.mods[mi + 1], cat.mods[mi]] = [cat.mods[mi], cat.mods[mi + 1]]; render(); } } }, "›"),
@@ -42,7 +43,7 @@ function render() { $("#phases").replaceChildren(...build.details.mod_categories
   h("div", { class: "muted", style: "font-size:12px;margin-top:6px" }, `${cat.mods.reduce((s, m) => s + (item(m.ability_id)?.cost || 0), 0).toLocaleString()} souls`)))); }
 function renderPicker() { const q = $("#search").value.toLowerCase(), slot = document.querySelector('input[name=slot]:checked').value, heroId = +$("#hero").value;
   const rows = items.filter((i) => (!slot || i.slot === slot) && (!q || i.name.toLowerCase().includes(q)) && (!i.heroes?.length || i.heroes.includes(heroId))).sort((a, b) => (a.slot ?? "").localeCompare(b.slot ?? "") || a.tier - b.tier || a.name.localeCompare(b.name));
-  $("#items").replaceChildren(...rows.map((i) => h("div", { class: "pick", onclick: () => { build.details.mod_categories[target].mods.push({ ability_id: i.id, annotation: null }); render(); } }, i.image ? h("img", { src: i.image }) : "", h("span", {}, i.name, " ", h("span", { class: "chip " + i.slot, style: "font-size:10px;padding:0 5px" }, `T${i.tier}`)), h("span", { class: "cost" }, i.cost)))); }
+  $("#items").replaceChildren(...rows.map((i) => withTip(h("div", { class: "pick", onclick: () => { build.details.mod_categories[target].mods.push({ ability_id: i.id, annotation: null }); render(); } }, i.image ? h("img", { src: i.image }) : "", h("span", {}, i.name, " ", h("span", { class: "chip " + i.slot, style: "font-size:10px;padding:0 5px" }, `T${i.tier}`)), h("span", { class: "cost" }, i.cost)), i))); }
 $("#search").oninput = renderPicker; document.querySelectorAll('input[name=slot]').forEach((r) => (r.onchange = renderPicker)); $("#hero").onchange = renderPicker;
 render(); renderPicker();
 const payload = () => ({ hero_id: +$("#hero").value, title: $("#title").value, description: $("#desc").value, details: build.details });
