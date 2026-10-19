@@ -4,7 +4,7 @@ main{max-width:1400px}
 .select{display:grid;grid-template-columns:minmax(380px,520px) 1fr;gap:24px;min-height:70vh}@media(max-width:900px){.select{grid-template-columns:1fr}}
 .grid-h{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px;align-content:start}
 .hc{aspect-ratio:3/4;border-radius:6px;overflow:hidden;cursor:pointer;position:relative;border:2px solid transparent;background:#0a0b0f;transition:transform .12s,border-color .12s}
-.hc img{width:100%;height:100%;object-fit:cover;display:block}.hc:hover,.hc.active{transform:scale(1.06);border-color:var(--accent);z-index:1}
+.hc img{width:100%;height:100%;object-fit:cover;display:block}.hc:hover,.hc.active{transform:scale(1.06);border-color:var(--accent);z-index:1}.hc.locked{border-color:#fff;box-shadow:0 0 0 2px var(--accent),0 0 18px rgba(228,185,79,.5)}
 .hc .wr{position:absolute;left:0;right:0;bottom:0;font-size:10px;text-align:center;background:rgba(0,0,0,.65);padding:1px 0}
 .stage{position:relative;border-radius:14px;overflow:hidden;min-height:520px;background:#0a0b0f center/cover no-repeat;border:1px solid var(--line)}
 .stage::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(14,15,19,.9) 0%,rgba(14,15,19,.35) 45%,rgba(14,15,19,.1) 100%)}
@@ -18,16 +18,16 @@ main{max-width:1400px}
 </style></head>
 <body><main>
 <h1>Select hero</h1>
-<p class="muted">Hover a card to preview, click to open the hero's page. Rank band for win rates: <select id="band"><option value="">All</option><option value="1,60">Initiate–Arcanist</option><option value="61,90">Oracle–Phantom</option><option value="91,116">Ascendant–Eternus</option></select></p>
+<p class="muted">Hover to preview, click to lock a hero and read their card, double-click to open their page. Rank band for win rates: <select id="band"><option value="">All</option><option value="1,60">Initiate–Arcanist</option><option value="61,90">Oracle–Phantom</option><option value="91,116">Ascendant–Eternus</option></select></p>
 <div class="select"><div id="grid" class="grid-h"></div><div id="stage" class="stage"><div class="info muted" style="padding:36px">Loading heroes…</div></div></div>
 <details class="meta"><summary>Full meta table (win and pick rates)</summary><div id="out" class="card">Loading…</div></details>
 </main>
 <script type="module">
 import { api, h, $, pct, heroes, shell, showError } from "/js/app.js";
 shell("/heroes.html");
-const hs = await heroes(); let stats = new Map(); let active = null;
+const hs = await heroes(); let stats = new Map(); let active = null; let locked = null;
 const roleOf = (x) => x.hero_type ? x.hero_type.replace(/_/g, " ") : "";
-function stage(x) { active = x; document.querySelectorAll(".hc").forEach((el) => el.classList.toggle("active", +el.dataset.id === x.id));
+function stage(x) { active = x; document.querySelectorAll(".hc").forEach((el) => { el.classList.toggle("active", +el.dataset.id === x.id); el.classList.toggle("locked", locked?.id === el.dataset.id * 1); });
   const st = stats.get(x.id); const el = $("#stage"); el.style.backgroundImage = x.images.background ? `url(${x.images.background})` : "";
   api(`/heroes/${x.id}/abilities`).then((abs) => { if (active?.id !== x.id) return; const row = $("#abrow"); if (row) row.replaceChildren(...abs.map((a) => h("img", { src: a.image, title: `${a.name}: ${(a.quip || "").replace(/<[^>]+>/g, "")}`, alt: a.name }))); }).catch(() => {});
   el.replaceChildren(x.images.gloat ? h("img", { class: "art", src: x.images.gloat, alt: "" }) : "",
@@ -36,8 +36,8 @@ function stage(x) { active = x; document.querySelectorAll(".hc").forEach((el) =>
       h("div", { style: "margin:14px 0" }, h("div", { class: "stat" }, h("b", {}, st ? pct(st.win_rate) : "–"), h("span", {}, "win rate")), h("div", { class: "stat" }, h("b", {}, st ? pct(st.pick_rate) : "–"), h("span", {}, "pick rate")), h("div", { class: "stat" }, h("b", {}, "●".repeat(x.complexity || 1) + "○".repeat(3 - (x.complexity || 1))), h("span", {}, "complexity")), x.gun_tag ? h("div", { class: "stat" }, h("b", {}, x.gun_tag), h("span", {}, "weapon")) : ""),
       h("div", { class: "abrow", id: "abrow" }),
       x.description?.role ? h("p", {}, x.description.role) : "", x.description?.playstyle ? h("p", { class: "muted" }, x.description.playstyle) : "",
-      h("p", { class: "actions" }, h("a", { class: "dl", style: "padding:9px 16px;font-size:14px", href: `/hero.html?id=${x.id}` }, "Open hero page"), h("a", { href: `/counters.html?hero=${x.id}` }, "Matchups"), h("a", { href: `/editor.html?hero=${x.id}` }, "New build"), h("a", { href: `/heatmap.html?hero=${x.id}` }, "Heatmap")))); }
-$("#grid").replaceChildren(...hs.map((x) => h("div", { class: "hc", "data-id": x.id, onmouseenter: () => stage(x), onclick: () => (location.href = `/hero.html?id=${x.id}`) }, h("img", { src: x.images.card || x.images.icon, alt: x.name, loading: "lazy" }), h("div", { class: "wr" }, x.name))));
+      h("p", { class: "actions" }, h("a", { class: "dl", style: "padding:9px 16px;font-size:14px", href: `/hero.html?id=${x.id}` }, "Open hero page"), locked?.id === x.id ? h("a", { href: "#", onclick: (e) => { e.preventDefault(); locked = null; stage(x); } }, "Unlock") : h("span", { class: "muted" }, "click card to lock"), h("a", { href: `/counters.html?hero=${x.id}` }, "Matchups"), h("a", { href: `/editor.html?hero=${x.id}` }, "New build"), h("a", { href: `/heatmap.html?hero=${x.id}` }, "Heatmap")))); }
+$("#grid").replaceChildren(...hs.map((x) => h("div", { class: "hc", "data-id": x.id, onmouseenter: () => { if (!locked) stage(x); }, onclick: () => { locked = locked?.id === x.id ? null : x; stage(locked || x); }, ondblclick: () => (location.href = `/hero.html?id=${x.id}`) }, h("img", { src: x.images.card || x.images.icon, alt: x.name, loading: "lazy" }), h("div", { class: "wr" }, x.name))));
 async function loadStats() { const [lo, hi] = ($("#band").value || ",").split(","); const q = new URLSearchParams({ min_unix_timestamp: Math.floor(Date.now() / 1000) - 14 * 86400 }); if (lo) { q.set("min_average_badge", lo); q.set("max_average_badge", hi); }
   try { const rows = await api(`/heroes/stats?${q}`); stats = new Map(rows.map((r) => [r.hero_id, r]));
     document.querySelectorAll(".hc").forEach((el) => { const s = stats.get(+el.dataset.id); if (s) el.querySelector(".wr").textContent = pct(s.win_rate); });
