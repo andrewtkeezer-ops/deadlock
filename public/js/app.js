@@ -78,18 +78,37 @@ export function withTip(el, it) {
   return el;
 }
 
-// ---- page chrome ----
+// ---- page chrome: atmosphere + left rail ----
+const ICONS = {
+  trophy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M7 6H4a3 3 0 0 0 3 5M17 6h3a3 3 0 0 1-3 5"/></svg>',
+  hero: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7c0-2 3-4 8-4s8 2 8 4v6c0 4-4 8-8 8s-8-4-8-8V7z"/><path d="M8 11c1 1 2 1 3 0M13 11c1 1 2 1 3 0M9 16c2 1 4 1 6 0"/></svg>',
+  swords: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21l6-6M21 3l-9 9M14 5l5 5M5 14l5 5M3 3l9 9M19 21l-6-6M10 5L5 10M19 14l-5 5"/></svg>',
+  map: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18M6 6l12 12M18 6L6 18"/></svg>',
+  book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4V4zM20 4h-7a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h8V4z"/></svg>',
+  bag: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1 12H6L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>',
+  gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
+  shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg>',
+};
 export function shell(active) {
-  const links = [["/", "Leaderboard"], ["/heroes.html", "Heroes"], ["/counters.html", "Counters"], ["/heatmap.html", "Heatmap"], ["/library.html", "Builds"], ["/items.html", "Items"], ["/setup.html", "Setup"]];
-  const nav = h("nav", {}, ...links.map(([href, label]) => h("a", { href, class: href === active ? "active" : "" }, label)));
-  const right = h("div", { class: "who", id: "whoami" });
-  document.body.prepend(h("header", {}, h("a", { class: "brand", href: "/" }, h("img", { src: "/img/logo.webp", alt: "Soul Scribe", class: "logo" })), nav, right));
+  if (!document.querySelector(".atmo")) {
+    document.body.prepend(h("div", { class: "atmo" }, h("div", { class: "base" }), h("div", { class: "fog" }), h("div", { class: "grain" }), h("div", { class: "mark" }), h("div", { class: "vig" })));
+    const page = h("div", { class: "page" }); const mains = [...document.body.querySelectorAll(":scope > main")]; mains.forEach((m) => page.append(m)); document.body.append(page);
+  }
+  const links = [["/", "Leaderboard", "trophy"], ["/heroes.html", "Heroes", "hero"], ["/counters.html", "Draft", "swords"], ["/heatmap.html", "Map", "map"], ["/library.html", "Builds", "book"], ["/items.html", "Items", "bag"], ["/setup.html", "Setup", "gear"]];
+  const mk = ([href, label, ic]) => { const a = h("a", { href, class: href === active ? "active" : "" }); a.innerHTML = `<span class="ic">${ICONS[ic]}</span><span class="lb">${label}</span>`; return a; };
+  const nav = h("nav", {}, ...links.map(mk));
+  const who = h("div", { class: "who" });
+  const rail = h("aside", { class: "rail" }, h("a", { class: "brand", href: "/" }, h("img", { class: "mark", src: "/img/icon.png", alt: "" }), h("img", { class: "word", src: "/img/logo.webp", alt: "Soul Scribe" })), nav, who);
+  document.body.prepend(rail);
   me().then(async (m) => {
-    if (m.role === "admin") nav.append(h("a", { href: "/admin.html", class: active === "/admin.html" ? "active" : "" }, "Admin"));
+    if (m.role === "admin") nav.append(mk(["/admin.html", "Admin", "shield"]));
     if (m.account_id) {
       let p = null; try { p = (await api("/players")).find((x) => x.account_id === m.account_id); } catch {}
-      right.append(h("a", { href: `/player.html?id=${m.account_id}`, class: "meLink" }, p?.avatar_url ? h("img", { src: p.avatar_url, alt: "" }) : "", p?.name ?? "My profile"));
-    } else right.append(h("a", { href: "/api/auth/steam/login" }, h("img", { src: "https://community.cloudflare.steamstatic.com/public/images/signinthroughsteam/sits_small.png", alt: "Sign in through Steam", style: "height:22px;vertical-align:middle" })));
+      const a = h("a", { href: `/player.html?id=${m.account_id}` }, p?.avatar_url ? h("img", { class: "av", src: p.avatar_url, alt: "" }) : h("span", { class: "av" }), h("span", { class: "nm" }, p?.name ?? "My profile", h("small", {}, "View profile")));
+      who.append(a); if (p?.mmr_rank) try { const b = await rankBadge(p.mmr_rank); b.style.height = "26px"; a.querySelector("small").replaceChildren(b, " ", p.mmr_score != null ? String(Math.round(p.mmr_score)) : ""); } catch {}
+    } else who.append(h("a", { href: "/api/auth/steam/login", title: "Sign in through Steam" }, h("img", { class: "steam", src: "https://community.cloudflare.steamstatic.com/public/images/signinthroughsteam/sits_small.png", alt: "Sign in through Steam" })));
   }).catch(() => {});
 }
+/** Count-up animation for a number element. */
+export function countUp(el, to, { decimals = 0, suffix = "", ms = 700 } = {}) { const start = performance.now(); const from = 0; const step = (t) => { const k = Math.min(1, (t - start) / ms); const v = from + (to - from) * (1 - Math.pow(1 - k, 3)); el.textContent = v.toFixed(decimals).replace(/\B(?=(\d{3})+(?!\d))/g, ",") + suffix; if (k < 1) requestAnimationFrame(step); }; requestAnimationFrame(step); return el; }
 export function showError(el, e) { el.replaceChildren(h("div", { class: "card error" }, `Error: ${e.message}`)); }
