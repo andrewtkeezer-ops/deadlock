@@ -34,7 +34,7 @@
 <details class="card"><summary>Lore</summary><p id="lore" class="muted"></p></details>
 </main>
 <script type="module">
-import { api, h, $, pct, ago, heroes, itemImg, shell, showError } from "/js/app.js";
+import { api, h, $, pct, ago, heroes, itemImg, abilityTooltip, withTipBuilder, shell, showError } from "/js/app.js";
 shell("/heroes.html");
 const id = +new URLSearchParams(location.search).get("id");
 const [hs, items] = await Promise.all([heroes(), api("/library/items")]); const x = hs.find((y) => y.id === id); const item = (i) => items.find((y) => y.id === i);
@@ -50,7 +50,7 @@ const hrow = (hid, right) => { const hh = hs.find((y) => y.id === hid); return h
   $("#stats").replaceChildren(h("div", { class: "stat" }, h("b", {}, s ? pct(s.win_rate) : "–"), h("span", {}, "win rate · 14d")), h("div", { class: "stat" }, h("b", {}, s ? pct(s.pick_rate) : "–"), h("span", {}, "pick rate")), h("div", { class: "stat" }, h("b", {}, s ? s.matches.toLocaleString() : "–"), h("span", {}, "matches"))); } catch {} })();
 (async () => { try { const abs = await api(`/heroes/${id}/abilities`);
   const html = (t) => { const d = document.createElement("span"); d.innerHTML = (t || "").replace(/<(?!\/?span)[^>]*>/g, ""); return d; };
-  $("#abilities").replaceChildren(...abs.map((a) => h("div", { class: "ab" }, h("div", { class: "top" }, a.image ? h("img", { src: a.image, alt: "" }) : "", h("div", {}, h("b", {}, a.name), h("span", {}, a.key === "ultimate" ? "Ultimate" : `Ability ${a.key}`))),
+  $("#abilities").replaceChildren(...abs.map((a) => h("div", { class: "ab" }, h("div", { class: "top" }, a.image ? withTipBuilder(h("img", { src: a.image, alt: "" }), () => abilityTooltip(a)) : "", h("div", {}, h("b", {}, a.name), h("span", {}, a.key === "ultimate" ? "Ultimate" : `Ability ${a.key}`))),
     h("div", { class: "nums" }, a.cooldown ? h("span", {}, `⟳ ${a.cooldown}s`) : "", a.duration ? h("span", {}, `⏱ ${a.duration}s`) : "", a.range ? h("span", {}, `↔ ${a.range}m`) : "", a.charges ? h("span", {}, `×${a.charges}`) : ""),
     h("p", {}, html(a.description)), ...a.tiers.map((t, i) => h("div", { class: "tier" }, h("b", {}, `T${i + 1}`), html(t)))))); } catch (e) { showError($("#abilities"), e); } })();
 (async () => { try { const m = await api(`/heroes/${id}/matchups`);

@@ -49,6 +49,26 @@ export function itemTooltip(it) {
   return card;
 }
 export const stripHtml = (t) => { const d = document.createElement("div"); d.innerHTML = (t || "").replace(/<(?!\/?span)[^>]*>/g, ""); return d; };
+export function abilityTooltip(a) {
+  return h("div", { class: "itip atip" }, h("div", { class: "t" }, a.image ? h("img", { src: a.image, alt: "" }) : "", h("div", {}, h("b", {}, a.name), h("div", { class: "muted" }, a.key === "ultimate" ? "ULTIMATE" : `ABILITY ${a.key}`))),
+    h("div", { class: "nums" }, a.cooldown ? h("span", {}, "⟳ ", h("b", {}, `${a.cooldown}s`), " cooldown") : "", a.duration ? h("span", {}, "⏱ ", h("b", {}, `${a.duration}s`)) : "", a.range ? h("span", {}, "↔ ", h("b", {}, `${a.range}m`)) : "", a.charges ? h("span", {}, "×", h("b", {}, String(a.charges)), " charges") : ""),
+    a.description ? h("div", { class: "desc" }, stripHtml(a.description)) : "",
+    ...(a.tiers || []).map((t, i) => h("div", { class: "tier" }, h("b", {}, `T${i + 1}`), stripHtml(t))));
+}
+/** Attach a hover tooltip built by `build()` to any element. */
+export function withTipBuilder(el, build) {
+  el.addEventListener("mouseenter", (e) => { tipEl?.remove(); tipEl = build(); tipEl.style.position = "fixed"; document.body.append(tipEl); place(e); });
+  el.addEventListener("mousemove", place); el.addEventListener("mouseleave", () => { tipEl?.remove(); tipEl = null; });
+  function place(e) { if (!tipEl) return; const w = tipEl.offsetWidth, hgt = tipEl.offsetHeight; let x = e.clientX + 16, y = e.clientY + 16; if (x + w > innerWidth - 8) x = e.clientX - w - 16; if (y + hgt > innerHeight - 8) y = innerHeight - hgt - 8; tipEl.style.left = x + "px"; tipEl.style.top = y + "px"; }
+  return el;
+}
+/** Glass modal. Returns the body element; closes on backdrop click or Esc. */
+export function modal(title, body) {
+  const close = () => { wrap.remove(); document.removeEventListener("keydown", onKey); };
+  const onKey = (e) => { if (e.key === "Escape") close(); };
+  const wrap = h("div", { class: "modal-wrap", onclick: (e) => { if (e.target === wrap) close(); } }, h("div", { class: "modal" }, h("div", { class: "mh" }, h("h2", {}, title), h("button", { class: "close", onclick: close }, "×")), h("div", { class: "mb" }, body)));
+  document.body.append(wrap); document.addEventListener("keydown", onKey); return wrap;
+}
 /** Attach a hover tooltip to any element for an item. */
 export function withTip(el, it) {
   if (!it) return el;
