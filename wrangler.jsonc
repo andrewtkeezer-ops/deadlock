@@ -27,7 +27,7 @@
     // Set as a secret instead: `wrangler secret put DEADLOCK_API_KEY`
     "ADMIN_TOKEN": "change-me",
     // Cloudflare Access: set both to turn on invite-only Google login (see README).
-    "ACCESS_TEAM_DOMAIN": "",
+    "ACCESS_TEAM_DOMAIN": "spring-base-00a6.cloudflareaccess.com",
     "ACCESS_AUD": "",
     "SUPER_ADMIN_EMAIL": "andrew@brandbutter.ca",
     // Steam account_id of the super admin (works in open mode and under Access).
