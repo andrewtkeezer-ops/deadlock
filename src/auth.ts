@@ -67,6 +67,8 @@ export async function requireMember(c: Context<{ Bindings: Env; Variables: { use
 export async function requireAdmin(c: Context<{ Bindings: Env; Variables: { user?: Identity } }>, next: Next) {
   const user = c.get("user");
   if (user?.role === "admin") return next();
+  // Access not configured yet (open/testing mode): everything is admin. Turn on Access before sharing the URL widely.
+  if (!c.env.ACCESS_TEAM_DOMAIN || !c.env.ACCESS_AUD) return next();
   const token = c.req.header("x-admin-token") ?? c.req.query("token");
   if (!user && token && token === c.env.ADMIN_TOKEN) return next();
   return c.json({ error: "unauthorized" }, 401);

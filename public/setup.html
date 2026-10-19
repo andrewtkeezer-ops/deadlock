@@ -21,10 +21,8 @@
 </div>
 
 <div class="card">
-<h2 style="margin-top:0">Step 3 — add yourself to the squad</h2>
-<p>Admins only — if you're not one, send Andrew your account_id.</p>
-<input type="number" id="acc" placeholder="account_id"> <input type="text" id="nm" placeholder="Display name"> <button class="primary" id="add">Add &amp; import</button>
-<p id="addout"></p>
+<h2 style="margin-top:0">Step 3 — get added to the squad</h2>
+<p>Tell Andrew your Steam display name (or send the profile link) — he adds you from the <a href="/admin.html">Admin</a> page and your matches import right away. Your account_id from Step 2 is only a fallback if search can't find you.</p>
 </div>
 </main>
 <script type="module">
@@ -36,9 +34,6 @@ $("#steamin").addEventListener("input", (e) => {
   if (!m) return (out.textContent = "");
   const acc = BigInt(m[0]) - BASE; out.innerHTML = `account_id = <strong>${acc}</strong>`; $("#acc").value = String(acc);
 });
-$("#add").addEventListener("click", async () => {
-  const out = $("#addout"); out.textContent = "Importing…";
-  try { const r = await api("/admin/players", { method: "POST", body: { account_id: Number($("#acc").value), name: $("#nm").value } });
     out.innerHTML = `<span class="ok">Added — imported ${r.matchesImported} matches.</span> <a href="/">Leaderboard</a>`; }
   catch (e) { out.innerHTML = `<span class="error">${e.message}</span>`; }
 });

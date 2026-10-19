@@ -14,7 +14,7 @@ async function load() {
     if (!players.length) return out.replaceChildren(h("p", {}, "No one is tracked yet. Head to ", h("a", { href: "/setup.html" }, "Setup"), "."));
     out.replaceChildren(h("table", {}, h("thead", {}, h("tr", {}, ...["#", "Player", "MMR", "Rank", "Games", "Win %", "K / D / A", "Souls/min", "Last played", "Synced"].map((t) => h("th", {}, t)))),
       h("tbody", {}, ...players.map((p, i) => h("tr", {},
-        h("td", {}, String(i + 1)), h("td", {}, h("a", { href: `/player.html?id=${p.account_id}` }, p.name)),
+        h("td", {}, String(i + 1)), h("td", {}, p.avatar_url ? h("img", { src: p.avatar_url, width: 24, height: 24, style: "border-radius:4px;vertical-align:middle;margin-right:8px" }) : "", h("a", { href: `/player.html?id=${p.account_id}` }, p.name)),
         h("td", { class: "num" }, p.mmr_score?.toFixed(0) ?? "–"), h("td", { class: "num" }, p.mmr_rank ?? "–"),
         h("td", { class: "num" }, String(p.games)), h("td", { class: "num" }, p.games ? pct(p.wins / p.games) : "–"),
         h("td", { class: "num" }, `${p.avg_kills.toFixed(1)} / ${p.avg_deaths.toFixed(1)} / ${p.avg_assists.toFixed(1)}`),

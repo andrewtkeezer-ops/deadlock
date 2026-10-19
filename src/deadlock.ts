@@ -91,6 +91,12 @@ export class DeadlockApi {
   killDeathStats(q: Record<string, string | number | undefined> = {}) {
     return this.get<KillDeathStat[]>(`/v1/analytics/kill-death-stats`, q, 12 * 3600);
   }
+  steamSearch(q: string, limit = 10) {
+    return this.get<SteamProfile[]>(`/v1/players/steam-search`, { search_query: q, limit }, 300);
+  }
+  steamProfiles(accountIds: number[]) {
+    return this.get<SteamProfile[]>(`/v1/players/steam`, { account_ids: accountIds.join(",") }, 3600);
+  }
   heroes() {
     return this.asset<HeroAsset[]>(`/v1/assets/heroes`, (raw) =>
       (raw as HeroAsset[]).map((h) => ({ id: h.id, name: h.name, class_name: h.class_name, player_selectable: h.player_selectable, disabled: h.disabled,
@@ -113,6 +119,9 @@ export class ApiError extends Error {
     super(msg);
   }
 }
+
+export type SteamProfile = { account_id: number; personaname: string; profileurl: string; avatar: string; avatarmedium?: string; avatarfull?: string;
+  realname?: string | null; countrycode?: string | null; matches_played_last_30d?: number | null; friends?: { account_id: number; friend_since: string }[] };
 
 // Loose upstream shapes — only the fields we rely on. Everything else is passed through.
 export type HeroStat = { hero_id: number; wins: number; losses: number; matches: number; players?: number; [k: string]: unknown };
