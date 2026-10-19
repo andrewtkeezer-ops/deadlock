@@ -1,17 +1,24 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Builds · Soul Scribe</title><link rel="icon" type="image/png" href="/img/favicon.png"><link rel="apple-touch-icon" href="/img/icon.png"><link rel="stylesheet" href="/css/app.css"></head>
 <body><main><h1>Build library</h1>
-<p class="muted">Everyone's builds. Hero: <select id="hero"><option value="">All</option></select> By: <select id="author"><option value="">Anyone</option></select> &nbsp; <a class="dl" style="padding:8px 14px;font-size:14px" href="/editor.html">+ New build</a> <a href="/builds.html" style="margin-left:10px">or start from the wizard</a></p>
+<p><button id="tabMine" class="primary">My builds</button> <button id="tabSquad">Squad builds</button> &nbsp; Hero: <select id="hero"><option value="">All</option></select> <span id="authorWrap" hidden>By: <select id="author"><option value="">Anyone</option></select></span> &nbsp; <a class="dl" style="padding:8px 14px;font-size:14px" href="/editor.html">+ New build</a> <a href="/builds.html" style="margin-left:10px">or start from the wizard</a></p>
+<p id="signin" class="muted" hidden>Sign in through Steam (top right) to make and keep your own builds.</p>
 <div id="list" class="grid"></div></main>
 <script type="module">
 import { api, h, $, ago, heroes, shell, showError } from "/js/app.js";
 shell("/library.html");
-const [hs, items, players, me] = await Promise.all([heroes(), api("/library/items"), api("/players"), api("/auth/steam/me")]);
+const [hs, items, players, me, who] = await Promise.all([heroes(), api("/library/items"), api("/players"), api("/auth/steam/me"), api("/me")]);
+let tab = me.account_id ? "mine" : "squad"; if (!me.account_id) $("#signin").hidden = false;
+const superAdmin = who.role === "admin" && !who.unconfigured; $("#authorWrap").hidden = !superAdmin;
+const setTab = (t) => { tab = t; $("#tabMine").className = t === "mine" ? "primary" : ""; $("#tabSquad").className = t === "squad" ? "primary" : ""; load(); };
+$("#tabMine").onclick = () => setTab("mine"); $("#tabSquad").onclick = () => setTab("squad");
 const hero = (id) => hs.find((x) => x.id === id), item = (id) => items.find((x) => x.id === id);
 hs.forEach((x) => $("#hero").append(new Option(x.name, x.id))); players.forEach((p) => $("#author").append(new Option(p.name, p.account_id)));
 async function load() { const el = $("#list"); try {
-  const q = new URLSearchParams(); if ($("#hero").value) q.set("hero_id", $("#hero").value); if ($("#author").value) q.set("account_id", $("#author").value);
+  const q = new URLSearchParams(); if ($("#hero").value) q.set("hero_id", $("#hero").value);
+  if (tab === "mine") { if (!me.account_id) return el.replaceChildren(h("p", { class: "muted" }, "Sign in through Steam to see your builds.")); q.set("account_id", me.account_id); }
+  else if (superAdmin && $("#author").value) q.set("account_id", $("#author").value);
   const rows = await api(`/library?${q}`);
-  if (!rows.length) return el.replaceChildren(h("p", { class: "muted" }, "No builds yet. Make the first one."));
+  if (!rows.length) return el.replaceChildren(h("p", { class: "muted" }, tab === "mine" ? "You haven't saved a build yet." : "Nobody has saved a build yet."));
   el.replaceChildren(...rows.map((b) => h("div", { class: "card", style: "margin:0;display:flex;flex-direction:column;gap:8px" },
     h("div", { style: "display:flex;gap:10px;align-items:center" }, hero(b.hero_id)?.images?.icon ? h("img", { src: hero(b.hero_id).images.icon, width: 40, height: 40, style: "border-radius:6px" }) : "",
       h("div", {}, h("a", { href: `/editor.html?id=${b.id}` }, h("strong", {}, b.title)), h("div", { class: "muted", style: "font-size:13px" }, `${hero(b.hero_id)?.name ?? "?"} · ${b.author_name ?? b.author}${b.ingame_build_id ? " · in game" : ""}`))),
@@ -19,5 +26,5 @@ async function load() { const el = $("#list"); try {
     h("div", { style: "display:flex;flex-wrap:wrap;gap:3px" }, ...b.preview.map((id) => item(id)?.image ? h("img", { src: item(id).image, title: item(id).name, width: 26, height: 26, style: "border-radius:4px" }) : "")),
     h("div", { class: "muted", style: "font-size:12px;display:flex;justify-content:space-between" }, h("span", {}, `${b.item_count} items · updated ${ago(b.updated_at || b.created_at)}`),
       h("span", {}, h("a", { href: `/editor.html?id=${b.id}` }, me.account_id === b.account_id ? "edit" : "view / fork"), " · ", h("a", { href: "#", onclick: async (e) => { e.preventDefault(); await api(`/library/${b.id}/vote`, { method: "POST" }); load(); } }, `▲ ${b.votes}`)))))); } catch (e) { showError(el, e); } }
-$("#hero").onchange = $("#author").onchange = load; load();
+$("#hero").onchange = $("#author").onchange = load; setTab(tab);
 </script></body></html>
