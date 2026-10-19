@@ -9,6 +9,19 @@ import type { Env } from "./types";
  * Rate limits (from the OpenAPI description): 200/min per IP, 400/min per key, 2000/min global.
  * Our Worker is a single caller, so the only real risk is uncached parallel bursts — hence cache first.
  */
+/**
+ * Response cache on Cloudflare's Cache API instead of KV: KV's free tier allows only 1,000 writes/day account-wide
+ * and every cache miss cost two. The Cache API has no operation limits (it is per data centre, which is fine for a
+ * friend group in one region). Keys are synthetic URLs on an internal host.
+ */
+const CACHE_HOST = "https://cache.soulscribe.internal/";
+async function cacheGet<T>(key: string): Promise<T | null> {
+  try { const res = await caches.default.match(new Request(CACHE_HOST + encodeURIComponent(key))); return res ? ((await res.json()) as T) : null; } catch { return null; }
+}
+async function cachePut(key: string, body: string, ttl: number): Promise<void> {
+  try { await caches.default.put(new Request(CACHE_HOST + encodeURIComponent(key)), new Response(body, { headers: { "content-type": "application/json", "cache-control": `public, max-age=${Math.max(60, ttl)}` } })); } catch { /* cache is best-effort */ }
+}
+
 export class DeadlockApi {
   constructor(private env: Env) {}
 
@@ -33,24 +46,21 @@ export class DeadlockApi {
     const staleKey = `stale:${key}`;
 
     if (ttl > 0) {
-      const hit = await this.env.CACHE.get(key, "json");
-      if (hit !== null) return hit as T;
+      const hit = await cacheGet<T>(key);
+      if (hit !== null) return hit;
     }
 
     try {
       const data = await this.fetchWithRetry<T>(url.toString());
       if (ttl > 0) {
         const body = JSON.stringify(data);
-        await Promise.all([
-          this.env.CACHE.put(key, body, { expirationTtl: Math.max(60, ttl) }),
-          this.env.CACHE.put(staleKey, body, { expirationTtl: 7 * 86400 }),
-        ]);
+        await Promise.all([cachePut(key, body, ttl), cachePut(staleKey, body, 7 * 86400)]);
       }
       return data;
     } catch (e) {
       if (ttl > 0 && e instanceof ApiError && (e.status === 503 || e.status === 429)) {
-        const stale = await this.env.CACHE.get(staleKey, "json");
-        if (stale !== null) { console.warn("serving stale for", key); return stale as T; }
+        const stale = await cacheGet<T>(staleKey);
+        if (stale !== null) { console.warn("serving stale for", key); return stale; }
       }
       throw e;
     }
@@ -62,11 +72,11 @@ export class DeadlockApi {
    */
   async asset<T>(path: string, trim?: (raw: unknown) => T, ttl = 86400): Promise<T> {
     const key = `asset:v4:${path}`;
-    const hit = await this.env.CACHE.get(key, "json");
-    if (hit !== null) return hit as T;
+    const hit = await cacheGet<T>(key);
+    if (hit !== null) return hit;
     const raw = await this.fetchWithRetry<unknown>(new URL(path, this.env.DEADLOCK_API).toString());
     const data = trim ? trim(raw) : (raw as T);
-    await this.env.CACHE.put(key, JSON.stringify(data), { expirationTtl: ttl });
+    await cachePut(key, JSON.stringify(data), ttl);
     return data;
   }
 

@@ -80,7 +80,7 @@ Admins can also search Steam names / paste profile URLs on **/admin.html**.
 |---|---|---|
 | Worker requests | 100k/day | a few hundred |
 | D1 | 5 GB, 5M reads/day | ~1 MB per 1k matches |
-| KV | 100k reads, 1k writes/day | writes ≈ cache misses; TTLs are 10 min–12 h |
+| KV | 100k reads, 1k writes/day | only Access certs + uploader-notify throttle (a few dozen writes/day). API/asset caching uses the Cache API (no op limits). |
 | Cron | free | 24 runs/day × ~12 upstream calls |
 | Upstream (deadlock-api) | 200 req/min/IP | nowhere close |
 
