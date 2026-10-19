@@ -9,6 +9,7 @@ export type Env = {
   ACCESS_TEAM_DOMAIN?: string;  // e.g. brandbutter.cloudflareaccess.com
   ACCESS_AUD?: string;          // Application Audience (AUD) tag from the Access app
   SUPER_ADMIN_EMAIL: string;
+  SUPER_ADMIN_ACCOUNT_ID?: string;
 };
 
 // Shape of one row from GET /v1/players/{account_id}/match-history.

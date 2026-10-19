@@ -6,7 +6,11 @@ import type { Env } from "./types";
  * for every request that passed the login page. We verify it against the team's public keys and read the email.
  * Docs: https://developers.cloudflare.com/cloudflare-one/identity/authorization-cookie/validating-json/
  */
-export type Identity = { email: string; role: "admin" | "member" };
+export type Identity = { email: string; role: "admin" | "member"; account_id?: number | null; super?: boolean };
+
+/** Steam account from the squad_steam cookie (set by /api/auth/steam/callback). Not a security boundary on its own. */
+export const steamAccount = (cookie?: string): number | null => { const m = /squad_steam=(\d+)/.exec(cookie ?? ""); return m ? Number(m[1]) : null; };
+export const isSuperAdmin = (env: Env, accountId: number | null) => !!accountId && String(accountId) === env.SUPER_ADMIN_ACCOUNT_ID;
 
 const b64url = (s: string) => Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0));
 
@@ -67,6 +71,7 @@ export async function requireMember(c: Context<{ Bindings: Env; Variables: { use
 export async function requireAdmin(c: Context<{ Bindings: Env; Variables: { user?: Identity } }>, next: Next) {
   const user = c.get("user");
   if (user?.role === "admin") return next();
+  if (isSuperAdmin(c.env, steamAccount(c.req.header("cookie")))) return next();
   // Access not configured yet (open/testing mode): everything is admin. Turn on Access before sharing the URL widely.
   if (!c.env.ACCESS_TEAM_DOMAIN || !c.env.ACCESS_AUD) return next();
   const token = c.req.header("x-admin-token") ?? c.req.query("token");

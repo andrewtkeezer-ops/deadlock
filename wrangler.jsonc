@@ -29,7 +29,9 @@
     // Cloudflare Access: set both to turn on invite-only Google login (see README).
     "ACCESS_TEAM_DOMAIN": "",
     "ACCESS_AUD": "",
-    "SUPER_ADMIN_EMAIL": "andrew@brandbutter.ca"
+    "SUPER_ADMIN_EMAIL": "andrew@brandbutter.ca",
+    // Steam account_id of the super admin (works in open mode and under Access).
+    "SUPER_ADMIN_ACCOUNT_ID": "894896"
   },
 
   "observability": { "enabled": true }

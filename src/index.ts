@@ -10,7 +10,7 @@ import library from "./routes/builds-library";
 import analytics from "./routes/analytics";
 import admin from "./routes/admin";
 import steam from "./routes/steam";
-import { requireMember, type Identity } from "./auth";
+import { requireMember, steamAccount, isSuperAdmin, type Identity } from "./auth";
 
 const app = new Hono<{ Bindings: Env; Variables: { user?: Identity } }>();
 app.use("/api/*", cors());
@@ -35,7 +35,12 @@ app.post("/api/ingest/notify", async (c) => {
   return c.json({ ok: true, queued: true });
 });
 app.use("/api/*", requireMember);
-app.get("/api/me", (c) => c.json(c.get("user") ?? { email: "dev", role: "admin", unconfigured: true }));
+app.get("/api/me", (c) => {
+  const steam = steamAccount(c.req.header("cookie")); const sup = isSuperAdmin(c.env, steam);
+  const u = c.get("user");
+  if (u) return c.json({ ...u, account_id: steam, super: sup || u.email === c.env.SUPER_ADMIN_EMAIL.toLowerCase(), role: sup ? "admin" : u.role });
+  return c.json({ email: null, role: sup ? "admin" : "member", account_id: steam, super: sup, unconfigured: !c.env.ACCESS_TEAM_DOMAIN || !c.env.ACCESS_AUD });
+});
 
 app.route("/api/players", players);
 app.route("/api/heroes", heroes);
