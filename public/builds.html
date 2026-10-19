@@ -1,27 +1,42 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Build wizard · Soul Scribe</title><link rel="icon" type="image/png" href="/img/favicon.png"><link rel="apple-touch-icon" href="/img/icon.png"><link rel="stylesheet" href="/css/app.css"></head>
-<body><main><h1>Build wizard</h1>
-<div class="card"><p>Pick a hero, say what you care about, and get a ranked shop + purchase order. Scores blend each item's actual stat modifiers with its win rate on this hero.</p>
-<p>Hero: <select id="hero"></select> &nbsp; Soul budget: <input type="number" id="budget" value="40000" step="1000" style="width:110px"> &nbsp; Trust win-rate data: <input type="range" id="wrw" min="0" max="100" value="40"> <span id="wrwv">40%</span></p>
-<div id="sliders"></div>
-<p><button class="primary" id="go">Build it</button> &nbsp; <button id="preset">Andrew's raw-DPS preset</button></p></div>
-<div id="out"></div>
-<p class="muted">Saved builds live in the <a href="/library.html">build library</a>.</p></main>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Build wizard · Soul Scribe</title><link rel="icon" type="image/png" href="/img/favicon.png"><link rel="stylesheet" href="/css/app.css">
+<style>
+main{max-width:1200px}.lay{display:grid;grid-template-columns:360px 1fr;gap:18px}@media(max-width:900px){.lay{grid-template-columns:1fr}}
+.sel{display:flex;gap:12px;align-items:center;margin-bottom:12px}.sel img{width:56px;height:74px;object-fit:cover;border-radius:8px}.sel select{flex:1}
+.pri{display:grid;gap:8px}.pri .row{display:grid;grid-template-columns:1fr 110px 24px;gap:10px;align-items:center;font-size:13px}.pri input[type=range]{width:100%;accent-color:var(--accent)}.pri .v{text-align:right;color:var(--accent);font-family:Reaver}
+.presets button{margin:4px 4px 0 0;font-size:12px}
+.order{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}.oi{background:#0f1118;border:1px solid var(--line);border-radius:10px;padding:10px;text-align:center;position:relative}.oi img{width:56px;height:56px;border-radius:8px;border:2px solid var(--line)}.oi.weapon img{border-color:var(--weapon)}.oi.spirit img{border-color:var(--spirit)}.oi.vitality img{border-color:var(--vitality)}
+.oi b{display:block;font-size:13px;margin-top:6px}.oi small{color:var(--muted);display:block}.oi .step{position:absolute;top:6px;left:8px;font-family:Reaver;color:var(--muted)}
+.tot{display:flex;gap:18px;align-items:baseline;flex-wrap:wrap}.tot b{font-family:Reaver;font-size:22px}
+.ranked .r{display:grid;grid-template-columns:36px 1fr 70px 70px 70px;gap:8px;align-items:center;padding:4px 0;border-bottom:1px solid var(--line);font-size:13px}
+</style></head>
+<body><main>
+<h1>Build wizard</h1><p class="muted">Say what you care about; the wizard scores every shop item by its real stat modifiers blended with its win rate on this hero, then lays out a purchase order within your budget. Open the result in the editor to tune and save it.</p>
+<div class="lay"><div class="card">
+<div class="sel"><img id="heroimg" alt=""><select id="hero"></select></div>
+<div class="row" style="display:flex;gap:10px;align-items:center;margin-bottom:12px"><label>Budget <input type="number" id="budget" value="40000" step="2000" style="width:100px"></label><label style="flex:1">Trust win rates <input type="range" id="wrw" min="0" max="100" value="40" style="width:100%"></label><span id="wrwv">40%</span></div>
+<div class="pri" id="pri"></div>
+<div class="presets"><span class="muted" style="font-size:12px">Presets:</span> <button data-p='{"weapon_damage":5,"spirit":4,"ammo":4,"range":4,"fire_rate":2}'>Raw DPS</button><button data-p='{"spirit":5,"cooldown":4,"spirit_resist":2,"health":2}'>Spirit caster</button><button data-p='{"health":5,"bullet_resist":4,"spirit_resist":4,"regen":3,"move_speed":2}'>Tank</button><button data-p='{"weapon_damage":4,"fire_rate":5,"lifesteal":4,"move_speed":3}'>Brawler</button><button data-p='{}'>Reset</button></div>
+<p style="margin-top:14px"><button class="primary" id="go" style="width:100%;padding:12px">Build it</button></p></div>
+<div><div id="out" class="card muted">Pick a hero and your priorities, then Build it.</div></div></div>
+</main>
 <script type="module">
-import { api, h, $, pct, heroes, shell, showError } from "/js/app.js";
-shell("/builds.html");
-const hs = await heroes(); hs.forEach((x) => $("#hero").append(new Option(x.name, x.id)));
+import { api, h, $, pct, fmt, heroes, items, itemImg, shell, showError } from "/js/app.js";
+shell("/library.html");
+const [hs, its] = await Promise.all([heroes(), items()]); hs.forEach((x) => $("#hero").append(new Option(x.name, x.id)));
+const pre = +new URLSearchParams(location.search).get("hero"); if (pre) $("#hero").value = pre;
+const heroImg = () => { const x = hs.find((y) => y.id === +$("#hero").value); $("#heroimg").src = x?.images?.card || ""; }; $("#hero").onchange = heroImg; heroImg();
 const stats = await api("/builds/stat-options"); const pri = {};
-$("#sliders").replaceChildren(...stats.map((s) => { pri[s.id] = 0; const v = h("span", {}, "0");
-  return h("div", { class: "slider" }, h("label", {}, s.label), h("input", { type: "range", min: 0, max: 5, value: 0, oninput: (e) => { pri[s.id] = +e.target.value; v.textContent = e.target.value; } }), v); }));
-$("#wrw").oninput = (e) => ($("#wrwv").textContent = e.target.value + "%");
-$("#preset").onclick = () => { Object.assign(pri, { weapon_damage: 5, spirit: 4, ammo: 4, range: 4, fire_rate: 2 }); [...$("#sliders").children].forEach((row, i) => { row.children[1].value = pri[stats[i].id]; row.children[2].textContent = pri[stats[i].id]; }); };
+function renderPri() { $("#pri").replaceChildren(...stats.map((s) => { pri[s.id] ??= 0; const v = h("span", { class: "v" }, String(pri[s.id] || "–")); return h("div", { class: "row" }, h("label", {}, s.label), h("input", { type: "range", min: 0, max: 5, value: pri[s.id], oninput: (e) => { pri[s.id] = +e.target.value; v.textContent = pri[s.id] || "–"; } }), v); })); }
+renderPri(); $("#wrw").oninput = (e) => ($("#wrwv").textContent = e.target.value + "%");
+document.querySelectorAll(".presets button").forEach((b) => (b.onclick = () => { for (const k of Object.keys(pri)) pri[k] = 0; Object.assign(pri, JSON.parse(b.dataset.p)); renderPri(); }));
 let last;
-$("#go").onclick = async () => { const out = $("#out"); out.replaceChildren(h("div", { class: "card" }, "Crunching…"));
+$("#go").onclick = async () => { const out = $("#out"); out.className = "card"; out.textContent = "Crunching…";
   try { last = await api("/builds/wizard", { method: "POST", body: { hero_id: +$("#hero").value, priorities: pri, budget: +$("#budget").value, winrate_weight: +$("#wrw").value / 100 } });
-    const item = (it) => h("div", { class: "card", style: "margin:0" }, h("strong", {}, it.name), " ", h("span", { class: "chip " + it.slot }, `${it.slot} T${it.tier}`), h("div", { class: "muted" }, `${it.cost.toLocaleString()} souls · win ${pct(it.win_rate)} (${it.samples}) · score ${it.score}`),
-      h("div", { class: "muted", style: "font-size:12px" }, Object.entries(it.contributes).map(([k, v]) => `${k} ${v}`).join(" · ")));
-    out.replaceChildren(h("div", { class: "card" }, h("h2", { style: "margin-top:0" }, `Purchase order — ${last.spent.toLocaleString()} / ${last.budget.toLocaleString()} souls`), h("div", { class: "grid" }, ...last.order.map(item)),
-      h("p", {}, h("button", { class: "primary", onclick: () => { sessionStorage.setItem("wizardBuild", JSON.stringify({ hero_id: last.hero_id, title: `${hs.find((y) => y.id === last.hero_id)?.name} wizard build`, order: last.order })); location.href = "/editor.html?from=wizard"; } }, "Open in build editor"), " ", h("span", { class: "muted" }, "to tweak it and save to the library"))),
-      h("div", { class: "card" }, h("h2", { style: "margin-top:0" }, "Top 60 items by score"), h("div", { class: "grid" }, ...last.ranked.map(item)))); }
+    const it = (i) => its.find((x) => x.id === i.item_id);
+    out.replaceChildren(h("div", { class: "tot" }, h("b", {}, `${fmt(last.spent)} / ${fmt(last.budget)} souls`), h("span", { class: "muted" }, `${last.order.length} items`), h("button", { class: "primary", style: "margin-left:auto", onclick: () => { sessionStorage.setItem("wizardBuild", JSON.stringify({ hero_id: last.hero_id, title: `${hs.find((y) => y.id === last.hero_id)?.name} wizard build`, order: last.order })); location.href = "/editor.html?from=wizard"; } }, "Open in build editor")),
+      h("h2", {}, "Purchase order"), h("div", { class: "order" }, ...last.order.map((i, n) => h("div", { class: "oi " + (i.slot || "") }, h("span", { class: "step" }, String(n + 1)), itemImg(it(i), 56), h("b", {}, i.name), h("small", {}, `T${i.tier} · ${fmt(i.cost)}`), h("small", {}, i.win_rate != null ? `${pct(i.win_rate)} wr` : "")))),
+      h("h2", {}, "Everything else, by score"), h("div", { class: "ranked" }, h("div", { class: "r muted", style: "font-size:11px;text-transform:uppercase" }, h("span"), h("span", {}, "Item"), h("span", {}, "Stats"), h("span", {}, "Win rate"), h("span", {}, "Score")),
+        ...last.ranked.filter((i) => !last.order.some((o) => o.item_id === i.item_id)).slice(0, 30).map((i) => h("div", { class: "r" }, itemImg(it(i), 30), h("span", {}, i.name, " ", h("span", { class: "chip " + i.slot, style: "font-size:10px;padding:0 5px" }, `T${i.tier}`)), h("span", { class: "num" }, i.stat_score.toFixed(2)), h("span", { class: "num" }, pct(i.win_rate)), h("span", { class: "num" }, i.score.toFixed(2)))))); }
   catch (e) { showError(out, e); } };
+if (pre) $("#go").click();
 </script></body></html>
