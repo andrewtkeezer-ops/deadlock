@@ -1,0 +1,50 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Hero · Soul Scribe</title><link rel="icon" type="image/png" href="/img/favicon.png"><link rel="stylesheet" href="/css/app.css">
+<style>
+.hero-head{position:relative;border-radius:14px;overflow:hidden;min-height:260px;border:1px solid var(--line);background:#0a0b0f center/cover no-repeat;margin-bottom:20px}
+.hero-head::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(14,15,19,.92) 0%,rgba(14,15,19,.4) 60%,rgba(14,15,19,.15) 100%)}
+.hero-head .art{position:absolute;right:0;top:0;bottom:0;max-width:45%;object-fit:contain;object-position:right bottom;z-index:1}
+.hero-head .info{position:relative;z-index:2;padding:28px;max-width:55%}.hero-head .name{height:56px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.8))}
+.tag{display:inline-block;background:#1f6fd0;color:#fff;font-weight:700;font-size:12px;padding:3px 9px;border-radius:3px;margin-right:6px;text-transform:uppercase}
+.stat{display:inline-block;margin-right:18px}.stat b{display:block;font-size:22px;font-family:Reaver}.stat span{color:var(--muted);font-size:12px;text-transform:uppercase}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:800px){.cols{grid-template-columns:1fr}}
+.items img{width:26px;height:26px;border-radius:4px;margin:1px}
+.hrow{display:flex;align-items:center;gap:8px}.hrow img{width:28px;height:28px;border-radius:4px}
+</style></head>
+<body><main>
+<p><a href="/heroes.html">← All heroes</a></p>
+<div id="head" class="hero-head"></div>
+<div class="cols">
+<div class="card"><h2 style="margin-top:0">Your squad on this hero</h2><div id="squad" class="muted">Loading…</div></div>
+<div class="card"><h2 style="margin-top:0">Squad builds</h2><div id="sbuilds" class="muted">Loading…</div></div>
+<div class="card"><h2 style="margin-top:0">Struggles against</h2><div id="counters">Loading…</div></div>
+<div class="card"><h2 style="margin-top:0">Best teammates</h2><div id="synergy">Loading…</div></div>
+</div>
+<div class="card"><h2 style="margin-top:0">Popular community builds <span class="muted" style="font-size:13px">(from the in-game library, by weekly favourites)</span></h2><div id="cbuilds">Loading…</div></div>
+<details class="card"><summary>Lore</summary><p id="lore" class="muted"></p></details>
+</main>
+<script type="module">
+import { api, h, $, pct, ago, heroes, shell, showError } from "/js/app.js";
+shell("/heroes.html");
+const id = +new URLSearchParams(location.search).get("id");
+const [hs, items] = await Promise.all([heroes(), api("/library/items")]); const x = hs.find((y) => y.id === id); const item = (i) => items.find((y) => y.id === i);
+if (!x) { $("#head").textContent = "Unknown hero"; throw new Error("no hero"); }
+document.title = `${x.name} · Soul Scribe`;
+const head = $("#head"); head.style.backgroundImage = x.images.background ? `url(${x.images.background})` : "";
+head.replaceChildren(x.images.gloat ? h("img", { class: "art", src: x.images.gloat, alt: "" }) : "", h("div", { class: "info" }, x.images.name ? h("img", { class: "name", src: x.images.name, alt: x.name }) : h("h1", {}, x.name),
+  h("div", { style: "margin:8px 0" }, ...(x.tags || []).map((t) => h("span", { class: "tag" }, t))), h("div", { id: "stats", style: "margin:12px 0" }), h("p", {}, x.description?.role || ""),
+  h("p", {}, h("a", { class: "dl", style: "padding:8px 14px;font-size:14px", href: `/editor.html?hero=${x.id}` }, "New build for " + x.name), " ", h("a", { href: `/counters.html?hero=${x.id}`, style: "margin-left:12px" }, "Full matchups"), " ", h("a", { href: `/heatmap.html?hero=${x.id}`, style: "margin-left:12px" }, "Heatmap"))));
+$("#lore").textContent = x.description?.lore || "";
+const hrow = (hid, right) => { const hh = hs.find((y) => y.id === hid); return h("div", { class: "hrow", style: "padding:4px 0;border-bottom:1px solid var(--line)" }, hh?.images?.icon ? h("img", { src: hh.images.icon }) : "", h("a", { href: `/hero.html?id=${hid}`, style: "flex:1" }, hh?.name ?? hid), right); };
+(async () => { try { const rows = await api(`/heroes/stats?min_unix_timestamp=${Math.floor(Date.now() / 1000) - 14 * 86400}`); const s = rows.find((r) => r.hero_id === id);
+  $("#stats").replaceChildren(h("div", { class: "stat" }, h("b", {}, s ? pct(s.win_rate) : "–"), h("span", {}, "win rate · 14d")), h("div", { class: "stat" }, h("b", {}, s ? pct(s.pick_rate) : "–"), h("span", {}, "pick rate")), h("div", { class: "stat" }, h("b", {}, s ? s.matches.toLocaleString() : "–"), h("span", {}, "matches"))); } catch {} })();
+(async () => { try { const m = await api(`/heroes/${id}/matchups`);
+  $("#counters").replaceChildren(...m.counters.slice(0, 6).map((r) => hrow(r.hero_id, h("span", { class: "num loss" }, pct(r.win_rate)))));
+  $("#synergy").replaceChildren(...m.synergies.slice(0, 6).map((r) => hrow(r.hero_id, h("span", { class: "num win" }, pct(r.win_rate))))); } catch (e) { showError($("#counters"), e); } })();
+(async () => { try { const players = await api("/players"); const rows = []; for (const p of players) { const d = await api(`/players/${p.account_id}`); const hstat = d.heroes.find((r) => r.hero_id === id); if (hstat) rows.push({ p, hstat }); }
+  $("#squad").replaceChildren(rows.length ? h("table", {}, h("tbody", {}, ...rows.sort((a, b) => b.hstat.games - a.hstat.games).map(({ p, hstat }) => h("tr", {}, h("td", {}, h("a", { href: `/player.html?id=${p.account_id}` }, p.name)), h("td", { class: "num" }, `${hstat.games} games`), h("td", { class: "num" }, pct(hstat.wins / hstat.games)), h("td", { class: "num" }, `${hstat.k.toFixed(1)}/${hstat.d.toFixed(1)}/${hstat.a.toFixed(1)}`))))) : h("span", {}, `Nobody in the squad has played ${x.name} yet.`)); } catch (e) { showError($("#squad"), e); } })();
+(async () => { try { const b = await api(`/library?hero_id=${id}`);
+  $("#sbuilds").replaceChildren(b.length ? h("div", {}, ...b.map((r) => h("div", { style: "padding:6px 0;border-bottom:1px solid var(--line)" }, h("a", { href: `/editor.html?id=${r.id}` }, h("strong", {}, r.title)), h("span", { class: "muted" }, ` by ${r.author_name ?? r.author}`), h("div", { class: "items" }, ...r.preview.map((i) => item(i)?.image ? h("img", { src: item(i).image, title: item(i).name }) : ""))))) : h("span", {}, "No squad builds yet. ", h("a", { href: `/editor.html?hero=${id}` }, "Make one."))); } catch (e) { showError($("#sbuilds"), e); } })();
+(async () => { try { const b = await api(`/heroes/${id}/builds`);
+  $("#cbuilds").replaceChildren(h("div", { class: "grid" }, ...b.map((r) => h("div", { class: "card", style: "margin:0" }, h("strong", {}, r.name), h("div", { class: "muted", style: "font-size:12px" }, `★ ${r.favorites.toLocaleString()} · ${r.weekly} this week · updated ${ago(r.updated)}`),
+    ...r.categories.slice(0, 4).map((cat) => h("div", { style: "margin-top:6px" }, h("div", { class: "muted", style: "font-size:12px" }, cat.name), h("div", { class: "items" }, ...cat.items.slice(0, 10).map((i) => item(i)?.image ? h("img", { src: item(i).image, title: item(i).name }) : "")))))))); } catch (e) { showError($("#cbuilds"), e); } })();
+</script></body></html>

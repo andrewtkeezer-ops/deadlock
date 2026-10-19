@@ -25,7 +25,7 @@ const qs = new URLSearchParams(location.search); const id = qs.get("id");
 const [hs, items, me, cats] = await Promise.all([heroes(), api("/library/items"), api("/auth/steam/me"), api("/library/categories")]);
 hs.forEach((x) => $("#hero").append(new Option(x.name, x.id)));
 const item = (i) => items.find((x) => x.id === i);
-let build = { hero_id: hs[0].id, title: "", description: "", details: { mod_categories: cats.map((name) => ({ name, mods: [] })) }, account_id: null };
+let build = { hero_id: +qs.get("hero") || hs[0].id, title: "", description: "", details: { mod_categories: cats.map((name) => ({ name, mods: [] })) }, account_id: null };
 let target = 0, mine = true;
 if (id) { build = await api(`/library/${id}`); mine = me.account_id && me.account_id === build.account_id; }
 else if (qs.get("from") === "wizard") { try { const w = JSON.parse(sessionStorage.getItem("wizardBuild") || "null"); if (w) { build.hero_id = w.hero_id; build.title = w.title || ""; const byTier = (lo, hi) => w.order.filter((i) => i.tier >= lo && i.tier <= hi).map((i) => ({ ability_id: i.item_id, annotation: null })); build.details.mod_categories[0].mods = byTier(1, 1); build.details.mod_categories[1].mods = byTier(2, 2); build.details.mod_categories[2].mods = byTier(3, 4); } } catch {} }

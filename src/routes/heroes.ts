@@ -7,7 +7,7 @@ const r = new Hono<{ Bindings: Env }>();
 /** Hero list (static assets) — names, images. */
 r.get("/", async (c) => {
   const heroes = await new DeadlockApi(c.env).heroes();
-  return c.json(heroes.filter((h) => h.player_selectable !== false && !h.disabled).map((h) => ({ id: h.id, name: h.name, images: h.images })).sort((a, b) => a.name.localeCompare(b.name)));
+  return c.json(heroes.filter((h) => h.player_selectable !== false && !h.disabled && !h.in_development).sort((a, b) => a.name.localeCompare(b.name)));
 });
 
 /** Win/pick rates. Query passthrough: ?min_average_badge=&max_average_badge=&min_unix_timestamp= */
@@ -63,6 +63,15 @@ r.get("/suggest", async (c) => {
     })
     .sort((a, b) => b.score - a.score);
   return c.json({ allies, enemies, suggestions: out });
+});
+
+/** Top community builds for a hero straight from the in-game build library. */
+r.get("/:id/builds", async (c) => {
+  const id = Number(c.req.param("id"));
+  const rows = await new DeadlockApi(c.env).get<{ hero_build: { hero_build_id: number; name: string; author_account_id: number; description?: string; last_updated_timestamp: number; details?: { mod_categories?: { name: string; mods: { ability_id: number }[] }[] } }; num_favorites?: number; num_weekly_favorites?: number }[]>(
+    `/v1/builds`, { hero_id: id, limit: 8, sort_by: "weekly_favorites", sort_direction: "desc", only_latest: "true" }, 3600);
+  return c.json(rows.map((b) => ({ id: b.hero_build.hero_build_id, name: b.hero_build.name, author: b.hero_build.author_account_id, favorites: b.num_favorites ?? 0, weekly: b.num_weekly_favorites ?? 0,
+    updated: b.hero_build.last_updated_timestamp, categories: (b.hero_build.details?.mod_categories ?? []).map((cat) => ({ name: cat.name, items: cat.mods.map((m) => m.ability_id) })) })));
 });
 
 /** Raw counter/synergy tables for one hero — for the "who beats X" page. */

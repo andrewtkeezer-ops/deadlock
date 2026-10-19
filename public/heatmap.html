@@ -14,7 +14,8 @@ const hs = await heroes();
 const cal = () => ({ ext: +$("#calExt").value, ox: +$("#calOx").value, oy: +$("#calOy").value, flipY: $("#calFlip").checked, flipX: $("#calFlipX").checked, swap: $("#calSwap").checked });
 for (const id of ["calExt","calOx","calOy"]) $("#"+id).oninput = (e) => { $("#"+id+"V").textContent = e.target.value; draw(); };
 for (const id of ["calFlip","calSwap","calFlipX"]) $("#"+id).onchange = draw; hs.forEach((x) => $("#hero").append(new Option(x.name, x.id)));
-const bg = new Image(); bg.src = "/img/map.png";
+const assets = await api("/assets"); const bg = new Image(); bg.crossOrigin = "anonymous"; bg.src = assets.map.images.minimap; const frame = new Image(); frame.crossOrigin = "anonymous"; frame.src = assets.map.images.frame;
+const pre = new URLSearchParams(location.search).get("hero"); if (pre) $("#hero").value = pre; $("#calExt").value = assets.map.radius; $("#calExtV").textContent = assets.map.radius;
 async function draw() { const c = $("#map").getContext("2d"); c.clearRect(0, 0, 768, 768); if (bg.complete && bg.naturalWidth) c.drawImage(bg, 0, 0, 768, 768);
   const q = new URLSearchParams(); if ($("#hero").value) q.set("hero_id", $("#hero").value); if (+$("#maxmin").value) q.set("max_match_duration_s", $("#maxmin").value * 60);
   try { const d = await api(`/analytics/heatmap?${q}`); const mode = $("#mode").value;
@@ -24,7 +25,10 @@ async function draw() { const c = $("#map").getContext("2d"); c.clearRect(0, 0, 
       if (!v) continue; const a = 0.75 * Math.min(1, Math.abs(v) ** 0.8); c.fillStyle = (mode === "deaths" || (mode === "net" && v < 0)) ? `rgba(217,85,79,${a})` : `rgba(95,191,122,${a})`;
       let [wx, wy] = k.swap ? [p.y, p.x] : [p.x, p.y]; wx += k.ox; wy += k.oy;
       let px = (wx + k.ext) / span * 768, py = (wy + k.ext) / span * 768; if (k.flipY) py = 768 - py; if (k.flipX) px = 768 - px;
-      c.fillRect(px, py, cell, cell); } }
+      c.fillRect(px, py, cell, cell); }
+    // objectives from the official map data (relative coords on the minimap image)
+    for (const [name, o] of Object.entries(assets.map.objectives || {})) { c.fillStyle = name.startsWith("team0") ? "#e4b94f" : "#4ab3ff"; c.beginPath(); c.arc(o.left_relative * 768, o.top_relative * 768, name.includes("core") ? 9 : 5, 0, Math.PI * 2); c.fill(); }
+    if (frame.complete && frame.naturalWidth) c.drawImage(frame, 0, 0, 768, 768); }
   catch (e) { showError($("#map").parentElement, e); } }
 $("#hero").onchange = $("#mode").onchange = $("#maxmin").onchange = draw; bg.onload = draw; draw();
 </script></body></html>

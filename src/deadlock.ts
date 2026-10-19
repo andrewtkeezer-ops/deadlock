@@ -125,8 +125,24 @@ export class DeadlockApi {
   }
   heroes() {
     return this.asset<HeroAsset[]>(`/v1/assets/heroes`, (raw) =>
-      (raw as HeroAsset[]).map((h) => ({ id: h.id, name: h.name, class_name: h.class_name, player_selectable: h.player_selectable, disabled: h.disabled,
-        in_development: h.in_development, images: { icon: h.images?.icon_image_small_webp ?? h.images?.icon_image_small, card: h.images?.icon_hero_card_webp ?? h.images?.icon_hero_card, minimap: h.images?.minimap_image_webp } })));
+      (raw as RawHero[]).map((h) => ({ id: h.id, name: h.name, class_name: h.class_name, player_selectable: h.player_selectable, disabled: h.disabled,
+        in_development: h.in_development, tags: h.tags ?? [], complexity: h.complexity, hero_type: h.hero_type, gun_tag: h.gun_tag, color: h.colors?.style_hex,
+        description: { role: h.description?.role, playstyle: h.description?.playstyle, lore: h.description?.lore },
+        images: { icon: h.images?.icon_image_small_webp ?? h.images?.icon_image_small, card: h.images?.icon_hero_card_webp ?? h.images?.icon_hero_card, minimap: h.images?.minimap_image_webp,
+          gloat: h.images?.hero_card_gloat_webp ?? h.images?.hero_card_gloat, critical: h.images?.hero_card_critical_webp, vertical: h.images?.top_bar_vertical_image_webp,
+          background: h.images?.background_image_webp ?? h.images?.background_image, name: h.images?.name_image } })));
+  }
+  /** Ranks, game colours, fonts and the official map, trimmed for the front end. */
+  uiAssets() {
+    return this.asset<UiAssets>(`/v1/assets/map`, undefined, 86400).then(async (map) => {
+      const [ranks, colors, fonts] = await Promise.all([this.asset<RawRank[]>(`/v1/assets/ranks`), this.asset<Record<string, { red: number; green: number; blue: number }>>(`/v1/assets/colors`), this.asset<Record<string, string>>(`/v1/assets/fonts`)]);
+      return {
+        ranks: ranks.map((r) => ({ tier: r.tier, name: r.name, color: r.color, large: r.images?.large_webp ?? r.images?.large, small: Array.from({ length: 6 }, (_, i) => r.images?.[`small_subrank${i + 1}_webp`] ?? r.images?.[`small_subrank${i + 1}`]), badge: Array.from({ length: 6 }, (_, i) => r.images?.[`subrank${i + 1}_webp`] ?? r.images?.[`subrank${i + 1}`]) })),
+        colors: Object.fromEntries(Object.entries(colors).map(([k, v]) => [k, `rgb(${v.red},${v.green},${v.blue})`])),
+        fonts: Object.fromEntries(Object.entries(fonts).filter(([k]) => k.startsWith("radiance") || k.startsWith("reaver"))),
+        map: { radius: map.radius, images: map.images, objectives: map.objective_positions, camps: (map.neutral_camps ?? []).map((c) => ({ name: c.name, kind: c.kind, left: c.left_relative, top: c.top_relative, icon: c.icon })) },
+      };
+    });
   }
   /** Shop items only, with `properties` flattened to {key: number}. */
   items() {
@@ -158,8 +174,16 @@ export type HeroSynergyStat = { hero_id1: number; hero_id2: number; wins: number
 export type ItemStat = { item_id: number; wins: number; losses: number; matches: number; players?: number; [k: string]: unknown };
 // World coordinates on a 128-unit grid (roughly -10k..+11k), not a 0..127 raster.
 export type KillDeathStat = { position_x: number; position_y: number; kills: number; deaths: number; killer_team: number };
-export type HeroAsset = { id: number; name: string; class_name: string; player_selectable?: boolean; disabled?: boolean; in_development?: boolean;
-  images?: Record<string, string | undefined> };
+type RawHero = { id: number; name: string; class_name: string; player_selectable?: boolean; disabled?: boolean; in_development?: boolean; tags?: string[]; complexity?: number;
+  hero_type?: string; gun_tag?: string; colors?: { style_hex?: string }; description?: { role?: string; playstyle?: string; lore?: string }; images?: Record<string, string | undefined> };
+export type HeroAsset = { id: number; name: string; class_name: string; player_selectable?: boolean; disabled?: boolean; in_development?: boolean; tags: string[]; complexity?: number;
+  hero_type?: string; gun_tag?: string; color?: string; description: { role?: string; playstyle?: string; lore?: string }; images: Record<string, string | undefined> };
+type RawRank = { tier: number; name: string; color: string; images?: Record<string, string | undefined> };
+export type UiAssets = {
+  radius: number; images: Record<string, string>; objective_positions: Record<string, { left_relative: number; top_relative: number }>;
+  neutral_camps?: { name: string; kind: string; left_relative: number; top_relative: number; icon?: string }[];
+  ranks?: unknown; colors?: unknown; fonts?: unknown; map?: unknown;
+};
 type RawItem = { id: number; name: string; class_name: string; type: string; item_slot_type?: "weapon" | "vitality" | "spirit"; item_tier?: number; cost?: number;
   shopable?: boolean; disabled?: boolean; is_active_item?: boolean; heroes?: number[]; image?: string; image_webp?: string; shop_image_webp?: string;
   properties?: Record<string, { value?: number | string } | undefined> };

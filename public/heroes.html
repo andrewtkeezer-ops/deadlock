@@ -1,20 +1,45 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Heroes · Soul Scribe</title><link rel="icon" type="image/png" href="/img/favicon.png"><link rel="apple-touch-icon" href="/img/icon.png"><link rel="stylesheet" href="/css/app.css"></head>
-<body><main><h1>Hero meta</h1>
-<p class="muted">Win and pick rates from all tracked matches. Rank band: <select id="band"><option value="">All</option><option value="1,60">Initiate–Arcanist</option><option value="61,90">Oracle–Phantom</option><option value="91,116">Ascendant–Eternus</option></select>
-Since: <select id="since"><option value="7">7 days</option><option value="14" selected>14 days</option><option value="30">30 days</option></select></p>
-<div id="out" class="card">Loading…</div></main>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Heroes · Soul Scribe</title><link rel="icon" type="image/png" href="/img/favicon.png"><link rel="stylesheet" href="/css/app.css">
+<style>
+main{max-width:1400px}
+.select{display:grid;grid-template-columns:minmax(380px,520px) 1fr;gap:24px;min-height:70vh}@media(max-width:900px){.select{grid-template-columns:1fr}}
+.grid-h{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px;align-content:start}
+.hc{aspect-ratio:3/4;border-radius:6px;overflow:hidden;cursor:pointer;position:relative;border:2px solid transparent;background:#0a0b0f;transition:transform .12s,border-color .12s}
+.hc img{width:100%;height:100%;object-fit:cover;display:block}.hc:hover,.hc.active{transform:scale(1.06);border-color:var(--accent);z-index:1}
+.hc .wr{position:absolute;left:0;right:0;bottom:0;font-size:10px;text-align:center;background:rgba(0,0,0,.65);padding:1px 0}
+.stage{position:relative;border-radius:14px;overflow:hidden;min-height:520px;background:#0a0b0f center/cover no-repeat;border:1px solid var(--line)}
+.stage::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(14,15,19,.9) 0%,rgba(14,15,19,.35) 45%,rgba(14,15,19,.1) 100%)}
+.stage .art{position:absolute;right:0;top:0;bottom:0;max-height:100%;object-fit:contain;object-position:right bottom;z-index:1;max-width:60%}
+.stage .info{position:relative;z-index:2;padding:36px;max-width:50%}@media(max-width:900px){.stage .info{max-width:100%}.stage .art{opacity:.25}}
+.stage .name{height:64px;max-width:100%;filter:drop-shadow(0 2px 6px rgba(0,0,0,.8))}.stage h2.name{font-family:Reaver;font-size:48px;margin:0;text-transform:uppercase}
+.tags{margin:10px 0}.tag{display:inline-block;background:#1f6fd0;color:#fff;font-weight:700;font-size:12px;padding:3px 9px;border-radius:3px;margin-right:6px;text-transform:uppercase;letter-spacing:.04em}
+.stat{display:inline-block;margin-right:18px}.stat b{display:block;font-size:22px;font-family:Reaver}.stat span{color:var(--muted);font-size:12px;text-transform:uppercase}
+.stage p{line-height:1.5;color:#dcd9cf}.stage .actions a{margin-right:14px}
+.meta{margin-top:28px}
+</style></head>
+<body><main>
+<h1>Select hero</h1>
+<p class="muted">Hover a card to preview, click to open the hero's page. Rank band for win rates: <select id="band"><option value="">All</option><option value="1,60">Initiate–Arcanist</option><option value="61,90">Oracle–Phantom</option><option value="91,116">Ascendant–Eternus</option></select></p>
+<div class="select"><div id="grid" class="grid-h"></div><div id="stage" class="stage"><div class="info muted" style="padding:36px">Loading heroes…</div></div></div>
+<details class="meta"><summary>Full meta table (win and pick rates)</summary><div id="out" class="card">Loading…</div></details>
+</main>
 <script type="module">
-import { api, h, $, pct, shell, showError } from "/js/app.js";
+import { api, h, $, pct, heroes, shell, showError } from "/js/app.js";
 shell("/heroes.html");
-async function load() {
-  const out = $("#out"); const [lo, hi] = ($("#band").value || ",").split(",");
-  const q = new URLSearchParams({ min_unix_timestamp: Math.floor(Date.now() / 1000) - $("#since").value * 86400 });
-  if (lo) { q.set("min_average_badge", lo); q.set("max_average_badge", hi); }
-  try { const rows = await api(`/heroes/stats?${q}`);
-    out.replaceChildren(h("table", {}, h("thead", {}, h("tr", {}, ...["Hero", "Win rate", "", "Pick rate", "Matches", ""].map((t) => h("th", {}, t)))),
-      h("tbody", {}, ...rows.map((r) => h("tr", {}, h("td", {}, r.name), h("td", { class: "num" }, pct(r.win_rate)), h("td", { style: "width:160px" }, h("div", { class: "bar" }, h("i", { style: `width:${Math.min(100, (r.win_rate - 0.35) / 0.3 * 100)}%` }))),
-        h("td", { class: "num" }, pct(r.pick_rate)), h("td", { class: "num" }, r.matches.toLocaleString()), h("td", {}, h("a", { href: `/counters.html?hero=${r.hero_id}` }, "matchups")))))));
-  } catch (e) { showError(out, e); }
-}
-$("#band").onchange = $("#since").onchange = load; load();
+const hs = await heroes(); let stats = new Map(); let active = null;
+const roleOf = (x) => x.hero_type ? x.hero_type.replace(/_/g, " ") : "";
+function stage(x) { active = x; document.querySelectorAll(".hc").forEach((el) => el.classList.toggle("active", +el.dataset.id === x.id));
+  const st = stats.get(x.id); const el = $("#stage"); el.style.backgroundImage = x.images.background ? `url(${x.images.background})` : "";
+  el.replaceChildren(x.images.gloat ? h("img", { class: "art", src: x.images.gloat, alt: "" }) : "",
+    h("div", { class: "info" }, x.images.name ? h("img", { class: "name", src: x.images.name, alt: x.name }) : h("h2", { class: "name" }, x.name),
+      h("div", { class: "tags" }, ...(x.tags || []).map((t) => h("span", { class: "tag" }, t))),
+      h("div", { style: "margin:14px 0" }, h("div", { class: "stat" }, h("b", {}, st ? pct(st.win_rate) : "–"), h("span", {}, "win rate")), h("div", { class: "stat" }, h("b", {}, st ? pct(st.pick_rate) : "–"), h("span", {}, "pick rate")), h("div", { class: "stat" }, h("b", {}, "●".repeat(x.complexity || 1) + "○".repeat(3 - (x.complexity || 1))), h("span", {}, "complexity")), x.gun_tag ? h("div", { class: "stat" }, h("b", {}, x.gun_tag), h("span", {}, "weapon")) : ""),
+      x.description?.role ? h("p", {}, x.description.role) : "", x.description?.playstyle ? h("p", { class: "muted" }, x.description.playstyle) : "",
+      h("p", { class: "actions" }, h("a", { class: "dl", style: "padding:9px 16px;font-size:14px", href: `/hero.html?id=${x.id}` }, "Open hero page"), h("a", { href: `/counters.html?hero=${x.id}` }, "Matchups"), h("a", { href: `/editor.html?hero=${x.id}` }, "New build"), h("a", { href: `/heatmap.html?hero=${x.id}` }, "Heatmap")))); }
+$("#grid").replaceChildren(...hs.map((x) => h("div", { class: "hc", "data-id": x.id, onmouseenter: () => stage(x), onclick: () => (location.href = `/hero.html?id=${x.id}`) }, h("img", { src: x.images.card || x.images.icon, alt: x.name, loading: "lazy" }), h("div", { class: "wr" }, x.name))));
+async function loadStats() { const [lo, hi] = ($("#band").value || ",").split(","); const q = new URLSearchParams({ min_unix_timestamp: Math.floor(Date.now() / 1000) - 14 * 86400 }); if (lo) { q.set("min_average_badge", lo); q.set("max_average_badge", hi); }
+  try { const rows = await api(`/heroes/stats?${q}`); stats = new Map(rows.map((r) => [r.hero_id, r]));
+    document.querySelectorAll(".hc").forEach((el) => { const s = stats.get(+el.dataset.id); if (s) el.querySelector(".wr").textContent = pct(s.win_rate); });
+    $("#out").replaceChildren(h("table", {}, h("thead", {}, h("tr", {}, ...["Hero", "Win rate", "", "Pick rate", "Matches"].map((t) => h("th", {}, t)))), h("tbody", {}, ...rows.map((r) => h("tr", {}, h("td", {}, h("a", { href: `/hero.html?id=${r.hero_id}` }, r.name)), h("td", { class: "num" }, pct(r.win_rate)), h("td", { style: "width:160px" }, h("div", { class: "bar" }, h("i", { style: `width:${Math.min(100, (r.win_rate - 0.35) / 0.3 * 100)}%` }))), h("td", { class: "num" }, pct(r.pick_rate)), h("td", { class: "num" }, r.matches.toLocaleString()))))));
+    if (active) stage(active); } catch (e) { showError($("#out"), e); } }
+$("#band").onchange = loadStats; stage(hs[Math.floor(Math.random() * hs.length)]); loadStats();
 </script></body></html>

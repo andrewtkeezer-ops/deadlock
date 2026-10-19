@@ -14,6 +14,7 @@ import { requireMember, type Identity } from "./auth";
 
 const app = new Hono<{ Bindings: Env; Variables: { user?: Identity } }>();
 app.use("/api/*", cors());
+app.get("/api/assets", async (c) => c.json(await new DeadlockApi(c.env).uiAssets()));
 app.get("/api/health", (c) => c.json({ ok: true, now: Date.now() }));
 /**
  * Called by the squad uploader (our deadlock-api-ingest fork) right after it uploads a match.
