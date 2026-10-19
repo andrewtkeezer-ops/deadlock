@@ -17,3 +17,4 @@ code,pre{background:#0a0b0f;border:1px solid var(--line);border-radius:6px;paddi
 .bar{height:8px;background:#262a38;border-radius:4px;overflow:hidden}.bar>i{display:block;height:100%;background:var(--accent)}
 .error{color:var(--loss)}.ok{color:var(--win)}
 @media (max-width:640px){header{flex-wrap:wrap}main{padding:16px}}
+a.dl{display:inline-block;background:var(--accent);color:#1a1200;font-weight:700;padding:12px 20px;border-radius:8px;font-size:16px}a.dl:hover{text-decoration:none;filter:brightness(1.08)}

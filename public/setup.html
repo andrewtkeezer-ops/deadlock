@@ -4,13 +4,19 @@
 <p>Valve doesn't publish a list of matches. A tracker needs each match's ID plus a one-time key (a "salt") that only <em>your</em> Steam client downloads. So every friend runs a tiny background tool once; after that, every game you play shows up here automatically, and it backfills your old games too.</p>
 
 <div class="card">
-<h2 style="margin-top:0">Step 1 — install the ingest tool (Windows)</h2>
-<p>Open <strong>PowerShell</strong> (Start → type "PowerShell") and paste:</p>
-<pre id="ps">irm https://raw.githubusercontent.com/deadlock-api/deadlock-api-ingest/master/install-windows.ps1 | iex</pre>
-<button class="primary" onclick="navigator.clipboard.writeText(document.getElementById('ps').textContent)">Copy command</button>
-<p class="muted">It installs to your user folder, starts on login, and shows a small window listing each match it sends (you can close it; it keeps running). Admin rights are only asked for to create the auto-start task. It uploads <strong>only</strong> match IDs, salts and your public Steam account ID — never your Steam login. Source: <a href="https://github.com/deadlock-api/deadlock-api-ingest" target="_blank" rel="noopener">github.com/deadlock-api/deadlock-api-ingest</a> (MIT, written in Rust).</p>
-<details><summary>Linux / Steam Deck</summary><pre>curl -fsSL https://raw.githubusercontent.com/deadlock-api/deadlock-api-ingest/master/install-linux.sh | bash</pre></details>
-<details><summary>Prefer it to only run while the game is open?</summary><p>Skip the installer, download <code>deadlock-api-ingest-windows-latest.exe</code> from the releases page, and set Deadlock's Steam launch option to:</p><pre>"C:\Users\YOUR_USER\AppData\Local\deadlock-api-ingest\deadlock-api-ingest.exe" -- %command%</pre></details>
+<h2 style="margin-top:0">Step 1 — install the match uploader (Windows)</h2>
+<p><a class="dl" href="https://github.com/deadlock-api/deadlock-api-ingest/releases/latest/download/deadlock-api-ingest-setup.exe">Download installer (.exe, ~32 MB)</a></p>
+<ol>
+<li>Run <code>deadlock-api-ingest-setup.exe</code>. Windows SmartScreen may warn because it's a small open-source project: click <strong>More info → Run anyway</strong>.</li>
+<li>It installs to your user folder and starts on login. A small window lists each match it sends; close it, it keeps running in the background.</li>
+<li>Play Deadlock. Your new games are sent as you play, and old ones backfill over the next day or so.</li>
+</ol>
+<p class="muted">It uploads <strong>only</strong> match IDs, their salts and your public Steam account ID. Never your Steam login. Source: <a href="https://github.com/deadlock-api/deadlock-api-ingest" target="_blank" rel="noopener">github.com/deadlock-api/deadlock-api-ingest</a> (MIT, Rust).</p>
+<details><summary>Prefer a command line, or on Linux / Steam Deck?</summary>
+<p>Windows PowerShell:</p><pre>irm https://raw.githubusercontent.com/deadlock-api/deadlock-api-ingest/master/install-windows.ps1 | iex</pre>
+<p>Linux:</p><pre>curl -fsSL https://raw.githubusercontent.com/deadlock-api/deadlock-api-ingest/master/install-linux.sh | bash</pre>
+<p>Only while the game runs: download <code>deadlock-api-ingest-windows-latest.exe</code> from the releases page and set Deadlock's Steam launch option to <code>"C:\Users\YOU\AppData\Local\deadlock-api-ingest\deadlock-api-ingest.exe" -- %command%</code></p>
+</details>
 </div>
 
 <div class="card">
