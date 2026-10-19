@@ -13,6 +13,11 @@
 .ab .top{display:flex;gap:10px;align-items:center;margin-bottom:8px}.ab .top img{width:48px;height:48px;border-radius:8px;background:#000}.ab .top b{display:block;font-family:Reaver;font-size:16px}.ab .top span{color:var(--muted);font-size:12px;text-transform:uppercase}
 .ab .nums{display:flex;gap:12px;color:var(--muted);font-size:12px;margin:6px 0}.ab p{font-size:13px;margin:6px 0;color:#dcd9cf}.ab .highlight{color:var(--accent);font-weight:600}
 .ab .tier{font-size:12px;color:var(--muted);border-top:1px dashed var(--line);padding-top:4px;margin-top:4px}.ab .tier b{color:var(--spirit);margin-right:4px}
+.starters{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}.st{background:#0f1118;border:1px solid var(--line);border-radius:10px;padding:12px;border-top:3px solid var(--line);display:flex;flex-direction:column;gap:8px}
+.st.weapon{border-top-color:var(--weapon)}.st.spirit{border-top-color:var(--spirit)}.st.vitality{border-top-color:var(--vitality)}.st.balanced{border-top-color:var(--accent)}
+.st .lean{font-family:Reaver;text-transform:uppercase;letter-spacing:.05em;font-size:13px}.st.weapon .lean{color:var(--weapon)}.st.spirit .lean{color:var(--spirit)}.st.vitality .lean{color:var(--vitality)}.st.balanced .lean{color:var(--accent)}
+.st b{font-size:14px;line-height:1.2}.st .fav{color:var(--muted);font-size:12px}.st .ph{font-size:11px;color:var(--muted);margin-top:4px}.st .items img{width:24px;height:24px}.st .mix{display:flex;height:6px;border-radius:3px;overflow:hidden}.st .mix i{display:block}
+.st button{margin-top:auto}
 </style></head>
 <body><main>
 <p><a href="/heroes.html">← All heroes</a></p>
@@ -24,11 +29,12 @@
 <div class="card"><h2 style="margin-top:0">Struggles against</h2><div id="counters">Loading…</div></div>
 <div class="card"><h2 style="margin-top:0">Best teammates</h2><div id="synergy">Loading…</div></div>
 </div>
-<div class="card"><h2 style="margin-top:0">Popular community builds <span class="muted" style="font-size:13px">(from the in-game library, by weekly favourites)</span></h2><div id="cbuilds">Loading…</div></div>
+<div class="card"><h2 style="margin-top:0">Starter builds <span class="muted" style="font-size:13px">the most-favourited community build for each playstyle, from the in-game library. Add one to your builds and adjust it.</span></h2><div id="starters" class="starters">Loading…</div></div>
+<details class="card"><summary>More community builds</summary><div id="cbuilds" style="margin-top:10px">Loading…</div></details>
 <details class="card"><summary>Lore</summary><p id="lore" class="muted"></p></details>
 </main>
 <script type="module">
-import { api, h, $, pct, ago, heroes, shell, showError } from "/js/app.js";
+import { api, h, $, pct, ago, heroes, itemImg, shell, showError } from "/js/app.js";
 shell("/heroes.html");
 const id = +new URLSearchParams(location.search).get("id");
 const [hs, items] = await Promise.all([heroes(), api("/library/items")]); const x = hs.find((y) => y.id === id); const item = (i) => items.find((y) => y.id === i);
@@ -56,7 +62,12 @@ const hrow = (hid, right) => { const hh = hs.find((y) => y.id === hid); return h
   $("#sbuilds").prepend(h("div", { class: "card", style: "margin:0 0 10px;border-color:var(--accent)" }, h("strong", {}, "Squad's proven build: "), h("a", { href: `/editor.html?id=${top.id}` }, top.title), h("span", { class: "muted" }, ` — used in ${top.games_using} of ${bb.sample_games} recent squad games, ${pct(top.win_rate)} win rate`))); } catch {} })();
 (async () => { try { const b = await api(`/library?hero_id=${id}`);
   $("#sbuilds").replaceChildren(b.length ? h("div", {}, ...b.map((r) => h("div", { style: "padding:6px 0;border-bottom:1px solid var(--line)" }, h("a", { href: `/editor.html?id=${r.id}` }, h("strong", {}, r.title)), h("span", { class: "muted" }, ` by ${r.author_name ?? r.author}`), h("div", { class: "items" }, ...r.preview.map((i) => item(i)?.image ? h("img", { src: item(i).image, title: item(i).name }) : ""))))) : h("span", {}, "No squad builds yet. ", h("a", { href: `/editor.html?hero=${id}` }, "Make one."))); } catch (e) { showError($("#sbuilds"), e); } })();
+const mixBar = (share) => h("div", { class: "mix" }, h("i", { style: `width:${share.weapon * 100}%;background:var(--weapon)` }), h("i", { style: `width:${share.spirit * 100}%;background:var(--spirit)` }), h("i", { style: `width:${share.vitality * 100}%;background:var(--vitality)` }));
+async function importBuild(b, btn) { btn.disabled = true; btn.textContent = "Copying…"; try { const r = await api("/library/import", { method: "POST", body: { hero_id: id, ingame_build_id: b.id } }); location.href = `/editor.html?id=${r.id}`; } catch (e) { btn.disabled = false; btn.textContent = e.message.includes("Sign in") ? "Sign in through Steam first" : "Add to my builds"; } }
+const buildCard = (lean, b) => h("div", { class: "st " + lean }, h("div", { class: "lean" }, b?.lean_label ?? ""), b ? [h("b", {}, b.name), h("div", { class: "fav" }, `★ ${b.favorites.toLocaleString()} favourites · ${b.item_count} items · updated ${ago(b.updated)}`), mixBar(b.share),
+  ...b.categories.slice(0, 4).map((cat) => h("div", {}, h("div", { class: "ph" }, cat.name), h("div", { class: "items" }, ...cat.items.slice(0, 12).map((i) => itemImg(item(i), 24))))),
+  h("button", { class: "primary", onclick: (e) => importBuild(b, e.target) }, "Add to my builds")] : h("span", { class: "muted" }, "No clear build of this type in the top 40."));
+(async () => { try { const st = await api(`/heroes/${id}/starter-builds`); $("#starters").replaceChildren(...["weapon", "spirit", "vitality", "balanced"].map((k) => buildCard(k, st[k]))); } catch (e) { showError($("#starters"), e); } })();
 (async () => { try { const b = await api(`/heroes/${id}/builds`);
-  $("#cbuilds").replaceChildren(h("div", { class: "grid" }, ...b.map((r) => h("div", { class: "card", style: "margin:0" }, h("strong", {}, r.name), h("div", { class: "muted", style: "font-size:12px" }, `★ ${r.favorites.toLocaleString()} · ${r.weekly} this week · updated ${ago(r.updated)}`),
-    ...r.categories.slice(0, 4).map((cat) => h("div", { style: "margin-top:6px" }, h("div", { class: "muted", style: "font-size:12px" }, cat.name), h("div", { class: "items" }, ...cat.items.slice(0, 10).map((i) => item(i)?.image ? h("img", { src: item(i).image, title: item(i).name }) : "")))))))); } catch (e) { showError($("#cbuilds"), e); } })();
+  $("#cbuilds").replaceChildren(h("div", { class: "starters" }, ...b.slice(0, 12).map((r) => buildCard(r.lean, r)))); } catch (e) { showError($("#cbuilds"), e); } })();
 </script></body></html>

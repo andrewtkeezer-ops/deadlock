@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { Env } from "../types";
-import { DeadlockApi } from "../deadlock";
+import { DeadlockApi, type ItemAsset } from "../deadlock";
+import { STAT_MAP } from "./builds";
 
 const r = new Hono<{ Bindings: Env }>();
 r.use("/:id/*", async (c, next) => { if (c.req.param("id") && !/^\d+$/.test(c.req.param("id")!)) return c.json({ error: "bad_request", message: "hero id must be numeric" }, 400); await next(); });
@@ -99,13 +100,54 @@ r.get("/:id/best-build", async (c) => {
 /** The hero's four abilities (icons, descriptions, tiers, numbers). */
 r.get("/:id/abilities", async (c) => c.json(await new DeadlockApi(c.env).heroAbilities(Number(c.req.param("id")))));
 
-/** Top community builds for a hero straight from the in-game build library. */
-r.get("/:id/builds", async (c) => {
-  const id = Number(c.req.param("id"));
-  const rows = await new DeadlockApi(c.env).get<{ hero_build: { hero_build_id: number; name: string; author_account_id: number; description?: string; last_updated_timestamp: number; details?: { mod_categories?: { name: string; mods: { ability_id: number }[] }[] } }; num_favorites?: number; num_weekly_favorites?: number }[]>(
-    `/v1/builds`, { hero_id: id, limit: 8, sort_by: "weekly_favorites", sort_direction: "desc", only_latest: "true" }, 3600);
-  return c.json(rows.map((b) => ({ id: b.hero_build.hero_build_id, name: b.hero_build.name, author: b.hero_build.author_account_id, favorites: b.num_favorites ?? 0, weekly: b.num_weekly_favorites ?? 0,
-    updated: b.hero_build.last_updated_timestamp, categories: (b.hero_build.details?.mod_categories ?? []).map((cat) => ({ name: cat.name, items: cat.mods.map((m) => m.ability_id) })) })));
+type InGameBuild = { hero_build: { hero_build_id: number; name: string; author_account_id: number; description?: string; last_updated_timestamp: number; version?: number;
+  details?: { mod_categories?: { name: string; description?: string; mods: { ability_id: number; annotation?: string | null }[] }[] } }; num_favorites?: number; num_weekly_favorites?: number | null };
+
+const LEAN_GROUPS: Record<string, string[]> = {
+  weapon: ["weapon_damage", "fire_rate", "ammo", "range"],
+  spirit: ["spirit", "cooldown"],
+  vitality: ["health", "spirit_resist", "bullet_resist", "regen", "lifesteal", "move_speed"],
+};
+const LEAN_LABEL: Record<string, string> = { weapon: "Weapon / gun", spirit: "Spirit", vitality: "Survivability", balanced: "Balanced" };
+
+/** Classify an in-game build by where its items' stats point. */
+function profileBuild(b: InGameBuild, byId: Map<number, ItemAsset>, maxPerStat: Record<string, number>) {
+  const ids = [...new Set((b.hero_build.details?.mod_categories ?? []).flatMap((cat) => cat.mods.map((m) => m.ability_id)))].filter((i) => byId.has(i));
+  const score: Record<string, number> = { weapon: 0, spirit: 0, vitality: 0 };
+  const slots: Record<string, number> = { weapon: 0, spirit: 0, vitality: 0 };
+  for (const i of ids) {
+    const it = byId.get(i)!; if (it.item_slot_type) slots[it.item_slot_type]++;
+    for (const [grp, stats] of Object.entries(LEAN_GROUPS)) for (const st of stats) { const v = STAT_MAP[st].keys.reduce((acc, k) => acc + (it.properties[k] ?? 0), 0); if (v && maxPerStat[st]) score[grp] += v / maxPerStat[st]; }
+  }
+  // blend stat leaning with slot distribution so an all-spirit-slot build reads as spirit even if its numbers are modest
+  const tot = Object.values(score).reduce((a, x) => a + x, 0) || 1, stot = ids.length || 1;
+  const share = Object.fromEntries(Object.keys(score).map((k) => [k, 0.6 * score[k] / tot + 0.4 * slots[k] / stot]));
+  const top = Object.entries(share).sort((a, b) => b[1] - a[1])[0];
+  const lean = top[1] >= 0.45 ? top[0] : "balanced";
+  return { ids, share, lean };
+}
+
+const looksEnglish = (name: string) => !/[\u3040-\u30ff\u3400-\u9fff\u0400-\u04ff\u0600-\u06ff\uac00-\ud7af]/.test(name);
+
+async function communityBuilds(env: Env, id: number) {
+  const api = new DeadlockApi(env);
+  const [rows, its] = await Promise.all([api.get<InGameBuild[]>(`/v1/builds`, { hero_id: id, limit: 40, sort_by: "favorites", sort_direction: "desc", only_latest: "true" }, 6 * 3600), api.items()]);
+  const byId = new Map(its.map((i) => [i.id, i])); const maxPerStat: Record<string, number> = {};
+  for (const it of its) for (const [st, def] of Object.entries(STAT_MAP)) maxPerStat[st] = Math.max(maxPerStat[st] ?? 0, def.keys.reduce((a, k) => a + (it.properties[k] ?? 0), 0));
+  const out = rows.filter((b) => looksEnglish(b.hero_build.name) && (b.hero_build.details?.mod_categories?.length ?? 0) > 0).map((b) => { const p = profileBuild(b, byId, maxPerStat);
+    return { id: b.hero_build.hero_build_id, name: b.hero_build.name, author: b.hero_build.author_account_id, favorites: b.num_favorites ?? 0, updated: b.hero_build.last_updated_timestamp, lean: p.lean, lean_label: LEAN_LABEL[p.lean], share: p.share, item_count: p.ids.length,
+      categories: (b.hero_build.details?.mod_categories ?? []).map((cat) => ({ name: cat.name, items: cat.mods.map((m) => m.ability_id).filter((i) => byId.has(i)) })) }; });
+  return out;
+}
+
+/** Top community builds (most favourited, English-named), with their lean. */
+r.get("/:id/builds", async (c) => c.json(await communityBuilds(c.env, Number(c.req.param("id")))));
+
+/** Starter picks: the most-favourited build for each lean (weapon / spirit / survivability) plus the best balanced one. */
+r.get("/:id/starter-builds", async (c) => {
+  const all = await communityBuilds(c.env, Number(c.req.param("id")));
+  const pick = (lean: string) => all.find((b) => b.lean === lean) ?? null;
+  return c.json({ weapon: pick("weapon"), spirit: pick("spirit"), vitality: pick("vitality"), balanced: pick("balanced"), labels: LEAN_LABEL });
 });
 
 /** Raw counter/synergy tables for one hero — for the "who beats X" page. */

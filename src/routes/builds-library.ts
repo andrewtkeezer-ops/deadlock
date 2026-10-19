@@ -67,6 +67,20 @@ r.post("/", async (c) => {
   return c.json({ ok: true, id: res.meta.last_row_id });
 });
 
+/** Copy an in-game library build into my builds: { hero_id, ingame_build_id }. */
+r.post("/import", async (c) => {
+  const me = steamId(c.req.header("cookie"));
+  if (!me) return c.json({ error: "Sign in through Steam to save builds" }, 401);
+  const b = await c.req.json<{ hero_id: number; ingame_build_id: number }>();
+  const rows = await new DeadlockApi(c.env).get<{ hero_build: { hero_build_id: number; name: string; description?: string; author_account_id: number; details?: { mod_categories?: ModCategory[] } } }[]>(`/v1/builds`, { build_id: b.ingame_build_id, only_latest: "true", limit: 1 }, 3600);
+  const src = rows[0]?.hero_build; if (!src) return c.json({ error: "build not found" }, 404);
+  const player = await c.env.DB.prepare("SELECT name FROM players WHERE account_id=?").bind(me).first<{ name: string }>();
+  const details = sanitize({ mod_categories: (src.details?.mod_categories ?? []).map((cat) => ({ name: cat.name, description: cat.description, mods: cat.mods })) });
+  const res = await c.env.DB.prepare("INSERT INTO builds(hero_id, author, account_id, title, description, priorities, items, details, updated_at) VALUES (?,?,?,?,?,'{}','[]',?,?)")
+    .bind(b.hero_id, player?.name ?? String(me), me, src.name.slice(0, 60), `Copied from in-game build #${src.hero_build_id} by ${src.author_account_id}. ${(src.description ?? "").slice(0, 400)}`.trim(), JSON.stringify(details), Math.floor(Date.now() / 1000)).run();
+  return c.json({ ok: true, id: res.meta.last_row_id });
+});
+
 r.put("/:id", async (c) => {
   const me = steamId(c.req.header("cookie"));
   const id = Number(c.req.param("id"));

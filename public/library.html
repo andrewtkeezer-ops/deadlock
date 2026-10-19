@@ -2,6 +2,7 @@
 <body><main><h1>Build library</h1>
 <p><button id="tabMine" class="primary">My builds</button> <button id="tabSquad">Squad builds</button> &nbsp; Hero: <select id="hero"><option value="">All</option></select> <span id="authorWrap" hidden>By: <select id="author"><option value="">Anyone</option></select></span> &nbsp; <a class="dl" style="padding:8px 14px;font-size:14px" href="/editor.html">+ New build</a> <a href="/builds.html" style="margin-left:10px">or start from the wizard</a></p>
 <p id="signin" class="muted" hidden>Sign in through Steam (top right) to make and keep your own builds.</p>
+<div class="card" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><strong>Start from a proven build:</strong> <select id="starterHero"><option value="">Pick a hero…</option></select> <span class="muted">opens the hero page with the top Weapon, Spirit, Survivability and Balanced builds, each one click from your library.</span></div>
 <div id="list" class="grid"></div></main>
 <script type="module">
 import { api, h, $, ago, heroes, itemImg, shell, showError } from "/js/app.js";
@@ -12,7 +13,7 @@ const superAdmin = who.role === "admin" && !who.unconfigured; $("#authorWrap").h
 const setTab = (t) => { tab = t; $("#tabMine").className = t === "mine" ? "primary" : ""; $("#tabSquad").className = t === "squad" ? "primary" : ""; load(); };
 $("#tabMine").onclick = () => setTab("mine"); $("#tabSquad").onclick = () => setTab("squad");
 const hero = (id) => hs.find((x) => x.id === id), item = (id) => items.find((x) => x.id === id);
-hs.forEach((x) => $("#hero").append(new Option(x.name, x.id))); players.forEach((p) => $("#author").append(new Option(p.name, p.account_id)));
+hs.forEach((x) => { $("#hero").append(new Option(x.name, x.id)); $("#starterHero").append(new Option(x.name, x.id)); }); $("#starterHero").onchange = (e) => { if (e.target.value) location.href = `/hero.html?id=${e.target.value}#starters`; }; players.forEach((p) => $("#author").append(new Option(p.name, p.account_id)));
 async function load() { const el = $("#list"); try {
   const q = new URLSearchParams(); if ($("#hero").value) q.set("hero_id", $("#hero").value);
   if (tab === "mine") { if (!me.account_id) return el.replaceChildren(h("p", { class: "muted" }, "Sign in through Steam to see your builds.")); q.set("account_id", me.account_id); }
