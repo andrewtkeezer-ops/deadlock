@@ -9,6 +9,7 @@ main{max-width:1300px}
 .mod .note{width:100px;background:transparent;border:0;border-bottom:1px solid var(--line);color:var(--muted);font-size:12px}.mod .x{padding:0 6px;line-height:1.4;color:var(--muted)}
 .picker{position:sticky;top:70px;max-height:82vh;overflow:auto}.pick{display:flex;align-items:center;gap:8px;padding:5px;border-radius:6px;cursor:pointer}.pick:hover{background:#1d2030}.pick img{width:32px;height:32px;border-radius:4px}.pick .cost{margin-left:auto;color:var(--muted);font-size:12px}
 .seg{display:flex;gap:4px;margin:6px 0}.seg button{flex:1;font-size:12px;padding:5px}
+.chipb{border:1px solid var(--line);background:#141620;color:var(--muted);border-radius:999px;padding:3px 9px;font-size:11px;cursor:pointer}.chipb.on{background:var(--accent);color:#1a1200;border-color:transparent;font-weight:700}
 .tot{display:flex;gap:16px;align-items:baseline}.tot b{font-family:Reaver;font-size:20px}
 </style></head>
 <body><main>
@@ -19,13 +20,16 @@ main{max-width:1300px}
 <div class="ed">
 <div id="phases"></div>
 <div class="card picker"><input type="text" id="search" placeholder="Search items…" style="width:100%"><div class="seg"><button data-slot="" class="primary">All</button><button data-slot="weapon">Weapon</button><button data-slot="vitality">Vitality</button><button data-slot="spirit">Spirit</button></div>
+<div id="chips" style="display:flex;flex-wrap:wrap;gap:4px;margin:4px 0"></div>
 <p class="muted" style="font-size:12px;margin:4px 0 8px">Click an item to add it to the highlighted phase. Drag items between phases to reorder.</p><div id="items"></div></div>
 </div></main>
 <script type="module">
 import { api, h, $, fmt, heroes, items, me, withTip, shell } from "/js/app.js";
 shell("/library.html");
 const qs = new URLSearchParams(location.search); const id = qs.get("id");
-const [hs, its, who, cats] = await Promise.all([heroes(), items(), me(), api("/library/categories")]);
+const [hs, its, who, cats, groups] = await Promise.all([heroes(), items(), me(), api("/library/categories"), api("/library/stat-groups")]);
+const statSel = new Set();
+function renderChips() { $("#chips").replaceChildren(...groups.map((g) => h("button", { class: "chipb" + (statSel.has(g.id) ? " on" : ""), onclick: () => { statSel.has(g.id) ? statSel.delete(g.id) : statSel.add(g.id); renderChips(); renderPicker(); } }, g.label))); }
 hs.forEach((x) => $("#hero").append(new Option(x.name, x.id)));
 const item = (i) => its.find((x) => x.id === i);
 let build = { hero_id: +qs.get("hero") || hs[0].id, title: "", description: "", details: { mod_categories: cats.map((name) => ({ name, mods: [] })) }, account_id: null };
@@ -47,10 +51,12 @@ function render() { let total = 0;
     return h("div", { class: "card phase" + (target === ci ? " target" : "") }, h("h3", { onclick: () => { target = ci; render(); } }, canEdit() ? h("input", { type: "text", value: cat.name, onchange: (e) => (cat.name = e.target.value), onclick: (e) => e.stopPropagation() }) : h("span", { style: "flex:1;font-family:Reaver;text-transform:uppercase" }, cat.name), h("span", { class: "souls" }, `${fmt(souls)} souls`)), mods); }));
   $("#total").textContent = fmt(total); }
 function renderPicker() { const q = $("#search").value.toLowerCase(), heroId = +$("#hero").value;
-  const rows = its.filter((i) => (!slotFilter || i.slot === slotFilter) && (!q || i.name.toLowerCase().includes(q) || (i.stats || []).some((s) => s.label.toLowerCase().includes(q))) && (!i.heroes?.length || i.heroes.includes(heroId))).sort((a, b) => (a.slot ?? "").localeCompare(b.slot ?? "") || a.tier - b.tier || a.name.localeCompare(b.name));
+  const strength = (i) => statSel.size ? [...statSel].reduce((s, k) => s + (i.leans?.[k] || 0), 0) / statSel.size : 0;
+  const rows = its.filter((i) => (!slotFilter || i.slot === slotFilter) && (!q || i.name.toLowerCase().includes(q) || (i.stats || []).some((s) => s.label.toLowerCase().includes(q))) && (!i.heroes?.length || i.heroes.includes(heroId)) && (!statSel.size || [...statSel].every((k) => (i.leans?.[k] || 0) > 0)))
+    .sort((a, b) => statSel.size ? strength(b) - strength(a) : ((a.slot ?? "").localeCompare(b.slot ?? "") || a.tier - b.tier || a.name.localeCompare(b.name)));
   $("#items").replaceChildren(...rows.map((i) => withTip(h("div", { class: "pick", onclick: () => { if (!canEdit()) return; build.details.mod_categories[target].mods.push({ ability_id: i.id, annotation: null }); render(); } }, i.image ? h("img", { src: i.image, alt: "" }) : "", h("span", {}, i.name, " ", h("span", { class: "chip " + i.slot, style: "font-size:10px;padding:0 5px" }, `T${i.tier}`)), h("span", { class: "cost" }, fmt(i.cost))), i))); }
 $("#search").oninput = renderPicker; document.querySelectorAll("[data-slot]").forEach((b) => (b.onclick = () => { slotFilter = b.dataset.slot; document.querySelectorAll("[data-slot]").forEach((x) => (x.className = x === b ? "primary" : "")); renderPicker(); })); $("#hero").onchange = () => { heroImg(); renderPicker(); };
-render(); renderPicker();
+render(); renderChips(); renderPicker();
 const payload = () => ({ hero_id: +$("#hero").value, title: $("#title").value, description: $("#desc").value, details: build.details });
 $("#save").onclick = async () => { const msg = $("#msg"); try { if (id && mine) { await api(`/library/${id}`, { method: "PUT", body: payload() }); msg.className = "ok"; msg.textContent = "Saved."; } else { const r = await api("/library", { method: "POST", body: payload() }); location.href = `/editor.html?id=${r.id}`; } } catch (e) { msg.className = "error"; msg.textContent = e.message; } };
 $("#fork").onclick = async () => { const msg = $("#msg"); try { const r = await api("/library", { method: "POST", body: { ...payload(), title: `${$("#title").value} (fork)`, forked_from: +id } }); location.href = `/editor.html?id=${r.id}`; } catch (e) { msg.className = "error"; msg.textContent = e.message; } };

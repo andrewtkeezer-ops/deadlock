@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { Env } from "../types";
 import { DeadlockApi } from "../deadlock";
+import { STAT_MAP } from "./builds";
 
 /**
  * Shared build library. Anyone signed in through Steam can create builds; everyone can see all of them;
@@ -28,7 +29,15 @@ function sanitize(d: unknown): Details {
 }
 
 /** All shop items for the editor's picker (cached asset, trimmed). */
-r.get("/items", async (c) => c.json((await new DeadlockApi(c.env).items()).map((i) => ({ id: i.id, name: i.name, class_name: i.class_name, slot: i.item_slot_type, tier: i.item_tier, cost: i.cost, image: i.image, heroes: i.heroes, active: i.is_active_item, activation: i.activation, components: i.component_items, description: i.description, stats: i.stats }))));
+r.get("/items", async (c) => {
+  const all = await new DeadlockApi(c.env).items();
+  // Normalised 0..1 strength per stat group (see STAT_MAP), so the UI can filter and rank by "more spirit", "more ammo", …
+  const raw = all.map((i) => Object.fromEntries(Object.entries(STAT_MAP).map(([k, def]) => [k, def.keys.reduce((a, key) => a + (i.properties[key] ?? 0), 0)])));
+  const max: Record<string, number> = {}; for (const r of raw) for (const [k, v] of Object.entries(r)) max[k] = Math.max(max[k] ?? 0, v);
+  return c.json(all.map((i, n) => ({ id: i.id, name: i.name, class_name: i.class_name, slot: i.item_slot_type, tier: i.item_tier, cost: i.cost, image: i.image, heroes: i.heroes, active: i.is_active_item, activation: i.activation, components: i.component_items, description: i.description, stats: i.stats,
+    leans: Object.fromEntries(Object.entries(raw[n]).filter(([, v]) => v > 0).map(([k, v]) => [k, +(v / (max[k] || 1)).toFixed(3)])) })));
+});
+r.get("/stat-groups", (c) => c.json(Object.entries(STAT_MAP).map(([id, s]) => ({ id, label: s.label }))));
 
 r.get("/categories", (c) => c.json(DEFAULT_CATEGORIES));
 
