@@ -23,7 +23,6 @@
 
   "vars": {
     "DEADLOCK_API": "https://api.deadlock-api.com",
-    "DEADLOCK_ASSETS": "https://assets.deadlock-api.com",
     // Optional: free key from deadlock-api doubles the rate limit and gets queue priority.
     // Set as a secret instead: `wrangler secret put DEADLOCK_API_KEY`
     "ADMIN_TOKEN": "change-me",

@@ -81,10 +81,10 @@ can load the page shells; all data comes from `/api/*`, which they can't reach.
 
 ## Known TODOs / things to verify against the live API
 
-- **Field names.** `src/types.ts` (`MatchHistoryRow`), `HeroPairStat` (`hero_id2` / `enemy_id`) and the item
-  `properties` keys in `src/routes/builds.ts::STAT_MAP` were written from the public clients/docs, not from a live
-  response — the API host wasn't reachable from the machine this was scaffolded on. Run `npm run dev`, open
-  `/api/builds/property-keys`, and compare `curl https://api.deadlock-api.com/openapi.json` if a page errors.
+- Field names and asset paths were verified against live responses on 2026-10-19. If a page errors after a game patch,
+  compare `/api/builds/property-keys` and https://api.deadlock-api.com/openapi.json.
+- There is no "bullet falloff" item property in the data; the closest is `LongRangeBonusWeaponPower` /
+  `BonusAttackRangePercent`, mapped to the wizard's "Range" slider.
 - `public/match.html` dumps raw match metadata; render a proper scoreboard.
 - Drop a minimap at `public/img/map.png` for the heatmap; set `FLIP_Y` if it's upside down.
 - Live match tracking is a **paid** feature upstream (per-match billing), so it's intentionally not here.

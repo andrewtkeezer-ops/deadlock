@@ -7,7 +7,7 @@ const r = new Hono<{ Bindings: Env }>();
 /** Hero list (static assets) — names, images. */
 r.get("/", async (c) => {
   const heroes = await new DeadlockApi(c.env).heroes();
-  return c.json(heroes.filter((h) => h.player_selectable !== false && !h.disabled).map((h) => ({ id: h.id, name: h.name, images: h.images })));
+  return c.json(heroes.filter((h) => h.player_selectable !== false && !h.disabled).map((h) => ({ id: h.id, name: h.name, images: h.images })).sort((a, b) => a.name.localeCompare(b.name)));
 });
 
 /** Win/pick rates. Query passthrough: ?min_average_badge=&max_average_badge=&min_unix_timestamp= */
@@ -45,11 +45,11 @@ r.get("/suggest", async (c) => {
   for (const s of synergy) {
     if (s.matches_played < minMatches) continue;
     const wr = s.wins / s.matches_played;
-    syn.set(`${s.hero_id}:${s.hero_id2}`, wr);
-    syn.set(`${s.hero_id2}:${s.hero_id}`, wr);
+    syn.set(`${s.hero_id1}:${s.hero_id2}`, wr);
+    syn.set(`${s.hero_id2}:${s.hero_id1}`, wr);
   }
   const ctr = new Map<string, number>();
-  for (const s of counter) if (s.matches_played >= minMatches) ctr.set(`${s.hero_id}:${s.enemy_id}`, s.wins / s.matches_played);
+  for (const s of counter) if (s.matches_played >= minMatches) ctr.set(`${s.hero_id}:${s.enemy_hero_id}`, s.wins / s.matches_played);
 
   const taken = new Set([...allies, ...enemies]);
   const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0.5);
@@ -71,9 +71,9 @@ r.get("/:id/matchups", async (c) => {
   const api = new DeadlockApi(c.env);
   const [synergy, counter, heroes] = await Promise.all([api.heroSynergyStats(), api.heroCounterStats(), api.heroes()]);
   const names = new Map(heroes.map((h) => [h.id, h.name]));
-  const counters = counter.filter((s) => s.hero_id === id).map((s) => ({ hero_id: s.enemy_id, name: names.get(s.enemy_id!), win_rate: s.wins / s.matches_played, matches: s.matches_played }));
-  const synergies = synergy.filter((s) => s.hero_id === id || s.hero_id2 === id).map((s) => {
-    const other = s.hero_id === id ? s.hero_id2! : s.hero_id;
+  const counters = counter.filter((s) => s.hero_id === id).map((s) => ({ hero_id: s.enemy_hero_id, name: names.get(s.enemy_hero_id), win_rate: s.wins / s.matches_played, matches: s.matches_played }));
+  const synergies = synergy.filter((s) => s.hero_id1 === id || s.hero_id2 === id).map((s) => {
+    const other = s.hero_id1 === id ? s.hero_id2 : s.hero_id1;
     return { hero_id: other, name: names.get(other), win_rate: s.wins / s.matches_played, matches: s.matches_played };
   });
   return c.json({ hero_id: id, name: names.get(id), counters: counters.sort((a, b) => a.win_rate - b.win_rate), synergies: synergies.sort((a, b) => b.win_rate - a.win_rate) });

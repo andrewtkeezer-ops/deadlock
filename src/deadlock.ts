@@ -34,13 +34,16 @@ export class DeadlockApi {
     return data;
   }
 
-  /** Static assets (heroes, items, maps). Cached for a day; bust by bumping the key if needed. */
-  async asset<T>(path: string, ttl = 86400): Promise<T> {
-    const url = new URL(path, this.env.DEADLOCK_ASSETS).toString();
-    const key = `asset:${url}`;
+  /**
+   * Static assets (heroes, items). Same host as the API (`/v1/assets/...`), cached for a day.
+   * `trim` lets us drop tooltip/description bulk before caching — the full item list is several MB.
+   */
+  async asset<T>(path: string, trim?: (raw: unknown) => T, ttl = 86400): Promise<T> {
+    const key = `asset:v2:${path}`;
     const hit = await this.env.CACHE.get(key, "json");
     if (hit !== null) return hit as T;
-    const data = await this.fetchWithRetry<T>(url);
+    const raw = await this.fetchWithRetry<unknown>(new URL(path, this.env.DEADLOCK_API).toString());
+    const data = trim ? trim(raw) : (raw as T);
     await this.env.CACHE.put(key, JSON.stringify(data), { expirationTtl: ttl });
     return data;
   }
@@ -77,10 +80,10 @@ export class DeadlockApi {
     return this.get<HeroStat[]>(`/v1/analytics/hero-stats`, q, 6 * 3600);
   }
   heroCounterStats(q: Record<string, string | number | undefined> = {}) {
-    return this.get<HeroPairStat[]>(`/v1/analytics/hero-counter-stats`, q, 12 * 3600);
+    return this.get<HeroCounterStat[]>(`/v1/analytics/hero-counter-stats`, q, 12 * 3600);
   }
   heroSynergyStats(q: Record<string, string | number | undefined> = {}) {
-    return this.get<HeroPairStat[]>(`/v1/analytics/hero-synergy-stats`, q, 12 * 3600);
+    return this.get<HeroSynergyStat[]>(`/v1/analytics/hero-synergy-stats`, q, 12 * 3600);
   }
   itemStats(q: Record<string, string | number | undefined> = {}) {
     return this.get<ItemStat[]>(`/v1/analytics/item-stats`, q, 6 * 3600);
@@ -89,10 +92,19 @@ export class DeadlockApi {
     return this.get<KillDeathStat[]>(`/v1/analytics/kill-death-stats`, q, 12 * 3600);
   }
   heroes() {
-    return this.asset<HeroAsset[]>(`/v2/heroes`);
+    return this.asset<HeroAsset[]>(`/v1/assets/heroes`, (raw) =>
+      (raw as HeroAsset[]).map((h) => ({ id: h.id, name: h.name, class_name: h.class_name, player_selectable: h.player_selectable, disabled: h.disabled,
+        in_development: h.in_development, images: { icon: h.images?.icon_image_small_webp ?? h.images?.icon_image_small, card: h.images?.icon_hero_card_webp ?? h.images?.icon_hero_card, minimap: h.images?.minimap_image_webp } })));
   }
+  /** Shop items only, with `properties` flattened to {key: number}. */
   items() {
-    return this.asset<ItemAsset[]>(`/v2/items`);
+    return this.asset<ItemAsset[]>(`/v1/assets/items`, (raw) =>
+      (raw as RawItem[])
+        .filter((i) => i.type === "upgrade" && i.shopable && !i.disabled)
+        .map((i) => ({ id: i.id, name: i.name, class_name: i.class_name, type: i.type, item_slot_type: i.item_slot_type, item_tier: i.item_tier, cost: i.cost,
+          shopable: i.shopable, disabled: i.disabled, image: i.shop_image_webp ?? i.image_webp ?? i.image, is_active_item: i.is_active_item,
+          heroes: i.heroes ?? [],
+          properties: Object.fromEntries(Object.entries(i.properties ?? {}).map(([k, v]) => [k, parseFloat(String(v?.value ?? "0")) || 0]).filter(([, n]) => n !== 0)) })));
   }
 }
 
@@ -104,13 +116,16 @@ export class ApiError extends Error {
 
 // Loose upstream shapes — only the fields we rely on. Everything else is passed through.
 export type HeroStat = { hero_id: number; wins: number; losses: number; matches: number; players?: number; [k: string]: unknown };
-export type HeroPairStat = { hero_id: number; enemy_id?: number; hero_id2?: number; wins: number; matches_played: number; [k: string]: unknown };
+// /v1/analytics/hero-counter-stats rows
+export type HeroCounterStat = { hero_id: number; enemy_hero_id: number; wins: number; matches_played: number; [k: string]: unknown };
+// /v1/analytics/hero-synergy-stats rows
+export type HeroSynergyStat = { hero_id1: number; hero_id2: number; wins: number; matches_played: number; [k: string]: unknown };
 export type ItemStat = { item_id: number; wins: number; losses: number; matches: number; players?: number; [k: string]: unknown };
-export type KillDeathStat = { x: number; y: number; kills: number; deaths: number; [k: string]: unknown };
-export type HeroAsset = { id: number; name: string; class_name: string; images?: Record<string, string>; player_selectable?: boolean; disabled?: boolean; [k: string]: unknown };
-export type ItemAsset = {
-  id: number; name: string; class_name: string; type: string; // "upgrade" | "ability" | "weapon"
-  item_slot_type?: "weapon" | "vitality" | "spirit"; item_tier?: number; cost?: number;
-  shopable?: boolean; disabled?: boolean; properties?: Record<string, { value?: number | string; [k: string]: unknown }>;
-  image?: string; [k: string]: unknown;
-};
+// World coordinates on a 128-unit grid (roughly -10k..+11k), not a 0..127 raster.
+export type KillDeathStat = { position_x: number; position_y: number; kills: number; deaths: number; killer_team: number };
+export type HeroAsset = { id: number; name: string; class_name: string; player_selectable?: boolean; disabled?: boolean; in_development?: boolean;
+  images?: Record<string, string | undefined> };
+type RawItem = { id: number; name: string; class_name: string; type: string; item_slot_type?: "weapon" | "vitality" | "spirit"; item_tier?: number; cost?: number;
+  shopable?: boolean; disabled?: boolean; is_active_item?: boolean; heroes?: number[]; image?: string; image_webp?: string; shop_image_webp?: string;
+  properties?: Record<string, { value?: number | string } | undefined> };
+export type ItemAsset = Omit<RawItem, "properties"> & { properties: Record<string, number> };

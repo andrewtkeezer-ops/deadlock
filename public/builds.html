@@ -14,7 +14,7 @@ const stats = await api("/builds/stat-options"); const pri = {};
 $("#sliders").replaceChildren(...stats.map((s) => { pri[s.id] = 0; const v = h("span", {}, "0");
   return h("div", { class: "slider" }, h("label", {}, s.label), h("input", { type: "range", min: 0, max: 5, value: 0, oninput: (e) => { pri[s.id] = +e.target.value; v.textContent = e.target.value; } }), v); }));
 $("#wrw").oninput = (e) => ($("#wrwv").textContent = e.target.value + "%");
-$("#preset").onclick = () => { Object.assign(pri, { weapon_damage: 5, spirit: 4, ammo: 4, falloff: 4, fire_rate: 2 }); [...$("#sliders").children].forEach((row, i) => { row.children[1].value = pri[stats[i].id]; row.children[2].textContent = pri[stats[i].id]; }); };
+$("#preset").onclick = () => { Object.assign(pri, { weapon_damage: 5, spirit: 4, ammo: 4, range: 4, fire_rate: 2 }); [...$("#sliders").children].forEach((row, i) => { row.children[1].value = pri[stats[i].id]; row.children[2].textContent = pri[stats[i].id]; }); };
 let last;
 $("#go").onclick = async () => { const out = $("#out"); out.replaceChildren(h("div", { class: "card" }, "Crunching…"));
   try { last = await api("/builds/wizard", { method: "POST", body: { hero_id: +$("#hero").value, priorities: pri, budget: +$("#budget").value, winrate_weight: +$("#wrw").value / 100 } });

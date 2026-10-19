@@ -3,7 +3,6 @@ export type Env = {
   CACHE: KVNamespace;
   ASSETS: Fetcher;
   DEADLOCK_API: string;
-  DEADLOCK_ASSETS: string;
   DEADLOCK_API_KEY?: string;
   ADMIN_TOKEN: string;
   // Cloudflare Access (Zero Trust). Leave empty for local dev → no auth.

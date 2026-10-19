@@ -14,25 +14,22 @@ const r = new Hono<{ Bindings: Env }>();
  * to see every key that actually exists for the current patch and adjust STAT_MAP accordingly.
  */
 export const STAT_MAP: Record<string, { label: string; keys: string[] }> = {
-  weapon_damage: { label: "Weapon damage",      keys: ["BaseAttackDamagePercent", "BonusBaseAttackDamagePercent", "WeaponPower", "BulletDamage"] },
-  spirit:        { label: "Spirit power",       keys: ["TechPower", "SpiritPower", "BonusTechPower"] },
-  ammo:          { label: "Ammo / clip size",   keys: ["ClipSizeIncrease", "ClipSizePercent", "BonusClipSizePercent", "ClipSizeBonus"] },
-  falloff:       { label: "Range / less falloff", keys: ["BulletDamageFalloffRangeReduction", "FalloffRangeReduction", "BonusFalloffRange", "BulletRange"] },
-  fire_rate:     { label: "Fire rate",          keys: ["FireRate", "BonusFireRate", "AttackSpeed"] },
-  health:        { label: "Health",             keys: ["BonusHealth", "Health", "BonusHealthPercent"] },
-  spirit_resist: { label: "Spirit resist",      keys: ["TechArmor", "SpiritResist", "TechResist"] },
-  bullet_resist: { label: "Bullet resist",      keys: ["BulletArmor", "BulletResist"] },
-  move_speed:    { label: "Move speed",         keys: ["BonusMoveSpeed", "MoveSpeed", "SprintSpeed"] },
-  lifesteal:     { label: "Lifesteal",          keys: ["BulletLifesteal", "TechLifesteal", "Lifesteal"] },
+  // keys = property names observed on live shop items (GET /api/builds/property-keys lists them with counts)
+  weapon_damage: { label: "Weapon damage",         keys: ["BaseAttackDamagePercent", "BaseAttackDamagePercentBonus", "BonusDamagePercent", "WeaponPowerPerStack", "BaseAttackDamagePercentAtMaxDuration"] },
+  spirit:        { label: "Spirit power",          keys: ["TechPower", "SpiritPower", "BonusSpirit", "TechPowerPercent", "ImbuedTechPower"] },
+  ammo:          { label: "Ammo / clip size",      keys: ["BonusClipSizePercent", "BonusClipSize", "BonusClipPerKill"] },
+  range:         { label: "Range / long-range dmg", keys: ["LongRangeBonusWeaponPower", "BonusAttackRangePercent", "BonusBulletSpeedPercent", "BonusZoomPercent"] },
+  fire_rate:     { label: "Fire rate",             keys: ["BonusFireRate", "FireRateBonus", "ActiveBonusFireRate", "FireRatePerKill"] },
+  health:        { label: "Health",                keys: ["BonusHealth", "BonusBaseHealth"] },
+  spirit_resist: { label: "Spirit resist",         keys: ["TechResist"] },
+  bullet_resist: { label: "Bullet resist",         keys: ["BulletResist"] },
+  move_speed:    { label: "Move / sprint speed",   keys: ["BonusMoveSpeed", "BonusSprintSpeed", "ActiveBonusMoveSpeed"] },
+  lifesteal:     { label: "Lifesteal",             keys: ["BulletLifestealPercent", "AbilityLifestealPercentHero", "BonusSpiritLifesteal", "ActiveBonusLifesteal"] },
+  cooldown:      { label: "Cooldown reduction",    keys: ["CooldownReduction", "ItemCooldownReduction", "UltimateCooldownReduction"] },
+  regen:         { label: "Health regen",          keys: ["BonusHealthRegen", "OutOfCombatHealthRegen"] },
 };
 
-function numericProp(it: ItemAsset, key: string): number {
-  const p = it.properties?.[key];
-  if (!p) return 0;
-  const v = typeof p === "object" && p !== null ? (p as { value?: unknown }).value : p;
-  const n = typeof v === "string" ? parseFloat(v) : Number(v);
-  return Number.isFinite(n) ? n : 0;
-}
+const numericProp = (it: ItemAsset, key: string): number => it.properties[key] ?? 0;
 
 r.get("/stat-options", (c) => c.json(Object.entries(STAT_MAP).map(([id, s]) => ({ id, label: s.label }))));
 
@@ -40,7 +37,7 @@ r.get("/stat-options", (c) => c.json(Object.entries(STAT_MAP).map(([id, s]) => (
 r.get("/property-keys", async (c) => {
   const items = await new DeadlockApi(c.env).items();
   const counts: Record<string, number> = {};
-  for (const it of items) if (it.type === "upgrade" && it.shopable !== false) for (const k of Object.keys(it.properties ?? {})) counts[k] = (counts[k] ?? 0) + 1;
+  for (const it of items) for (const k of Object.keys(it.properties)) counts[k] = (counts[k] ?? 0) + 1;
   return c.json(Object.entries(counts).sort((a, b) => b[1] - a[1]));
 });
 
@@ -52,11 +49,11 @@ r.post("/wizard", async (c) => {
   const body = await c.req.json<{ hero_id: number; priorities: Record<string, number>; budget?: number; winrate_weight?: number }>();
   const api = new DeadlockApi(c.env);
   const [items, stats] = await Promise.all([api.items(), api.itemStats({ hero_id: body.hero_id }).catch(() => [])]);
-  const wr = new Map(stats.map((s) => [s.item_id, { wr: s.matches ? s.wins / s.matches : 0.5, n: s.matches }]));
+  const wr = new Map(stats.map((s) => [s.item_id, { wr: s.matches ? s.wins / s.matches : 0.5, n: s.matches }] as const));
   const wrWeight = body.winrate_weight ?? 0.5;
   const budget = body.budget ?? 40000;
 
-  const shop = items.filter((i) => i.type === "upgrade" && i.shopable !== false && !i.disabled && i.cost);
+  const shop = items.filter((i) => i.cost && (!i.heroes?.length || i.heroes.includes(body.hero_id)));
 
   // Normalise each stat across the shop so a +40 clip and a +12% damage are comparable.
   const maxPerStat: Record<string, number> = {};

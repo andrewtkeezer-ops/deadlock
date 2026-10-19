@@ -12,9 +12,19 @@ const r = new Hono<{ Bindings: Env }>();
 r.get("/heatmap", async (c) => {
   const q = Object.fromEntries(new URL(c.req.url).searchParams);
   const cells = await new DeadlockApi(c.env).killDeathStats(q);
-  let maxK = 0, maxD = 0;
-  for (const cell of cells) { maxK = Math.max(maxK, cell.kills); maxD = Math.max(maxD, cell.deaths); }
-  return c.json({ size: 128, maxKills: maxK, maxDeaths: maxD, cells });
+  let maxK = 0, maxD = 0, minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  for (const cell of cells) {
+    maxK = Math.max(maxK, cell.kills); maxD = Math.max(maxD, cell.deaths);
+    minX = Math.min(minX, cell.position_x); maxX = Math.max(maxX, cell.position_x);
+    minY = Math.min(minY, cell.position_y); maxY = Math.max(maxY, cell.position_y);
+  }
+  // Collapse killer_team so each grid cell appears once.
+  const merged = new Map<string, { x: number; y: number; kills: number; deaths: number }>();
+  for (const cell of cells) {
+    const k = `${cell.position_x}:${cell.position_y}`; const m = merged.get(k) ?? { x: cell.position_x, y: cell.position_y, kills: 0, deaths: 0 };
+    m.kills += cell.kills; m.deaths += cell.deaths; merged.set(k, m);
+  }
+  return c.json({ step: 128, bounds: { minX, maxX, minY, maxY }, maxKills: maxK, maxDeaths: maxD, cells: [...merged.values()] });
 });
 
 /** Item win/pick rates for a hero. ?hero_id=&min_average_badge= */
