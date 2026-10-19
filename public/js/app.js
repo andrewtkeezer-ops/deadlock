@@ -26,7 +26,10 @@ export function shell(active) {
   document.body.prepend(h("header", {}, h("span", { class: "brand" }, "DEADLOCK SQUAD"),
     h("nav", {}, ...links.map(([href, label]) => h("a", { href, class: href === active ? "active" : "" }, label))),
     h("span", { id: "whoami", class: "muted", style: "margin-left:auto;font-size:13px" })));
-  api("/auth/steam/me").then((m) => { if (m.account_id && active !== "/setup.html") $("#whoami").prepend(h("a", { href: `/player.html?id=${m.account_id}`, style: "margin-right:12px" }, "My profile")); }).catch(() => {});
+  api("/auth/steam/me").then((m) => {
+    if (m.account_id) $("#whoami").prepend(h("a", { href: `/player.html?id=${m.account_id}`, style: "margin-right:12px" }, "My profile"));
+    else $("#whoami").prepend(h("a", { href: "/api/auth/steam/login", class: "steam-btn" }, h("img", { src: "https://community.cloudflare.steamstatic.com/public/images/signinthroughsteam/sits_small.png", alt: "Sign in through Steam", style: "height:22px;vertical-align:middle" })));
+  }).catch(() => {});
   api("/me").then((me) => { const el = $("#whoami"); if (!me.unconfigured) el.textContent = me.email; if (me.role !== "admin") $('a[href="/admin.html"]')?.remove(); }).catch(() => {});
 }
 export function showError(el, e) { el.replaceChildren(h("div", { class: "card error" }, `Error: ${e.message}`)); }

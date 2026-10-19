@@ -4,7 +4,9 @@
 <p>They sign in with the Google account you invite, and they're in. Optionally link their Steam account_id so their stats show on their profile.</p>
 <input type="text" id="email" placeholder="friend@gmail.com" style="width:260px"> <select id="role"><option value="member">Member</option><option value="admin">Admin</option></select> <input type="number" id="acc" placeholder="account_id (optional)" style="width:180px"> <button class="primary" id="invite">Invite</button> <span id="msg"></span></div>
 <div class="card"><h2 style="margin-top:0">Members</h2><div id="members">Loading…</div></div>
-<div class="card"><h2 style="margin-top:0">Add a player</h2><p>Search by Steam name, or paste a Steam profile URL / SteamID64. Click a result to add them and import their matches.</p>
+<div class="card"><h2 style="margin-top:0">Add yourself</h2>
+<p><a href="/api/auth/steam/login"><img src="https://community.cloudflare.steamstatic.com/public/images/signinthroughsteam/sits_01.png" alt="Sign in through Steam" style="height:35px;vertical-align:middle"></a> &nbsp; Steam tells us which account is yours; your matches import immediately. Friends can do the same from the <a href="/setup.html">Setup</a> page.</p></div>
+<div class="card"><h2 style="margin-top:0">Add someone else</h2><p class="muted">Fallback for friends who can't sign in themselves: search by Steam name, or paste a Steam profile URL. Only finds players deadlock-api has already seen.</p>
 <input type="text" id="q" placeholder="Steam name or profile URL" style="width:320px"> <button class="primary" id="search">Search</button> <span id="pmsg"></span>
 <div id="results" style="margin-top:12px"></div></div>
 <div class="card"><h2 style="margin-top:0">Tracked players</h2><p><button id="sync">Sync everyone now</button> <span id="smsg"></span></p><div id="players"></div></div>
