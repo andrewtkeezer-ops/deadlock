@@ -35,15 +35,16 @@ r.get("/:id", async (c) => {
   const id = Number(c.req.param("id"));
   const player = await c.env.DB.prepare("SELECT * FROM players WHERE account_id=?").bind(id).first<Player>();
   if (!player) return c.json({ error: "not tracked" }, 404);
-  const [matches, heroes, mmr] = await Promise.all([
+  const [matches, heroes, mmr, ingest] = await Promise.all([
     c.env.DB.prepare("SELECT * FROM player_matches WHERE account_id=? ORDER BY start_time DESC LIMIT 50").bind(id).all(),
     c.env.DB.prepare(
       `SELECT hero_id, COUNT(*) games, SUM(won) wins, AVG(kills) k, AVG(deaths) d, AVG(assists) a
          FROM player_matches WHERE account_id=? GROUP BY hero_id ORDER BY games DESC`
     ).bind(id).all(),
     c.env.DB.prepare("SELECT ts, score, rank FROM mmr_history WHERE account_id=? ORDER BY ts").bind(id).all(),
+    new DeadlockApi(c.env).ingestStatus(id).catch(() => null),
   ]);
-  return c.json({ player, matches: matches.results, heroes: heroes.results, mmr: mmr.results });
+  return c.json({ player, matches: matches.results, heroes: heroes.results, mmr: mmr.results, ingest });
 });
 
 /** Full 12-player match detail, fetched on demand and cached forever in D1. */

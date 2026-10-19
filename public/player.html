@@ -10,7 +10,9 @@ const qs = new URLSearchParams(location.search); const id = qs.get("id");
 if (qs.has("welcome")) $("#sub").insertAdjacentHTML("beforebegin", `<p class="ok">You are in. Imported ${qs.get("welcome")} matches so far. <a href="/setup.html">Install the match uploader</a> and the rest backfill over the next day.</p>`);
 try {
   const [d, hs] = await Promise.all([api(`/players/${id}`), heroes()]); const name = (x) => hs.find((y) => y.id === x)?.name ?? x;
-  $("#name").textContent = d.player.name; $("#sub").textContent = `MMR ${d.player.mmr_score?.toFixed(0) ?? "–"} · rank ${d.player.mmr_rank ?? "–"} · synced ${ago(d.player.last_sync_at)}`;
+  $("#name").textContent = d.player.name;
+  if (d.ingest && !d.ingest.active) $("#sub").insertAdjacentHTML("afterend", `<p class="card" style="border-color:var(--accent)"><strong>Match uploader not detected</strong> ${d.ingest.last_upload_at ? "(last upload " + new Date(d.ingest.last_upload_at).toLocaleDateString() + ")" : "(never run)"}. Only games someone else uploaded will show here. <a href="/setup.html">Install it</a> to get all your matches.</p>`);
+  else if (d.ingest) $("#sub").textContent += ` · uploader active (last upload ${new Date(d.ingest.last_upload_at).toLocaleString()})`; $("#sub").textContent = `MMR ${d.player.mmr_score?.toFixed(0) ?? "–"} · rank ${d.player.mmr_rank ?? "–"} · synced ${ago(d.player.last_sync_at)}`;
   $("#heroes").replaceChildren(h("table", {}, h("thead", {}, h("tr", {}, ...["Hero", "Games", "Win %", "Avg K/D/A"].map((t) => h("th", {}, t)))),
     h("tbody", {}, ...d.heroes.map((r) => h("tr", {}, h("td", {}, name(r.hero_id)), h("td", { class: "num" }, String(r.games)), h("td", { class: "num" }, pct(r.wins / r.games)), h("td", { class: "num" }, `${r.k.toFixed(1)}/${r.d.toFixed(1)}/${r.a.toFixed(1)}`))))));
   $("#matches").replaceChildren(h("table", {}, h("thead", {}, h("tr", {}, ...["When", "Hero", "Result", "K/D/A", "Souls", "LH/DN", "Length", ""].map((t) => h("th", {}, t)))),

@@ -91,6 +91,10 @@ export class DeadlockApi {
   killDeathStats(q: Record<string, string | number | undefined> = {}) {
     return this.get<KillDeathStat[]>(`/v1/analytics/kill-death-stats`, q, 12 * 3600);
   }
+  /** Whether the player's match uploader has been seen recently. */
+  ingestStatus(accountId: number) {
+    return this.get<{ account_id: number; active: boolean; last_upload_at: string | null; window_days: number }>(`/v1/players/${accountId}/ingest-status`, {}, 300);
+  }
   steamSearch(q: string, limit = 10) {
     return this.get<SteamProfile[]>(`/v1/players/steam-search`, { search_query: q, limit }, 300);
   }
