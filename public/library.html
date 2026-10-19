@@ -1,31 +1,40 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Builds · Soul Scribe</title><link rel="icon" type="image/png" href="/img/favicon.png"><link rel="apple-touch-icon" href="/img/icon.png"><link rel="stylesheet" href="/css/app.css"></head>
-<body><main><h1>Build library</h1>
-<p><button id="tabMine" class="primary">My builds</button> <button id="tabSquad">Squad builds</button> &nbsp; Hero: <select id="hero"><option value="">All</option></select> <span id="authorWrap" hidden>By: <select id="author"><option value="">Anyone</option></select></span> &nbsp; <a class="dl" style="padding:8px 14px;font-size:14px" href="/editor.html">+ New build</a> <a href="/builds.html" style="margin-left:10px">or start from the wizard</a></p>
-<p id="signin" class="muted" hidden>Sign in through Steam (top right) to make and keep your own builds.</p>
-<div class="card" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><strong>Start from a proven build:</strong> <select id="starterHero"><option value="">Pick a hero…</option></select> <span class="muted">opens the hero page with the top Weapon, Spirit, Survivability and Balanced builds, each one click from your library.</span></div>
-<div id="list" class="grid"></div></main>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Builds · Soul Scribe</title><link rel="icon" type="image/png" href="/img/favicon.png"><link rel="stylesheet" href="/css/app.css">
+<style>
+.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.top h1{margin:0}.top .sp{flex:1}.tabs{display:flex;gap:4px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:12px;padding:4px}.tabs button{border:0;background:transparent;color:var(--muted);padding:8px 14px;border-radius:9px}.tabs button.on{background:var(--accent);color:#1a1200}
+.lead{margin:6px 0 18px}
+.hgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px}
+.ht{position:relative;aspect-ratio:3/4;border-radius:10px;overflow:hidden;cursor:pointer;border:2px solid rgba(255,255,255,.07);background:#0a0b0f;transition:transform .18s var(--ease),border-color .18s,box-shadow .18s,opacity .25s}
+.ht img{width:100%;height:100%;object-fit:cover;display:block}.ht:hover{transform:translateY(-6px) scale(1.04);border-color:var(--accent);box-shadow:0 14px 30px rgba(0,0,0,.6),0 0 20px rgba(232,199,106,.2);z-index:1}
+.ht .nm{position:absolute;left:0;right:0;bottom:0;font-size:10px;text-align:center;background:linear-gradient(transparent,rgba(0,0,0,.92));padding:16px 4px 4px;letter-spacing:.06em;text-transform:uppercase;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ht .cnt{position:absolute;top:6px;right:6px;min-width:22px;height:22px;padding:0 6px;border-radius:11px;background:var(--accent);color:#1a1200;font-family:Reaver;font-size:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.6)}
+.ht.none{opacity:.45}.ht.none:hover{opacity:1}
+.bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.bc{display:flex;gap:12px;padding:12px;background:var(--panel);border:1px solid var(--line);border-radius:14px;backdrop-filter:blur(10px);transition:transform .18s var(--ease),border-color .18s}.bc:hover{transform:translateY(-3px);border-color:rgba(232,199,106,.35)}
+.bc img.hero{width:64px;height:86px;object-fit:cover;border-radius:8px;flex:none}.bc .b{flex:1;min-width:0}.bc .b b{display:block;font-family:Reaver;font-size:15px;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bc .b small{color:var(--muted);display:block}.bc .items{margin-top:6px}.bc .items img{width:22px;height:22px}.bc .foot{display:flex;justify-content:space-between;align-items:center;margin-top:6px;font-size:12px}
+.empty{text-align:center;padding:30px}.empty p{color:var(--muted)}
+</style></head>
+<body><main>
+<div class="top"><h1>Builds</h1><div class="tabs"><button id="tabMine" class="on">My builds</button><button id="tabSquad">Squad builds</button></div><span class="sp"></span><span id="authorWrap" hidden>By: <select id="author"><option value="">Anyone</option></select></span><a class="dl" style="padding:9px 16px;font-size:14px" href="/editor.html">+ New build</a><a class="btn" href="/builds.html">Wizard</a></div>
+<p class="lead muted" id="lead">Pick a hero to see builds for them — yours, the squad's, and the top community builds you can copy and adjust.</p>
+<div id="hgrid" class="hgrid"></div>
+<h2 id="listTitle">Your builds</h2>
+<div id="list" class="bgrid"></div>
+</main>
 <script type="module">
-import { api, h, $, ago, heroes, itemImg, shell, showError } from "/js/app.js";
+import { api, h, $, ago, heroes, items, itemImg, me, shell, showError } from "/js/app.js";
 shell("/library.html");
-const [hs, items, players, me, who] = await Promise.all([heroes(), api("/library/items"), api("/players"), api("/auth/steam/me"), api("/me")]);
-let tab = me.account_id ? "mine" : "squad"; if (!me.account_id) $("#signin").hidden = false;
-const superAdmin = who.role === "admin" && !who.unconfigured; $("#authorWrap").hidden = !superAdmin;
-const setTab = (t) => { tab = t; $("#tabMine").className = t === "mine" ? "primary" : ""; $("#tabSquad").className = t === "squad" ? "primary" : ""; load(); };
-$("#tabMine").onclick = () => setTab("mine"); $("#tabSquad").onclick = () => setTab("squad");
-const hero = (id) => hs.find((x) => x.id === id), item = (id) => items.find((x) => x.id === id);
-hs.forEach((x) => { $("#hero").append(new Option(x.name, x.id)); $("#starterHero").append(new Option(x.name, x.id)); }); $("#starterHero").onchange = (e) => { if (e.target.value) location.href = `/hero.html?id=${e.target.value}#starters`; }; players.forEach((p) => $("#author").append(new Option(p.name, p.account_id)));
-async function load() { const el = $("#list"); try {
-  const q = new URLSearchParams(); if ($("#hero").value) q.set("hero_id", $("#hero").value);
-  if (tab === "mine") { if (!me.account_id) return el.replaceChildren(h("p", { class: "muted" }, "Sign in through Steam to see your builds.")); q.set("account_id", me.account_id); }
-  else if (superAdmin && $("#author").value) q.set("account_id", $("#author").value);
-  const rows = await api(`/library?${q}`);
-  if (!rows.length) return el.replaceChildren(h("p", { class: "muted" }, tab === "mine" ? "You haven't saved a build yet." : "Nobody has saved a build yet."));
-  el.replaceChildren(...rows.map((b) => h("div", { class: "card", style: "margin:0;display:flex;flex-direction:column;gap:8px" },
-    h("div", { style: "display:flex;gap:10px;align-items:center" }, hero(b.hero_id)?.images?.card ? h("img", { src: hero(b.hero_id).images.card, width: 44, height: 58, style: "border-radius:6px;object-fit:cover" }) : "",
-      h("div", {}, h("a", { href: `/editor.html?id=${b.id}` }, h("strong", {}, b.title)), h("div", { class: "muted", style: "font-size:13px" }, `${hero(b.hero_id)?.name ?? "?"} · ${b.author_name ?? b.author}${b.ingame_build_id ? " · in game" : ""}`))),
-    b.description ? h("div", { class: "muted", style: "font-size:13px" }, b.description.slice(0, 140)) : "",
-    h("div", { style: "display:flex;flex-wrap:wrap;gap:3px" }, ...b.preview.map((id) => itemImg(item(id), 26))),
-    h("div", { class: "muted", style: "font-size:12px;display:flex;justify-content:space-between" }, h("span", {}, `${b.item_count} items · updated ${ago(b.updated_at || b.created_at)}`),
-      h("span", {}, h("a", { href: `/editor.html?id=${b.id}` }, me.account_id === b.account_id ? "edit" : "view / fork"), " · ", h("a", { href: "#", onclick: async (e) => { e.preventDefault(); await api(`/library/${b.id}/vote`, { method: "POST" }); load(); } }, `▲ ${b.votes}`)))))); } catch (e) { showError(el, e); } }
-$("#hero").onchange = $("#author").onchange = load; setTab(tab);
+const [hs, its, players, who] = await Promise.all([heroes(), items(), api("/players"), me()]);
+const hero = (id) => hs.find((x) => x.id === id), item = (id) => its.find((x) => x.id === id);
+let tab = who.account_id ? "mine" : "squad"; const superAdmin = who.super; $("#authorWrap").hidden = !superAdmin; players.forEach((p) => $("#author").append(new Option(p.name, p.account_id)));
+const setTab = (t) => { tab = t; $("#tabMine").className = t === "mine" ? "on" : ""; $("#tabSquad").className = t === "squad" ? "on" : ""; $("#listTitle").textContent = t === "mine" ? "Your builds" : "Squad builds"; load(); };
+$("#tabMine").onclick = () => setTab("mine"); $("#tabSquad").onclick = () => setTab("squad"); $("#author").onchange = load;
+async function load() {
+  const q = new URLSearchParams(); if (tab === "mine") { if (!who.account_id) { $("#list").replaceChildren(h("div", { class: "empty card" }, h("p", {}, "Sign in through Steam (bottom left) to keep your own builds."))); renderGrid([]); return; } q.set("account_id", who.account_id); } else if (superAdmin && $("#author").value) q.set("account_id", $("#author").value);
+  try { const rows = await api(`/library?${q}`); renderGrid(rows);
+    $("#list").replaceChildren(rows.length ? [...rows].sort((a, b) => (b.updated_at || b.created_at) - (a.updated_at || a.created_at)).map((b) => { const hx = hero(b.hero_id); return h("div", { class: "bc" }, hx?.images?.card ? h("img", { class: "hero", src: hx.images.card, alt: "" }) : "", h("div", { class: "b" }, h("a", { href: `/editor.html?id=${b.id}` }, h("b", {}, b.title)), h("small", {}, `${hx?.name ?? "?"} · ${b.author_name ?? b.author}${b.ingame_build_id ? " · in game" : ""}`), h("div", { class: "items" }, ...b.preview.slice(0, 10).map((id) => itemImg(item(id), 22))),
+      h("div", { class: "foot" }, h("span", { class: "muted" }, `${b.item_count} items · ${ago(b.updated_at || b.created_at)}`), h("span", {}, h("a", { href: `/editor.html?id=${b.id}` }, who.account_id === b.account_id ? "edit" : "view / fork"), " · ", h("a", { href: "#", onclick: async (e) => { e.preventDefault(); await api(`/library/${b.id}/vote`, { method: "POST" }); load(); } }, `▲ ${b.votes}`))))); })
+      : h("div", { class: "empty card" }, h("p", {}, tab === "mine" ? "You haven't saved a build yet. Pick a hero above to start from a proven build, or use the wizard." : "Nobody has saved a build yet."))); } catch (e) { showError($("#list"), e); } }
+function renderGrid(rows) { const counts = new Map(); for (const b of rows) counts.set(b.hero_id, (counts.get(b.hero_id) || 0) + 1);
+  $("#hgrid").replaceChildren(...hs.map((x) => { const n = counts.get(x.id) || 0; return h("a", { class: "ht" + (n ? "" : " none"), href: `/hero.html?id=${x.id}#builds`, title: `${x.name}: ${n} build${n === 1 ? "" : "s"}` }, h("img", { src: x.images.card || x.images.icon, alt: x.name }), n ? h("span", { class: "cnt" }, String(n)) : "", h("div", { class: "nm" }, x.name)); })); }
+setTab(tab);
 </script></body></html>
