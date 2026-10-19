@@ -53,7 +53,7 @@ app.route("/api/auth/steam", steam);
 app.onError((err, c) => {
   console.error(err);
   if (err instanceof ApiError) return c.json({ error: "upstream", status: err.status, message: err.message }, 502);
-  return c.json({ error: "internal", message: err.message }, 500);
+  return c.json({ error: "internal", message: err.message.slice(0, 300) }, 500);
 });
 
 // Anything that isn't /api/* is a static file in /public.

@@ -3,6 +3,7 @@ import type { Env } from "../types";
 import { DeadlockApi } from "../deadlock";
 
 const r = new Hono<{ Bindings: Env }>();
+r.use("/:id/*", async (c, next) => { if (c.req.param("id") && !/^\d+$/.test(c.req.param("id")!)) return c.json({ error: "bad_request", message: "hero id must be numeric" }, 400); await next(); });
 
 /** Hero list (static assets) — names, images. */
 r.get("/", async (c) => {
@@ -63,6 +64,36 @@ r.get("/suggest", async (c) => {
     })
     .sort((a, b) => b.score - a.score);
   return c.json({ allies, enemies, suggestions: out });
+});
+
+/** Squad members' record on this hero, from our D1 copy (one query instead of one per player). */
+r.get("/:id/squad", async (c) => {
+  const id = Number(c.req.param("id"));
+  const { results } = await c.env.DB.prepare(
+    `SELECT p.account_id, p.name, p.avatar_url, p.mmr_rank, COUNT(*) games, SUM(m.won) wins, AVG(m.kills) k, AVG(m.deaths) d, AVG(m.assists) a,
+            AVG(m.net_worth*60.0/NULLIF(m.duration_s,0)) spm, MAX(m.start_time) last_played
+       FROM player_matches m JOIN players p ON p.account_id=m.account_id WHERE m.hero_id=? GROUP BY p.account_id ORDER BY games DESC`).bind(id).all();
+  return c.json(results);
+});
+
+/**
+ * "Squad's best build" for a hero: for each squad build, look at the squad's recent matches on this hero and
+ * score how often the final item set overlapped with the build. Cheap, honest, and improves as data accrues.
+ */
+r.get("/:id/best-build", async (c) => {
+  const id = Number(c.req.param("id"));
+  const [{ results: builds }, { results: metas }] = await Promise.all([
+    c.env.DB.prepare("SELECT b.id, b.title, b.details, b.account_id, p.name author_name FROM builds b LEFT JOIN players p ON p.account_id=b.account_id WHERE b.hero_id=?").bind(id).all<{ id: number; title: string; details: string; account_id: number; author_name: string | null }>(),
+    c.env.DB.prepare("SELECT mm.json, pm.account_id, pm.won FROM player_matches pm JOIN match_meta mm ON mm.match_id=pm.match_id WHERE pm.hero_id=? ORDER BY pm.start_time DESC LIMIT 60").bind(id).all<{ json: string; account_id: number; won: number }>(),
+  ]);
+  if (!builds.length) return c.json(null);
+  const games = metas.map((m) => { const mi = JSON.parse(m.json).match_info; const me = mi?.players?.find((p: { account_id: number }) => p.account_id === m.account_id); const held = new Set<number>();
+    for (const it of me?.items ?? []) if (it.sold_time_s) held.delete(it.item_id); else held.add(it.item_id); return { held, won: !!m.won }; });
+  const scored = builds.map((b) => { const ids = new Set<number>(); try { for (const cat of JSON.parse(b.details).mod_categories ?? []) for (const m of cat.mods ?? []) ids.add(m.ability_id); } catch {}
+    let used = 0, wins = 0; for (const g of games) { const overlap = [...ids].filter((x) => g.held.has(x)).length; if (ids.size && overlap / ids.size >= 0.5) { used++; if (g.won) wins++; } }
+    return { id: b.id, title: b.title, author_name: b.author_name, items: ids.size, games_using: used, wins_using: wins, win_rate: used ? wins / used : null }; })
+    .sort((a, b) => (b.games_using - a.games_using) || ((b.win_rate ?? 0) - (a.win_rate ?? 0)));
+  return c.json({ sample_games: games.length, builds: scored });
 });
 
 /** The hero's four abilities (icons, descriptions, tiers, numbers). */
