@@ -6,7 +6,7 @@
   "compatibility_flags": ["nodejs_compat"],
 
   // Static site lives in /public; the Worker handles /api/* and falls through to assets.
-  "assets": { "directory": "./public", "binding": "ASSETS", "not_found_handling": "404-page" },
+  "assets": { "directory": "./public", "binding": "ASSETS", "not_found_handling": "404-page", "run_worker_first": ["/api/*"] },
 
   // Free tier: 5 GB storage, 5M reads/day. Run `npm run db:create` and paste the id here.
   "d1_databases": [
