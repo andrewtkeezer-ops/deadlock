@@ -1,0 +1,24 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Player · Deadlock Squad</title><link rel="stylesheet" href="/css/app.css"></head>
+<body><main><h1 id="name">Player</h1><p id="sub" class="muted"></p>
+<h2>Heroes</h2><div id="heroes" class="card">Loading…</div>
+<h2>MMR history</h2><div class="card"><canvas id="mmr" width="1000" height="220" style="width:100%"></canvas></div>
+<h2>Recent matches</h2><div id="matches" class="card">Loading…</div></main>
+<script type="module">
+import { api, h, $, pct, ago, dur, heroes, shell, showError } from "/js/app.js";
+shell("/");
+const id = new URLSearchParams(location.search).get("id");
+try {
+  const [d, hs] = await Promise.all([api(`/players/${id}`), heroes()]); const name = (x) => hs.find((y) => y.id === x)?.name ?? x;
+  $("#name").textContent = d.player.name; $("#sub").textContent = `MMR ${d.player.mmr_score?.toFixed(0) ?? "–"} · rank ${d.player.mmr_rank ?? "–"} · synced ${ago(d.player.last_sync_at)}`;
+  $("#heroes").replaceChildren(h("table", {}, h("thead", {}, h("tr", {}, ...["Hero", "Games", "Win %", "Avg K/D/A"].map((t) => h("th", {}, t)))),
+    h("tbody", {}, ...d.heroes.map((r) => h("tr", {}, h("td", {}, name(r.hero_id)), h("td", { class: "num" }, String(r.games)), h("td", { class: "num" }, pct(r.wins / r.games)), h("td", { class: "num" }, `${r.k.toFixed(1)}/${r.d.toFixed(1)}/${r.a.toFixed(1)}`))))));
+  $("#matches").replaceChildren(h("table", {}, h("thead", {}, h("tr", {}, ...["When", "Hero", "Result", "K/D/A", "Souls", "LH/DN", "Length", ""].map((t) => h("th", {}, t)))),
+    h("tbody", {}, ...d.matches.map((m) => h("tr", {}, h("td", {}, ago(m.start_time)), h("td", {}, name(m.hero_id)), h("td", { class: m.won ? "win" : "loss" }, m.won ? "Win" : "Loss"),
+      h("td", { class: "num" }, `${m.kills}/${m.deaths}/${m.assists}`), h("td", { class: "num" }, m.net_worth.toLocaleString()), h("td", { class: "num" }, `${m.last_hits}/${m.denies}`), h("td", {}, dur(m.duration_s)), h("td", {}, h("a", { href: `/match.html?id=${m.match_id}` }, "details")))))));
+  // tiny MMR line chart
+  const c = $("#mmr").getContext("2d"), pts = d.mmr.filter((p) => p.score != null);
+  if (pts.length > 1) { const xs = pts.map((p) => p.ts), ys = pts.map((p) => p.score), [x0, x1] = [Math.min(...xs), Math.max(...xs)], [y0, y1] = [Math.min(...ys) - 10, Math.max(...ys) + 10];
+    c.strokeStyle = "#e4b94f"; c.lineWidth = 2; c.beginPath(); pts.forEach((p, i) => { const x = 10 + (p.ts - x0) / (x1 - x0 || 1) * 980, y = 210 - (p.score - y0) / (y1 - y0) * 200; i ? c.lineTo(x, y) : c.moveTo(x, y); }); c.stroke(); }
+  else { c.fillStyle = "#8f93a3"; c.font = "16px system-ui"; c.fillText("MMR history builds up after a few hourly syncs.", 20, 110); }
+} catch (e) { showError($("#heroes"), e); }
+</script></body></html>

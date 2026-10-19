@@ -1,0 +1,23 @@
+{
+  "name": "deadlock-squad",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "db:create": "wrangler d1 create deadlock-squad",
+    "db:migrate:local": "wrangler d1 migrations apply deadlock-squad --local",
+    "db:migrate": "wrangler d1 migrations apply deadlock-squad --remote",
+    "sync": "curl -X POST http://localhost:8787/api/admin/sync"
+  },
+  "dependencies": {
+    "hono": "^4.6.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.0.0",
+    "typescript": "^5.6.0",
+    "wrangler": "^4.0.0"
+  }
+}

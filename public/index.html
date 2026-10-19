@@ -1,0 +1,37 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Deadlock Squad</title><link rel="stylesheet" href="/css/app.css"></head>
+<body><main>
+<h1>Squad leaderboard</h1><p class="muted">Ranked by estimated MMR. Last <select id="days"><option value="7">7 days</option><option value="30" selected>30 days</option><option value="90">90 days</option><option value="3650">all time</option></select></p>
+<div id="out" class="card">Loading…</div>
+<h2>Recent games</h2><div id="recent" class="card">Loading…</div>
+</main>
+<script type="module">
+import { api, h, $, pct, ago, dur, heroes, shell, showError } from "/js/app.js";
+shell("/");
+async function load() {
+  const out = $("#out");
+  try {
+    const [{ players }, hs] = await Promise.all([api(`/players/leaderboard?days=${$("#days").value}`), heroes()]);
+    if (!players.length) return out.replaceChildren(h("p", {}, "No one is tracked yet. Head to ", h("a", { href: "/setup.html" }, "Setup"), "."));
+    out.replaceChildren(h("table", {}, h("thead", {}, h("tr", {}, ...["#", "Player", "MMR", "Rank", "Games", "Win %", "K / D / A", "Souls/min", "Last played", "Synced"].map((t) => h("th", {}, t)))),
+      h("tbody", {}, ...players.map((p, i) => h("tr", {},
+        h("td", {}, String(i + 1)), h("td", {}, h("a", { href: `/player.html?id=${p.account_id}` }, p.name)),
+        h("td", { class: "num" }, p.mmr_score?.toFixed(0) ?? "–"), h("td", { class: "num" }, p.mmr_rank ?? "–"),
+        h("td", { class: "num" }, String(p.games)), h("td", { class: "num" }, p.games ? pct(p.wins / p.games) : "–"),
+        h("td", { class: "num" }, `${p.avg_kills.toFixed(1)} / ${p.avg_deaths.toFixed(1)} / ${p.avg_assists.toFixed(1)}`),
+        h("td", { class: "num" }, p.souls_per_min.toFixed(0)), h("td", {}, ago(p.last_played)), h("td", { class: "muted" }, ago(p.last_sync_at)))))));
+  } catch (e) { showError(out, e); }
+}
+$("#days").addEventListener("change", load); load();
+// Recent games across the whole squad
+(async () => {
+  const el = $("#recent");
+  try {
+    const list = await api("/players"); const hs = await heroes(); const name = (id) => hs.find((x) => x.id === id)?.name ?? id;
+    const all = (await Promise.all(list.map((p) => api(`/players/${p.account_id}`).then((d) => d.matches.slice(0, 10).map((m) => ({ ...m, player: p.name })))))).flat().sort((a, b) => b.start_time - a.start_time).slice(0, 25);
+    el.replaceChildren(h("table", {}, h("thead", {}, h("tr", {}, ...["When", "Player", "Hero", "Result", "K/D/A", "Souls", "Length", ""].map((t) => h("th", {}, t)))),
+      h("tbody", {}, ...all.map((m) => h("tr", {}, h("td", {}, ago(m.start_time)), h("td", {}, m.player), h("td", {}, name(m.hero_id)),
+        h("td", { class: m.won ? "win" : "loss" }, m.won ? "Win" : "Loss"), h("td", { class: "num" }, `${m.kills}/${m.deaths}/${m.assists}`),
+        h("td", { class: "num" }, m.net_worth.toLocaleString()), h("td", {}, dur(m.duration_s)), h("td", {}, h("a", { href: `/match.html?id=${m.match_id}` }, "details")))))));
+  } catch (e) { showError(el, e); }
+})();
+</script></body></html>

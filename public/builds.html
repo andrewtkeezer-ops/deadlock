@@ -1,0 +1,31 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Build wizard · Deadlock Squad</title><link rel="stylesheet" href="/css/app.css"></head>
+<body><main><h1>Build wizard</h1>
+<div class="card"><p>Pick a hero, say what you care about, and get a ranked shop + purchase order. Scores blend each item's actual stat modifiers with its win rate on this hero.</p>
+<p>Hero: <select id="hero"></select> &nbsp; Soul budget: <input type="number" id="budget" value="40000" step="1000" style="width:110px"> &nbsp; Trust win-rate data: <input type="range" id="wrw" min="0" max="100" value="40"> <span id="wrwv">40%</span></p>
+<div id="sliders"></div>
+<p><button class="primary" id="go">Build it</button> &nbsp; <button id="preset">Andrew's raw-DPS preset</button></p></div>
+<div id="out"></div>
+<h2>Saved squad builds</h2><div id="saved" class="card muted">Loading…</div></main>
+<script type="module">
+import { api, h, $, pct, heroes, shell, showError } from "/js/app.js";
+shell("/builds.html");
+const hs = await heroes(); hs.forEach((x) => $("#hero").append(new Option(x.name, x.id)));
+const stats = await api("/builds/stat-options"); const pri = {};
+$("#sliders").replaceChildren(...stats.map((s) => { pri[s.id] = 0; const v = h("span", {}, "0");
+  return h("div", { class: "slider" }, h("label", {}, s.label), h("input", { type: "range", min: 0, max: 5, value: 0, oninput: (e) => { pri[s.id] = +e.target.value; v.textContent = e.target.value; } }), v); }));
+$("#wrw").oninput = (e) => ($("#wrwv").textContent = e.target.value + "%");
+$("#preset").onclick = () => { Object.assign(pri, { weapon_damage: 5, spirit: 4, ammo: 4, falloff: 4, fire_rate: 2 }); [...$("#sliders").children].forEach((row, i) => { row.children[1].value = pri[stats[i].id]; row.children[2].textContent = pri[stats[i].id]; }); };
+let last;
+$("#go").onclick = async () => { const out = $("#out"); out.replaceChildren(h("div", { class: "card" }, "Crunching…"));
+  try { last = await api("/builds/wizard", { method: "POST", body: { hero_id: +$("#hero").value, priorities: pri, budget: +$("#budget").value, winrate_weight: +$("#wrw").value / 100 } });
+    const item = (it) => h("div", { class: "card", style: "margin:0" }, h("strong", {}, it.name), " ", h("span", { class: "chip " + it.slot }, `${it.slot} T${it.tier}`), h("div", { class: "muted" }, `${it.cost.toLocaleString()} souls · win ${pct(it.win_rate)} (${it.samples}) · score ${it.score}`),
+      h("div", { class: "muted", style: "font-size:12px" }, Object.entries(it.contributes).map(([k, v]) => `${k} ${v}`).join(" · ")));
+    out.replaceChildren(h("div", { class: "card" }, h("h2", { style: "margin-top:0" }, `Purchase order — ${last.spent.toLocaleString()} / ${last.budget.toLocaleString()} souls`), h("div", { class: "grid" }, ...last.order.map(item)),
+      h("p", {}, h("input", { type: "text", id: "title", placeholder: "Build name" }), " ", h("input", { type: "text", id: "author", placeholder: "Your name" }), " ", h("button", { class: "primary", onclick: save }, "Save for the squad"))),
+      h("div", { class: "card" }, h("h2", { style: "margin-top:0" }, "Top 60 items by score"), h("div", { class: "grid" }, ...last.ranked.map(item)))); }
+  catch (e) { showError(out, e); } };
+async function save() { await api("/builds", { method: "POST", body: { hero_id: last.hero_id, title: $("#title").value || "Untitled", author: $("#author").value || "anon", priorities: pri, items: last.order.map((i) => ({ item_id: i.item_id, name: i.name, tier: i.tier })) } }); loadSaved(); }
+async function loadSaved() { const el = $("#saved"); try { const b = await api("/builds"); el.className = "card";
+  el.replaceChildren(b.length ? h("table", {}, h("tbody", {}, ...b.map((x) => h("tr", {}, h("td", {}, hs.find((y) => y.id === x.hero_id)?.name), h("td", {}, h("strong", {}, x.title), " ", h("span", { class: "muted" }, `by ${x.author}`)), h("td", {}, x.items.map((i) => i.name).join(" → ")), h("td", { class: "num" }, `▲ ${x.votes}`, " ", h("button", { onclick: async () => { await api(`/builds/${x.id}/vote`, { method: "POST" }); loadSaved(); } }, "+1")))))) : "No saved builds yet."); } catch (e) { showError(el, e); } }
+loadSaved();
+</script></body></html>

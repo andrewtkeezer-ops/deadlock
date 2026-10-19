@@ -1,0 +1,45 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Setup · Deadlock Squad</title><link rel="stylesheet" href="/css/app.css"></head>
+<body><main>
+<h1>Get your matches tracked</h1>
+<p>Valve doesn't publish a list of matches. A tracker needs each match's ID plus a one-time key (a "salt") that only <em>your</em> Steam client downloads. So every friend runs a tiny background tool once; after that, every game you play shows up here automatically, and it backfills your old games too.</p>
+
+<div class="card">
+<h2 style="margin-top:0">Step 1 — install the ingest tool (Windows)</h2>
+<p>Open <strong>PowerShell</strong> (Start → type "PowerShell") and paste:</p>
+<pre id="ps">irm https://raw.githubusercontent.com/deadlock-api/deadlock-api-ingest/master/install-windows.ps1 | iex</pre>
+<button class="primary" onclick="navigator.clipboard.writeText(document.getElementById('ps').textContent)">Copy command</button>
+<p class="muted">It installs to your user folder, starts on login, and shows a small window listing each match it sends (you can close it; it keeps running). Admin rights are only asked for to create the auto-start task. It uploads <strong>only</strong> match IDs, salts and your public Steam account ID — never your Steam login. Source: <a href="https://github.com/deadlock-api/deadlock-api-ingest" target="_blank" rel="noopener">github.com/deadlock-api/deadlock-api-ingest</a> (MIT, written in Rust).</p>
+<details><summary>Linux / Steam Deck</summary><pre>curl -fsSL https://raw.githubusercontent.com/deadlock-api/deadlock-api-ingest/master/install-linux.sh | bash</pre></details>
+<details><summary>Prefer it to only run while the game is open?</summary><p>Skip the installer, download <code>deadlock-api-ingest-windows-latest.exe</code> from the releases page, and set Deadlock's Steam launch option to:</p><pre>"C:\Users\YOUR_USER\AppData\Local\deadlock-api-ingest\deadlock-api-ingest.exe" -- %command%</pre></details>
+</div>
+
+<div class="card">
+<h2 style="margin-top:0">Step 2 — find your Steam account ID</h2>
+<p>Paste your Steam profile URL or SteamID64 and we'll convert it:</p>
+<input type="text" id="steamin" placeholder="https://steamcommunity.com/profiles/7656119… or 7656119…" style="width:100%"> <p id="steamout" class="muted"></p>
+<p class="muted">Vanity URLs (<code>/id/yourname</code>) can't be converted without a Steam API key — open your profile, click "Edit profile" and the numeric ID is shown, or use steamid.io.</p>
+</div>
+
+<div class="card">
+<h2 style="margin-top:0">Step 3 — add yourself to the squad</h2>
+<p>Needs the admin token (ask Andrew).</p>
+<input type="number" id="acc" placeholder="account_id"> <input type="text" id="nm" placeholder="Display name"> <input type="text" id="tok" placeholder="admin token"> <button class="primary" id="add">Add &amp; import</button>
+<p id="addout"></p>
+</div>
+</main>
+<script type="module">
+import { api, $, shell } from "/js/app.js";
+shell("/setup.html");
+const BASE = 76561197960265728n;
+$("#steamin").addEventListener("input", (e) => {
+  const m = e.target.value.match(/7656119\d{10}/); const out = $("#steamout");
+  if (!m) return (out.textContent = "");
+  const acc = BigInt(m[0]) - BASE; out.innerHTML = `account_id = <strong>${acc}</strong>`; $("#acc").value = String(acc);
+});
+$("#add").addEventListener("click", async () => {
+  const out = $("#addout"); out.textContent = "Importing…";
+  try { const r = await api("/admin/players", { method: "POST", headers: { "x-admin-token": $("#tok").value }, body: { account_id: Number($("#acc").value), name: $("#nm").value } });
+    out.innerHTML = `<span class="ok">Added — imported ${r.matchesImported} matches.</span> <a href="/">Leaderboard</a>`; }
+  catch (e) { out.innerHTML = `<span class="error">${e.message}</span>`; }
+});
+</script></body></html>

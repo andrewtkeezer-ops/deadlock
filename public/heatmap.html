@@ -1,0 +1,18 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Heatmap · Deadlock Squad</title><link rel="stylesheet" href="/css/app.css"></head>
+<body><main><h1>Danger zones</h1>
+<p class="muted">Where players of a hero get kills (green) and die (red), from all tracked matches. Hero: <select id="hero"><option value="">All heroes</option></select> Show: <select id="mode"><option value="deaths">Deaths</option><option value="kills">Kills</option><option value="net">Kills − deaths</option></select> First <input type="number" id="maxmin" value="0" min="0" style="width:70px"> min (0 = whole game)</p>
+<div class="card" style="text-align:center"><canvas id="map" width="768" height="768" style="max-width:100%;background:#0a0b0f;border-radius:8px"></canvas><p class="muted">TODO: drop a minimap PNG at <code>/img/map.png</code> and it will be drawn underneath. The API's 128×128 raster is in map coordinates; if it looks mirrored, flip <code>FLIP_Y</code> in this page.</p></div></main>
+<script type="module">
+import { api, $, heroes, shell, showError } from "/js/app.js";
+shell("/heatmap.html");
+const FLIP_Y = true; const hs = await heroes(); hs.forEach((x) => $("#hero").append(new Option(x.name, x.id)));
+const bg = new Image(); bg.src = "/img/map.png";
+async function draw() { const c = $("#map").getContext("2d"); c.clearRect(0, 0, 768, 768); if (bg.complete && bg.naturalWidth) c.drawImage(bg, 0, 0, 768, 768);
+  const q = new URLSearchParams(); if ($("#hero").value) q.set("hero_id", $("#hero").value); if (+$("#maxmin").value) q.set("max_match_duration_s", $("#maxmin").value * 60);
+  try { const d = await api(`/analytics/heatmap?${q}`); const mode = $("#mode").value; const cell = 768 / d.size;
+    for (const p of d.cells) { const v = mode === "deaths" ? p.deaths / d.maxDeaths : mode === "kills" ? p.kills / d.maxKills : (p.kills - p.deaths) / Math.max(d.maxKills, d.maxDeaths);
+      if (!v) continue; const a = Math.min(1, Math.abs(v) ** 0.6); c.fillStyle = (mode === "deaths" || (mode === "net" && v < 0)) ? `rgba(217,85,79,${a})` : `rgba(95,191,122,${a})`;
+      const y = FLIP_Y ? d.size - 1 - p.y : p.y; c.fillRect(p.x * cell, y * cell, cell, cell); } }
+  catch (e) { showError($("#map").parentElement, e); } }
+$("#hero").onchange = $("#mode").onchange = $("#maxmin").onchange = draw; bg.onload = draw; draw();
+</script></body></html>

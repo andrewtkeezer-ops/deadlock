@@ -1,0 +1,33 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "deadlock-squad",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // Static site lives in /public; the Worker handles /api/* and falls through to assets.
+  "assets": { "directory": "./public", "binding": "ASSETS", "not_found_handling": "404-page" },
+
+  // Free tier: 5 GB storage, 5M reads/day. Run `npm run db:create` and paste the id here.
+  "d1_databases": [
+    { "binding": "DB", "database_name": "deadlock-squad", "database_id": "REPLACE_WITH_D1_ID", "migrations_dir": "migrations" }
+  ],
+
+  // Cache of upstream deadlock-api responses. Free tier: 100k reads/day, 1k writes/day.
+  "kv_namespaces": [
+    { "binding": "CACHE", "id": "REPLACE_WITH_KV_ID" }
+  ],
+
+  // Poll the friend list for new matches. Cron triggers are free.
+  "triggers": { "crons": ["17 * * * *"] },
+
+  "vars": {
+    "DEADLOCK_API": "https://api.deadlock-api.com",
+    "DEADLOCK_ASSETS": "https://assets.deadlock-api.com",
+    // Optional: free key from deadlock-api doubles the rate limit and gets queue priority.
+    // Set as a secret instead: `wrangler secret put DEADLOCK_API_KEY`
+    "ADMIN_TOKEN": "change-me"
+  },
+
+  "observability": { "enabled": true }
+}

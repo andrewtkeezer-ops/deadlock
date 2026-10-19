@@ -1,0 +1,20 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Heroes · Deadlock Squad</title><link rel="stylesheet" href="/css/app.css"></head>
+<body><main><h1>Hero meta</h1>
+<p class="muted">Win and pick rates from all tracked matches. Rank band: <select id="band"><option value="">All</option><option value="1,60">Initiate–Arcanist</option><option value="61,90">Oracle–Phantom</option><option value="91,116">Ascendant–Eternus</option></select>
+Since: <select id="since"><option value="7">7 days</option><option value="14" selected>14 days</option><option value="30">30 days</option></select></p>
+<div id="out" class="card">Loading…</div></main>
+<script type="module">
+import { api, h, $, pct, shell, showError } from "/js/app.js";
+shell("/heroes.html");
+async function load() {
+  const out = $("#out"); const [lo, hi] = ($("#band").value || ",").split(",");
+  const q = new URLSearchParams({ min_unix_timestamp: Math.floor(Date.now() / 1000) - $("#since").value * 86400 });
+  if (lo) { q.set("min_average_badge", lo); q.set("max_average_badge", hi); }
+  try { const rows = await api(`/heroes/stats?${q}`);
+    out.replaceChildren(h("table", {}, h("thead", {}, h("tr", {}, ...["Hero", "Win rate", "", "Pick rate", "Matches", ""].map((t) => h("th", {}, t)))),
+      h("tbody", {}, ...rows.map((r) => h("tr", {}, h("td", {}, r.name), h("td", { class: "num" }, pct(r.win_rate)), h("td", { style: "width:160px" }, h("div", { class: "bar" }, h("i", { style: `width:${Math.min(100, (r.win_rate - 0.35) / 0.3 * 100)}%` }))),
+        h("td", { class: "num" }, pct(r.pick_rate)), h("td", { class: "num" }, r.matches.toLocaleString()), h("td", {}, h("a", { href: `/counters.html?hero=${r.hero_id}` }, "matchups")))))));
+  } catch (e) { showError(out, e); }
+}
+$("#band").onchange = $("#since").onchange = load; load();
+</script></body></html>

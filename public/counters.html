@@ -1,0 +1,28 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Counters · Deadlock Squad</title><link rel="stylesheet" href="/css/app.css"></head>
+<body><main><h1>Who should I pick?</h1>
+<div class="card"><p>Add the heroes already locked in. Suggestions score each remaining hero by synergy with your allies plus win rate against the enemies.</p>
+<div style="display:flex;gap:20px;flex-wrap:wrap"><div><strong>Allies</strong><br><select id="ally"></select> <button id="addAlly">+</button><div id="allies"></div></div>
+<div><strong>Enemies</strong><br><select id="enemy"></select> <button id="addEnemy">+</button><div id="enemies"></div></div></div>
+<p><button class="primary" id="go">Suggest</button></p></div>
+<div id="out" class="card muted">Pick some heroes, then Suggest.</div>
+<h2 id="mtitle"></h2><div id="matchups"></div></main>
+<script type="module">
+import { api, h, $, pct, heroes, shell, showError } from "/js/app.js";
+shell("/counters.html");
+const hs = await heroes(); const opt = (sel) => hs.forEach((x) => sel.append(h("option", { value: x.id }, x.name))); opt($("#ally")); opt($("#enemy"));
+const picks = { allies: [], enemies: [] };
+const render = () => ["allies", "enemies"].forEach((k) => $("#" + k).replaceChildren(...picks[k].map((id) => h("span", { class: "chip", onclick: () => { picks[k] = picks[k].filter((x) => x !== id); render(); } }, hs.find((x) => x.id === id).name + " ×"))));
+$("#addAlly").onclick = () => { const id = +$("#ally").value; if (picks.allies.length < 5 && !picks.allies.includes(id)) picks.allies.push(id); render(); };
+$("#addEnemy").onclick = () => { const id = +$("#enemy").value; if (picks.enemies.length < 6 && !picks.enemies.includes(id)) picks.enemies.push(id); render(); };
+$("#go").onclick = async () => { const out = $("#out"); out.textContent = "Thinking…";
+  try { const r = await api(`/heroes/suggest?allies=${picks.allies}&enemies=${picks.enemies}`);
+    out.className = "card"; out.replaceChildren(h("table", {}, h("thead", {}, h("tr", {}, ...["Hero", "Score", "Synergy w/ allies", "Win vs enemies", "Data points"].map((t) => h("th", {}, t)))),
+      h("tbody", {}, ...r.suggestions.slice(0, 15).map((s) => h("tr", {}, h("td", {}, h("a", { href: `?hero=${s.hero_id}` }, s.name)), h("td", { class: "num" }, (s.score * 100).toFixed(1)), h("td", { class: "num" }, pct(s.synergy)), h("td", { class: "num" }, pct(s.counter)), h("td", { class: "num" }, String(s.samples))))))); }
+  catch (e) { showError(out, e); } };
+// single-hero matchup tables (?hero=ID)
+const hero = new URLSearchParams(location.search).get("hero");
+if (hero) { try { const m = await api(`/heroes/${hero}/matchups`); $("#mtitle").textContent = `${m.name}: matchups`;
+  const tbl = (title, rows, cls) => h("div", { class: "card" }, h("h3", { style: "margin-top:0" }, title), h("table", {}, h("tbody", {}, ...rows.slice(0, 12).map((r) => h("tr", {}, h("td", {}, r.name), h("td", { class: "num " + cls(r) }, pct(r.win_rate)), h("td", { class: "num muted" }, `${r.matches} games`))))));
+  $("#matchups").replaceChildren(h("div", { class: "grid" }, tbl(`${m.name} struggles against`, m.counters, (r) => r.win_rate < .5 ? "loss" : "win"), tbl(`${m.name} beats`, [...m.counters].reverse(), (r) => r.win_rate < .5 ? "loss" : "win"), tbl(`Best teammates for ${m.name}`, m.synergies, () => "win"))); }
+  catch (e) { showError($("#matchups"), e); } }
+</script></body></html>
