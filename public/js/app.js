@@ -101,11 +101,15 @@ export function shell(active) {
   const mk = ([href, label, ic]) => { const a = h("a", { href, class: href === active ? "active" : "" }); a.innerHTML = `<span class="ic">${ICONS[ic]}</span><span class="lb">${label}</span>`; return a; };
   const pill = h("span", { class: "pill" });
   const nav = h("nav", {}, pill, ...links.map(mk));
-  const toggle = h("button", { class: "toggle", type: "button", title: "Collapse menu" }); toggle.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg><span>Collapse</span>`;
-  toggle.addEventListener("click", () => { const c = document.body.classList.toggle("rail-collapsed"); try { localStorage.setItem("ss.rail", c ? "collapsed" : "open"); } catch {} setTimeout(movePill, 350); });
+  const collapsed0 = document.body.classList.contains("rail-collapsed");
+  const toggle = h("button", { class: "toggle", type: "button", title: collapsed0 ? "Expand menu" : "Collapse menu" }); toggle.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg><span>${collapsed0 ? "Expand" : "Collapse"}</span>`;
+  toggle.addEventListener("click", () => { const c = document.body.classList.toggle("rail-collapsed"); rail.classList.remove("peek"); armed = false; toggle.title = c ? "Expand menu" : "Collapse menu"; toggle.querySelector("span").textContent = c ? "Expand" : "Collapse"; try { localStorage.setItem("ss.rail", c ? "collapsed" : "open"); } catch {} setTimeout(movePill, 350); });
   const who = h("div", { class: "who" });
   const rail = h("aside", { class: "rail" }, h("a", { class: "brand", href: "/", title: "Soul Scribe" }, h("img", { class: "mark", src: "/img/icon.png", alt: "" }), h("img", { class: "word", src: "/img/logo.webp", alt: "Soul Scribe" })), nav, toggle, who);
   document.body.prepend(rail);
+  // collapsed rail peeks open on hover — but not right after you clicked Collapse (wait until the pointer has left once)
+  let armed = true, peekT; rail.addEventListener("mouseenter", () => { if (!armed) return; peekT = setTimeout(() => rail.classList.add("peek"), 140); });
+  rail.addEventListener("mouseleave", () => { clearTimeout(peekT); rail.classList.remove("peek"); armed = true; });
   // sliding active pill + hover preview + click ripple
   function movePill(target) { const a = target || nav.querySelector("a.active"); if (!a) { pill.style.opacity = 0; return; } pill.style.top = a.offsetTop + "px"; pill.style.opacity = 1; }
   requestAnimationFrame(() => movePill());
@@ -116,9 +120,9 @@ export function shell(active) {
     if (m.account_id) {
       let p = null; try { p = (await api("/players")).find((x) => x.account_id === m.account_id); } catch {}
       const a = h("a", { href: `/player.html?id=${m.account_id}` }, p?.avatar_url ? h("img", { class: "av", src: p.avatar_url, alt: "" }) : h("span", { class: "av" }), h("span", { class: "nm" }, p?.name ?? "My profile", h("small", {}, "View profile")));
-      const out = h("a", { class: "out", href: "/api/auth/steam/logout", title: "Sign out" }); out.innerHTML = `<span class="ic">${ICONS.out}</span>`;
-      who.append(a, out); if (p?.mmr_rank) try { const b = await rankBadge(p.mmr_rank); b.style.height = "26px"; a.querySelector("small").replaceChildren(b, " ", p.mmr_score != null ? String(Math.round(p.mmr_score)) : ""); } catch {}
+      who.append(a); if (p?.mmr_rank) try { const b = await rankBadge(p.mmr_rank); b.style.height = "26px"; a.querySelector("small").replaceChildren(b, " ", p.mmr_score != null ? String(Math.round(p.mmr_score)) : ""); } catch {}
     } else who.append(h("a", { href: "/api/auth/steam/login", title: "Sign in through Steam" }, h("img", { class: "steam", src: "https://community.cloudflare.steamstatic.com/public/images/signinthroughsteam/sits_small.png", alt: "Sign in through Steam" })));
+    if (m.account_id || m.email) { const out = h("a", { class: "out", href: "/api/auth/steam/logout", title: "Sign out" }); out.innerHTML = `<span class="ic">${ICONS.out}</span><span class="lb">Sign out</span>`; who.after(out); }
   }).catch(() => {});
   if (!reduced) alive();
 }
