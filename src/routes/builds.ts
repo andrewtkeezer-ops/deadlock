@@ -96,27 +96,4 @@ r.post("/wizard", async (c) => {
   return c.json({ hero_id: body.hero_id, budget, spent, order, ranked: scored.slice(0, 60) });
 });
 
-// ---- saved builds shared with the group ----
-r.get("/", async (c) => {
-  const hero = c.req.query("hero_id");
-  const q = hero
-    ? c.env.DB.prepare("SELECT * FROM builds WHERE hero_id=? ORDER BY votes DESC, created_at DESC").bind(Number(hero))
-    : c.env.DB.prepare("SELECT * FROM builds ORDER BY created_at DESC LIMIT 100");
-  const { results } = await q.all();
-  return c.json(results.map((b) => ({ ...b, priorities: JSON.parse(b.priorities as string), items: JSON.parse(b.items as string) })));
-});
-
-r.post("/", async (c) => {
-  const b = await c.req.json<{ hero_id: number; author: string; title: string; priorities: unknown; items: unknown; notes?: string }>();
-  if (!b.hero_id || !b.author || !b.title) return c.json({ error: "hero_id, author, title required" }, 400);
-  const res = await c.env.DB.prepare("INSERT INTO builds(hero_id, author, title, priorities, items, notes) VALUES (?,?,?,?,?,?)")
-    .bind(b.hero_id, b.author, b.title, JSON.stringify(b.priorities ?? {}), JSON.stringify(b.items ?? []), b.notes ?? null).run();
-  return c.json({ ok: true, id: res.meta.last_row_id });
-});
-
-r.post("/:id/vote", async (c) => {
-  await c.env.DB.prepare("UPDATE builds SET votes=votes+1 WHERE id=?").bind(Number(c.req.param("id"))).run();
-  return c.json({ ok: true });
-});
-
 export default r;

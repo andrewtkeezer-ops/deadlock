@@ -5,7 +5,7 @@
 <div id="sliders"></div>
 <p><button class="primary" id="go">Build it</button> &nbsp; <button id="preset">Andrew's raw-DPS preset</button></p></div>
 <div id="out"></div>
-<h2>Saved squad builds</h2><div id="saved" class="card muted">Loading…</div></main>
+<p class="muted">Saved builds live in the <a href="/library.html">build library</a>.</p></main>
 <script type="module">
 import { api, h, $, pct, heroes, shell, showError } from "/js/app.js";
 shell("/builds.html");
@@ -21,11 +21,7 @@ $("#go").onclick = async () => { const out = $("#out"); out.replaceChildren(h("d
     const item = (it) => h("div", { class: "card", style: "margin:0" }, h("strong", {}, it.name), " ", h("span", { class: "chip " + it.slot }, `${it.slot} T${it.tier}`), h("div", { class: "muted" }, `${it.cost.toLocaleString()} souls · win ${pct(it.win_rate)} (${it.samples}) · score ${it.score}`),
       h("div", { class: "muted", style: "font-size:12px" }, Object.entries(it.contributes).map(([k, v]) => `${k} ${v}`).join(" · ")));
     out.replaceChildren(h("div", { class: "card" }, h("h2", { style: "margin-top:0" }, `Purchase order — ${last.spent.toLocaleString()} / ${last.budget.toLocaleString()} souls`), h("div", { class: "grid" }, ...last.order.map(item)),
-      h("p", {}, h("input", { type: "text", id: "title", placeholder: "Build name" }), " ", h("input", { type: "text", id: "author", placeholder: "Your name" }), " ", h("button", { class: "primary", onclick: save }, "Save for the squad"))),
+      h("p", {}, h("button", { class: "primary", onclick: () => { sessionStorage.setItem("wizardBuild", JSON.stringify({ hero_id: last.hero_id, title: `${hs.find((y) => y.id === last.hero_id)?.name} wizard build`, order: last.order })); location.href = "/editor.html?from=wizard"; } }, "Open in build editor"), " ", h("span", { class: "muted" }, "to tweak it and save to the library"))),
       h("div", { class: "card" }, h("h2", { style: "margin-top:0" }, "Top 60 items by score"), h("div", { class: "grid" }, ...last.ranked.map(item)))); }
   catch (e) { showError(out, e); } };
-async function save() { await api("/builds", { method: "POST", body: { hero_id: last.hero_id, title: $("#title").value || "Untitled", author: $("#author").value || "anon", priorities: pri, items: last.order.map((i) => ({ item_id: i.item_id, name: i.name, tier: i.tier })) } }); loadSaved(); }
-async function loadSaved() { const el = $("#saved"); try { const b = await api("/builds"); el.className = "card";
-  el.replaceChildren(b.length ? h("table", {}, h("tbody", {}, ...b.map((x) => h("tr", {}, h("td", {}, hs.find((y) => y.id === x.hero_id)?.name), h("td", {}, h("strong", {}, x.title), " ", h("span", { class: "muted" }, `by ${x.author}`)), h("td", {}, x.items.map((i) => i.name).join(" → ")), h("td", { class: "num" }, `▲ ${x.votes}`, " ", h("button", { onclick: async () => { await api(`/builds/${x.id}/vote`, { method: "POST" }); loadSaved(); } }, "+1")))))) : "No saved builds yet."); } catch (e) { showError(el, e); } }
-loadSaved();
 </script></body></html>

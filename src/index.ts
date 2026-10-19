@@ -6,6 +6,7 @@ import { ApiError, DeadlockApi } from "./deadlock";
 import players from "./routes/players";
 import heroes from "./routes/heroes";
 import builds from "./routes/builds";
+import library from "./routes/builds-library";
 import analytics from "./routes/analytics";
 import admin from "./routes/admin";
 import steam from "./routes/steam";
@@ -37,6 +38,7 @@ app.get("/api/me", (c) => c.json(c.get("user") ?? { email: "dev", role: "admin",
 
 app.route("/api/players", players);
 app.route("/api/heroes", heroes);
+app.route("/api/library", library);
 app.route("/api/builds", builds);
 app.route("/api/analytics", analytics);
 app.route("/api/admin", admin);
