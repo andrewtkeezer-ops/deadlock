@@ -1,68 +1,73 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Heroes · Soul Scribe</title><link rel="icon" type="image/png" href="/img/favicon.png"><link rel="stylesheet" href="/css/app.css">
 <style>
-main{max-width:none;padding:0;min-height:100vh;display:flex;flex-direction:column}
-.topbar{display:flex;align-items:center;gap:14px;padding:22px 36px 0;position:relative;z-index:5}.topbar h1{margin:0}.topbar .sp{flex:1}.topbar .hint{color:var(--muted);font-size:12px;letter-spacing:.12em;text-transform:uppercase}
-/* stage */
-.stage{position:relative;flex:1;min-height:62vh;overflow:hidden;isolation:isolate;--tint:#4174bb}
-.stage .bg{position:absolute;inset:-4%;background:center/cover no-repeat;filter:blur(3px) saturate(1.2) brightness(.7);transform:scale(1.04);transition:opacity .4s;opacity:.7}
-.stage .tint{position:absolute;inset:0;background:radial-gradient(55% 70% at 72% 55%,color-mix(in srgb,var(--tint) 55%,transparent),transparent 70%),linear-gradient(90deg,rgba(7,8,12,.97) 0%,rgba(7,8,12,.8) 32%,rgba(7,8,12,.25) 62%,rgba(7,8,12,.1) 100%),linear-gradient(0deg,rgba(7,8,12,1) 0%,rgba(7,8,12,.6) 14%,transparent 40%)}
-.stage .art{position:absolute;right:2%;top:-2%;height:106%;max-width:66%;object-fit:contain;object-position:right bottom;z-index:1;-webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 25%);mask-image:linear-gradient(90deg,transparent 0%,#000 25%);filter:drop-shadow(0 30px 50px rgba(0,0,0,.75))}
-.stage .sweep{position:absolute;inset:0;z-index:2;pointer-events:none;background:linear-gradient(100deg,transparent 35%,rgba(255,255,255,.14) 50%,transparent 65%);transform:translateX(-120%);opacity:0}
-.stage .rings{position:absolute;left:-10%;bottom:-30%;width:70%;aspect-ratio:1;border-radius:50%;border:1px solid rgba(255,255,255,.05);box-shadow:0 0 0 80px rgba(255,255,255,.025),0 0 0 160px rgba(255,255,255,.015);pointer-events:none}
-.stage.in .art{animation:artIn .6s var(--ease) both}.stage.in .info>*{animation:rise .5s var(--ease) both}.stage.in .info>*:nth-child(2){animation-delay:.05s}.stage.in .info>*:nth-child(3){animation-delay:.1s}.stage.in .info>*:nth-child(4){animation-delay:.15s}.stage.in .info>*:nth-child(5){animation-delay:.2s}.stage.in .info>*:nth-child(6){animation-delay:.25s}.stage.in .bg{animation:bgIn .6s ease both}.stage.in .sweep{animation:sweep .8s .15s ease-out both}
-@keyframes artIn{from{opacity:0;transform:translateX(50px) scale(1.04);filter:blur(8px)}to{opacity:1;transform:none;filter:blur(0)}}@keyframes bgIn{from{opacity:0}to{opacity:.7}}@keyframes sweep{0%{transform:translateX(-120%);opacity:1}100%{transform:translateX(120%);opacity:0}}
-.stage .info{position:relative;z-index:3;padding:40px 36px 30px;max-width:620px}
-.stage .name{height:84px;max-width:100%;filter:drop-shadow(0 4px 14px rgba(0,0,0,.9))}.stage h2.name{font-family:Reaver;font-size:64px;margin:0;line-height:1}
-.tags{margin:14px 0 18px}.tag{display:inline-block;background:color-mix(in srgb,var(--tint) 75%,#1f6fd0);color:#fff;font-weight:700;font-size:12px;padding:4px 10px;border-radius:4px;margin-right:6px;text-transform:uppercase;letter-spacing:.06em;box-shadow:0 3px 10px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.2)}
-.stats{display:flex;gap:26px;margin:6px 0 16px}.stat b{display:block;font-size:30px;font-family:Reaver;line-height:1.1}.stat span{color:var(--muted);font-size:11px;letter-spacing:.16em;text-transform:uppercase}
-.abrow{display:flex;gap:12px;margin:8px 0 18px}.abrow img{width:60px;height:60px;border-radius:50%;border:2px solid rgba(255,255,255,.2);background:#000;box-shadow:0 6px 16px rgba(0,0,0,.6),0 0 0 4px rgba(0,0,0,.35);transition:transform .18s var(--ease),border-color .18s,box-shadow .18s}.abrow img:hover{transform:translateY(-3px) scale(1.08);border-color:var(--accent);box-shadow:0 10px 24px rgba(0,0,0,.7),0 0 20px rgba(232,199,106,.35)}
-.stage p.role{color:#dcd9cf;max-width:52ch;line-height:1.55}
-.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}.btn.lock{padding:10px 12px}.btn.lock.on{background:rgba(232,199,106,.22);border-color:var(--accent);color:var(--accent)}
-/* bottom hero rail */
-.hrail{position:relative;z-index:4;padding:0 36px 26px;margin-top:-10px}.hrail .track{display:flex;gap:8px;overflow-x:auto;padding:14px 4px 10px;scrollbar-width:thin;scroll-snap-type:x proximity}
-.hc{flex:none;width:92px;aspect-ratio:3/4;border-radius:8px;overflow:hidden;cursor:pointer;position:relative;border:2px solid rgba(255,255,255,.08);background:#0a0b0f;transition:transform .2s var(--ease),border-color .2s,box-shadow .2s;scroll-snap-align:center}
-.hc img{width:100%;height:100%;object-fit:cover;display:block;transition:filter .2s,transform .3s var(--ease)}.hc:hover img,.hc.active img{transform:scale(1.06)}
-.hc:hover,.hc.active{transform:translateY(-10px);border-color:var(--accent);box-shadow:0 14px 30px rgba(0,0,0,.6),0 0 24px rgba(232,199,106,.25);z-index:1}
-.hc.locked{border-color:#fff;box-shadow:0 0 0 2px var(--accent),0 0 26px rgba(232,199,106,.6)}.hc.locked::before{content:"🔒";position:absolute;top:4px;right:5px;font-size:12px;z-index:2;filter:drop-shadow(0 1px 2px #000)}
-.hc .wr{position:absolute;left:0;right:0;bottom:0;font-size:10px;text-align:center;background:linear-gradient(transparent,rgba(0,0,0,.9));padding:14px 0 3px;letter-spacing:.06em;text-transform:uppercase;font-weight:600}
-.hc.dimmed{opacity:.3;filter:grayscale(.8)}
+main{max-width:none;padding:0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+.topbar{display:flex;align-items:center;gap:14px;padding:18px 28px 12px;position:relative;z-index:5}.topbar h1{margin:0;font-size:28px}.topbar .sp{flex:1}.topbar .hint{color:var(--muted);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
 .filters{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.filters .chipb{padding:4px 10px;font-size:12px}
-@media(max-width:860px){.topbar{padding:14px 14px 0;flex-wrap:wrap}.stage{min-height:70vh}.stage .info{padding:22px 16px;max-width:100%}.stage .art{opacity:.45;max-width:100%;right:-10%}.stage .name{height:56px}.stats{gap:16px}.stat b{font-size:24px}.abrow img{width:48px;height:48px}.hrail{padding:0 10px 14px}.hc{width:72px}}
+.select{flex:1;display:grid;grid-template-columns:minmax(440px,34%) 1fr;gap:0;min-height:0}
+/* grid of all heroes, no scrolling */
+.gridwrap{padding:4px 18px 22px 28px;display:flex;flex-direction:column;min-height:0}
+.grid-h{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;flex:1;min-height:0;align-content:start}
+.hc{aspect-ratio:3/4;border-radius:7px;overflow:hidden;cursor:pointer;position:relative;border:2px solid rgba(255,255,255,.07);background:#0a0b0f;transition:transform .18s var(--ease),border-color .18s,box-shadow .18s,opacity .25s,filter .25s}
+.hc img{width:100%;height:100%;object-fit:cover;display:block}.hc:hover,.hc.active{transform:scale(1.08);border-color:var(--accent);z-index:2;box-shadow:0 10px 24px rgba(0,0,0,.65),0 0 18px rgba(232,199,106,.25)}
+.hc.locked{border-color:#fff;box-shadow:0 0 0 2px var(--accent),0 0 24px rgba(232,199,106,.6)}.hc.locked::before{content:"🔒";position:absolute;top:3px;right:4px;font-size:11px;z-index:2;filter:drop-shadow(0 1px 2px #000)}
+.hc .wr{position:absolute;left:0;right:0;bottom:0;font-size:9px;text-align:center;background:linear-gradient(transparent,rgba(0,0,0,.9));padding:12px 0 2px;letter-spacing:.06em;text-transform:uppercase;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hc.dimmed{opacity:.25;filter:grayscale(.9)}
+/* stage */
+.stage{position:relative;overflow:hidden;isolation:isolate;--tint:#4174bb;border-left:1px solid var(--line);min-height:0}
+.stage .bg{position:absolute;inset:-3%;background:center/cover no-repeat;filter:saturate(1.15) brightness(.85);transform:scale(1.03);opacity:0}
+.stage .tint{position:absolute;inset:0;background:radial-gradient(50% 70% at 70% 50%,color-mix(in srgb,var(--tint) 40%,transparent),transparent 72%),linear-gradient(90deg,rgba(7,8,12,.96) 0%,rgba(7,8,12,.7) 30%,rgba(7,8,12,.25) 55%,rgba(7,8,12,.35) 100%),linear-gradient(0deg,rgba(7,8,12,.95) 0%,rgba(7,8,12,.3) 25%,transparent 50%)}
+.stage .sweep{position:absolute;inset:0;z-index:2;pointer-events:none;background:linear-gradient(100deg,transparent 35%,rgba(255,255,255,.14) 50%,transparent 65%);transform:translateX(-120%);opacity:0}
+.stage .layout{position:relative;z-index:3;height:100%;display:grid;grid-template-columns:1fr auto;gap:24px;padding:28px 36px 28px 32px;align-items:center}
+.cardwrap{perspective:1200px;align-self:center;padding-right:8px}
+.hcard{position:relative;width:300px;height:407px;border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.18);box-shadow:0 30px 60px rgba(0,0,0,.75),0 0 0 1px rgba(0,0,0,.6),0 0 60px color-mix(in srgb,var(--tint) 45%,transparent);transform-style:preserve-3d;transition:transform .15s ease-out;background:#000}
+.hcard img{width:100%;height:100%;object-fit:cover;display:block}.hcard::after{content:"";position:absolute;inset:0;background:linear-gradient(160deg,rgba(255,255,255,.14),transparent 35%,transparent 70%,rgba(0,0,0,.35));pointer-events:none}
+.hcard .frame{position:absolute;inset:8px;border:1px solid rgba(232,199,106,.35);border-radius:9px;pointer-events:none}
+.stage.in .hcard{animation:cardIn .55s var(--ease) both}.stage.in .info>*{animation:rise .5s var(--ease) both}.stage.in .info>*:nth-child(2){animation-delay:.05s}.stage.in .info>*:nth-child(3){animation-delay:.1s}.stage.in .info>*:nth-child(4){animation-delay:.15s}.stage.in .info>*:nth-child(5){animation-delay:.2s}.stage.in .info>*:nth-child(6){animation-delay:.25s}.stage.in .bg{animation:bgIn .7s ease both}.stage.in .sweep{animation:sweep .8s .15s ease-out both}
+@keyframes cardIn{from{opacity:0;transform:translateX(40px) rotateY(-14deg) scale(.96)}to{opacity:1;transform:none}}@keyframes bgIn{from{opacity:0;transform:scale(1.08)}to{opacity:1;transform:scale(1.03)}}@keyframes sweep{0%{transform:translateX(-120%);opacity:1}100%{transform:translateX(120%);opacity:0}}
+.info{min-width:0}.stage .name{height:76px;max-width:100%;filter:drop-shadow(0 4px 14px rgba(0,0,0,.9))}.stage h2.name{font-family:Reaver;font-size:56px;margin:0;line-height:1}
+.tags{margin:12px 0 16px}.tag{display:inline-block;background:color-mix(in srgb,var(--tint) 75%,#1f6fd0);color:#fff;font-weight:700;font-size:12px;padding:4px 10px;border-radius:4px;margin:0 6px 6px 0;text-transform:uppercase;letter-spacing:.06em;box-shadow:0 3px 10px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.2)}
+.stats{display:flex;gap:24px;margin:6px 0 14px;flex-wrap:wrap}.stat b{display:block;font-size:28px;font-family:Reaver;line-height:1.1}.stat span{color:var(--muted);font-size:11px;letter-spacing:.16em;text-transform:uppercase}
+.abrow{display:flex;gap:12px;margin:8px 0 16px}.abrow img{width:58px;height:58px;border-radius:50%;border:2px solid rgba(255,255,255,.2);background:#000;box-shadow:0 6px 16px rgba(0,0,0,.6),0 0 0 4px rgba(0,0,0,.35);transition:transform .18s var(--ease),border-color .18s,box-shadow .18s}.abrow img:hover{transform:translateY(-3px) scale(1.08);border-color:var(--accent);box-shadow:0 10px 24px rgba(0,0,0,.7),0 0 20px rgba(232,199,106,.35)}
+.stage p.role{color:#dcd9cf;max-width:48ch;line-height:1.55;margin:0 0 6px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}.btn.lock.on{background:rgba(232,199,106,.22);border-color:var(--accent);color:var(--accent)}
+@media(max-width:1100px){.stage .layout{grid-template-columns:1fr;align-items:start;overflow:auto}.cardwrap{display:none}.select{grid-template-columns:minmax(360px,40%) 1fr}}
+@media(max-width:860px){main{height:auto;overflow:visible}.select{grid-template-columns:1fr}.grid-h{grid-template-columns:repeat(6,1fr)}.stage{min-height:70vh;border-left:0}.topbar{padding:14px 14px 8px;flex-wrap:wrap}.stage .layout{padding:18px 14px}.stage .name{height:52px}}
 </style></head>
 <body><main>
 <div class="topbar"><h1>Select hero</h1><span class="hint">Hover to preview · click to lock · double-click to open</span><span class="sp"></span>
 <div class="filters" id="filters"></div><select id="band"><option value="">All ranks</option><option value="1,60">Initiate–Arcanist</option><option value="61,90">Oracle–Phantom</option><option value="91,116">Ascendant–Eternus</option></select><button id="metaBtn">Meta table</button></div>
-<div id="stage" class="stage"><div class="info muted">Loading heroes…</div></div>
-<div class="hrail"><div class="track" id="grid"></div></div>
+<div class="select"><div class="gridwrap"><div class="grid-h" id="grid"></div></div><div id="stage" class="stage"><div class="layout"><div class="info muted">Loading heroes…</div></div></div></div>
 </main>
 <script type="module">
 import { api, h, $, pct, heroes, abilityTooltip, withTipBuilder, modal, heroIcon, countUp, shell } from "/js/app.js";
 shell("/heroes.html");
 const hs = await heroes(); let stats = new Map(); let rows = []; let active = null; let locked = null; let roleFilter = ""; const abCache = new Map();
 const roles = [...new Set(hs.map((x) => x.hero_type).filter(Boolean))];
-$("#filters").replaceChildren(h("button", { class: "chipb" + (roleFilter ? "" : " on"), onclick: () => setRole("") }, "All"), ...roles.map((r) => h("button", { class: "chipb", onclick: () => setRole(r) }, r.replace(/_/g, " "))));
+$("#filters").replaceChildren(h("button", { class: "chipb on", onclick: () => setRole("") }, "All"), ...roles.map((r) => h("button", { class: "chipb", onclick: () => setRole(r) }, r.replace(/_/g, " "))));
 function setRole(r) { roleFilter = r; [...$("#filters").children].forEach((b, i) => b.classList.toggle("on", i === 0 ? !r : b.textContent === r.replace(/_/g, " "))); document.querySelectorAll(".hc").forEach((el) => el.classList.toggle("dimmed", !!r && hs.find((x) => x.id === +el.dataset.id)?.hero_type !== r)); }
 function stage(x) { active = x; document.querySelectorAll(".hc").forEach((el) => { el.classList.toggle("active", +el.dataset.id === x.id); el.classList.toggle("locked", locked?.id === +el.dataset.id); });
   const st = stats.get(x.id); const el = $("#stage"); el.style.setProperty("--tint", x.color || "#4174bb"); el.classList.remove("in"); void el.offsetWidth;
   const abrow = h("div", { class: "abrow" }); const isLocked = locked?.id === x.id;
   const wrEl = h("b", { class: st ? (st.win_rate >= .5 ? "win" : "loss") : "" }, "–"), prEl = h("b", {}, "–");
-  el.replaceChildren(h("div", { class: "bg", style: x.images.background ? `background-image:url(${x.images.background})` : "" }), h("div", { class: "tint" }), h("div", { class: "rings" }), x.images.gloat ? h("img", { class: "art", src: x.images.gloat, alt: "" }) : "", h("div", { class: "sweep" }),
-    h("div", { class: "info" }, x.images.name ? h("img", { class: "name", src: x.images.name, alt: x.name }) : h("h2", { class: "name" }, x.name),
+  const card = h("div", { class: "hcard" }, h("img", { src: x.images.gloat || x.images.card, alt: x.name }), h("div", { class: "frame" }));
+  const wrap = h("div", { class: "cardwrap", onmousemove: (e) => { const r = wrap.getBoundingClientRect(); const dx = (e.clientX - r.left) / r.width - .5, dy = (e.clientY - r.top) / r.height - .5; card.style.transform = `rotateY(${dx * 14}deg) rotateX(${-dy * 10}deg) translateZ(10px)`; }, onmouseleave: () => (card.style.transform = "") }, card);
+  el.replaceChildren(h("div", { class: "bg", style: x.images.background ? `background-image:url(${x.images.background})` : "" }), h("div", { class: "tint" }), h("div", { class: "sweep" }),
+    h("div", { class: "layout" }, h("div", { class: "info" }, x.images.name ? h("img", { class: "name", src: x.images.name, alt: x.name }) : h("h2", { class: "name" }, x.name),
       h("div", { class: "tags" }, ...(x.tags || []).map((t) => h("span", { class: "tag" }, t))),
-      h("div", { class: "stats" }, h("div", { class: "stat" }, wrEl, h("span", {}, "win rate")), h("div", { class: "stat" }, prEl, h("span", {}, "pick rate")), h("div", { class: "stat" }, h("b", {}, "●".repeat(x.complexity || 1) + "○".repeat(3 - (x.complexity || 1))), h("span", {}, "complexity")), x.gun_tag ? h("div", { class: "stat" }, h("b", { style: "font-size:20px;padding-top:6px" }, x.gun_tag), h("span", {}, "weapon")) : ""),
+      h("div", { class: "stats" }, h("div", { class: "stat" }, wrEl, h("span", {}, "win rate")), h("div", { class: "stat" }, prEl, h("span", {}, "pick rate")), h("div", { class: "stat" }, h("b", {}, "●".repeat(x.complexity || 1) + "○".repeat(3 - (x.complexity || 1))), h("span", {}, "complexity")), x.gun_tag ? h("div", { class: "stat" }, h("b", { style: "font-size:18px;padding-top:7px" }, x.gun_tag), h("span", {}, "weapon")) : ""),
       abrow, x.description?.role ? h("p", { class: "role" }, x.description.role) : "",
       h("div", { class: "actions" }, h("a", { class: "btn primary", href: `/hero.html?id=${x.id}` }, "Open hero page"), h("a", { class: "btn", href: `/counters.html?hero=${x.id}` }, "⚔ Matchups"), h("a", { class: "btn", href: `/editor.html?hero=${x.id}` }, "✎ New build"), h("a", { class: "btn", href: `/heatmap.html?hero=${x.id}` }, "◎ Heatmap"),
-        h("button", { class: "btn lock" + (isLocked ? " on" : ""), onclick: () => { locked = isLocked ? null : x; stage(x); } }, isLocked ? "🔒 Locked" : "🔓 Lock"))));
+        h("button", { class: "btn lock" + (isLocked ? " on" : ""), onclick: () => { locked = isLocked ? null : x; stage(x); } }, isLocked ? "🔒 Locked" : "🔓 Lock"))), wrap));
   el.classList.add("in");
   if (st) { countUp(wrEl, st.win_rate * 100, { decimals: 1, suffix: "%", ms: 600 }); countUp(prEl, st.pick_rate * 100, { decimals: 1, suffix: "%", ms: 600 }); }
   const fill = (abs) => { if (active?.id !== x.id) return; abrow.replaceChildren(...abs.map((a) => withTipBuilder(h("img", { src: a.image, alt: a.name }), () => abilityTooltip(a)))); };
   if (abCache.has(x.id)) fill(abCache.get(x.id)); else api(`/heroes/${x.id}/abilities`).then((abs) => { abCache.set(x.id, abs); fill(abs); }).catch(() => {}); }
-$("#grid").replaceChildren(...hs.map((x) => h("div", { class: "hc", "data-id": x.id, onmouseenter: () => { if (!locked) stage(x); }, onclick: (e) => { locked = locked?.id === x.id ? null : x; stage(locked || x); e.currentTarget.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" }); }, ondblclick: () => (location.href = `/hero.html?id=${x.id}`) }, h("img", { src: x.images.card || x.images.icon, alt: x.name, loading: "lazy" }), h("div", { class: "wr" }, x.name))));
+$("#grid").replaceChildren(...hs.map((x) => h("div", { class: "hc", "data-id": x.id, onmouseenter: () => { if (!locked) stage(x); }, onclick: () => { locked = locked?.id === x.id ? null : x; stage(locked || x); }, ondblclick: () => (location.href = `/hero.html?id=${x.id}`) }, h("img", { src: x.images.card || x.images.icon, alt: x.name }), h("div", { class: "wr" }, x.name))));
 async function loadStats() { const [lo, hi] = ($("#band").value || ",").split(","); const q = new URLSearchParams({ min_unix_timestamp: Math.floor(Date.now() / 1000) - 14 * 86400 }); if (lo) { q.set("min_average_badge", lo); q.set("max_average_badge", hi); }
   try { rows = await api(`/heroes/stats?${q}`); stats = new Map(rows.map((r) => [r.hero_id, r])); if (active) stage(active); } catch (e) { console.warn(e); } }
 function metaTable() { let key = "win_rate", dir = -1; const body = h("div"); const render = () => { const sorted = [...rows].sort((a, b) => (a[key] > b[key] ? 1 : -1) * dir);
     body.replaceChildren(h("table", {}, h("thead", {}, h("tr", {}, ...[["name", "Hero"], ["win_rate", "Win rate"], ["pick_rate", "Pick rate"], ["matches", "Matches"]].map(([k, t]) => h("th", { class: key === k ? "sorted" : "", onclick: () => { if (key === k) dir = -dir; else { key = k; dir = k === "name" ? 1 : -1; } render(); } }, t, key === k ? (dir < 0 ? " ▼" : " ▲") : "")))),
       h("tbody", {}, ...sorted.map((r) => h("tr", {}, h("td", {}, heroIcon(hs.find((x) => x.id === r.hero_id)), " ", h("a", { href: `/hero.html?id=${r.hero_id}` }, r.name)), h("td", { class: "num " + (r.win_rate >= .5 ? "win" : "loss") }, pct(r.win_rate)), h("td", { class: "num" }, pct(r.pick_rate)), h("td", { class: "num" }, r.matches.toLocaleString())))))); }; render(); return body; }
 $("#metaBtn").onclick = () => modal(`Hero meta · last 14 days${$("#band").selectedIndex ? " · " + $("#band").selectedOptions[0].text : ""}`, metaTable());
-$("#band").onchange = loadStats; const first = hs[Math.floor(Math.random() * hs.length)]; stage(first); loadStats(); document.querySelector(`.hc[data-id="${first.id}"]`)?.scrollIntoView({ inline: "center", block: "nearest" });
+$("#band").onchange = loadStats; stage(hs[Math.floor(Math.random() * hs.length)]); loadStats();
 </script></body></html>
