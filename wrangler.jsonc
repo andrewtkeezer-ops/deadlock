@@ -15,7 +15,7 @@
 
   // Cache of upstream deadlock-api responses. Free tier: 100k reads/day, 1k writes/day.
   "kv_namespaces": [
-    { "binding": "CACHE", "id": "REPLACE_WITH_KV_ID" }
+    { "binding": "CACHE", "id": "2acaa06863e04b658391f25b451bf178" }
   ],
 
   // Poll the friend list for new matches. Cron triggers are free.
