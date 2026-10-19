@@ -1,0 +1,9 @@
+{
+  // Soul Scribe landing page: a separate, UNPROTECTED static Worker. The app itself sits behind Cloudflare Access,
+  // so the sign-in screen has to live outside it. "Continue with Google" simply links to the app, which triggers Access → Google.
+  // Deploy: a second Workers Builds project on the same repo with root directory `landing`, or `npx wrangler deploy` from here.
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "soulscribe",
+  "compatibility_date": "2025-10-01",
+  "assets": { "directory": "./public", "not_found_handling": "single-page-application" }
+}
