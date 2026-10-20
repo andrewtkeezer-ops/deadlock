@@ -102,8 +102,8 @@ export function shell(active) {
   const pill = h("span", { class: "pill" });
   const nav = h("nav", {}, pill, ...links.map(mk));
   const collapsed0 = document.body.classList.contains("rail-collapsed");
-  const toggle = h("button", { class: "toggle", type: "button", title: collapsed0 ? "Expand menu" : "Collapse menu" }); toggle.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg><span>${collapsed0 ? "Expand" : "Collapse"}</span>`;
-  toggle.addEventListener("click", () => { const c = document.body.classList.toggle("rail-collapsed"); rail.classList.remove("peek"); armed = false; toggle.title = c ? "Expand menu" : "Collapse menu"; toggle.querySelector("span").textContent = c ? "Expand" : "Collapse"; try { localStorage.setItem("ss.rail", c ? "collapsed" : "open"); } catch {} setTimeout(movePill, 350); });
+  const toggle = h("button", { class: "toggle", type: "button", title: collapsed0 ? "Expand menu" : "Collapse menu", "aria-label": "Toggle menu" }); toggle.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>`;
+  toggle.addEventListener("click", () => { const c = document.body.classList.toggle("rail-collapsed"); rail.classList.remove("peek"); armed = false; toggle.title = c ? "Expand menu" : "Collapse menu"; try { localStorage.setItem("ss.rail", c ? "collapsed" : "open"); } catch {} setTimeout(movePill, 350); });
   const who = h("div", { class: "who" });
   const rail = h("aside", { class: "rail" }, h("a", { class: "brand", href: "/", title: "Soul Scribe" }, h("img", { class: "mark", src: "/img/icon.png", alt: "" }), h("img", { class: "word", src: "/img/logo.webp", alt: "Soul Scribe" })), nav, toggle, who);
   document.body.prepend(rail);
@@ -121,8 +121,12 @@ export function shell(active) {
       let p = null; try { p = (await api("/players")).find((x) => x.account_id === m.account_id); } catch {}
       const a = h("a", { href: `/player.html?id=${m.account_id}` }, p?.avatar_url ? h("img", { class: "av", src: p.avatar_url, alt: "" }) : h("span", { class: "av" }), h("span", { class: "nm" }, p?.name ?? "My profile", h("small", {}, "View profile")));
       who.append(a); if (p?.mmr_rank) try { const b = await rankBadge(p.mmr_rank); b.style.height = "26px"; a.querySelector("small").replaceChildren(b, " ", p.mmr_score != null ? String(Math.round(p.mmr_score)) : ""); } catch {}
-    } else who.append(h("a", { href: "/api/auth/steam/login", title: "Sign in through Steam" }, h("img", { class: "steam", src: "https://community.cloudflare.steamstatic.com/public/images/signinthroughsteam/sits_small.png", alt: "Sign in through Steam" })));
-    if (m.account_id || m.email) { const out = h("a", { class: "out", href: "/api/auth/steam/logout", title: "Sign out" }); out.innerHTML = `<span class="ic">${ICONS.out}</span><span class="lb">Sign out</span>`; who.after(out); }
+    } else {
+      // Signed in through the Google door (Cloudflare Access) but no Steam account linked yet: show who they are + a link to connect Steam.
+      if (m.email || m.access) who.append(h("a", { href: "/setup.html", title: "Connect your Steam account" }, h("span", { class: "av gg" }, "G"), h("span", { class: "nm" }, m.email ?? "Signed in with Google", h("small", {}, m.role === "admin" ? "Admin · connect Steam" : "Connect Steam"))));
+      else who.append(h("a", { href: "/api/auth/steam/login", title: "Sign in through Steam" }, h("img", { class: "steam", src: "https://community.cloudflare.steamstatic.com/public/images/signinthroughsteam/sits_small.png", alt: "Sign in through Steam" })));
+    }
+    if (m.account_id || m.email || m.access) { const out = h("a", { class: "out", href: "/api/auth/steam/logout", title: "Sign out" }); out.innerHTML = `<span class="ic">${ICONS.out}</span><span class="lb">Sign out</span>`; who.after(out); }
   }).catch(() => {});
   if (!reduced) alive();
 }

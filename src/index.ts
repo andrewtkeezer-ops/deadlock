@@ -38,8 +38,10 @@ app.use("/api/*", requireMember);
 app.get("/api/me", (c) => {
   const steam = steamAccount(c.req.header("cookie")); const sup = isSuperAdmin(c.env, steam);
   const u = c.get("user");
-  if (u) return c.json({ ...u, account_id: steam, super: sup || u.email === c.env.SUPER_ADMIN_EMAIL.toLowerCase(), role: sup ? "admin" : u.role });
-  return c.json({ email: null, role: sup ? "admin" : "member", account_id: steam, super: sup, unconfigured: !c.env.ACCESS_TEAM_DOMAIN || !c.env.ACCESS_AUD });
+  // Did this browser come through the Cloudflare Access (Google) login page? True even when ACCESS_AUD isn't set yet and we can't read the email.
+  const access = !!(c.req.header("cf-access-jwt-assertion") || /CF_Authorization=/.test(c.req.header("cookie") ?? ""));
+  if (u) return c.json({ ...u, account_id: steam, access, super: sup || u.email === c.env.SUPER_ADMIN_EMAIL.toLowerCase(), role: sup ? "admin" : u.role });
+  return c.json({ email: null, role: sup ? "admin" : "member", account_id: steam, access, super: sup, unconfigured: !c.env.ACCESS_TEAM_DOMAIN || !c.env.ACCESS_AUD });
 });
 
 app.route("/api/players", players);

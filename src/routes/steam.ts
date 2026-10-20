@@ -65,7 +65,8 @@ r.get("/me", (c) => {
 /** Sign out: drop the Steam cookie, and when Cloudflare Access is the door, end that session too (it bounces back to "/"). */
 r.get("/logout", (c) => {
   c.header("set-cookie", "squad_steam=; Path=/; Max-Age=0; SameSite=Lax; Secure");
-  return c.redirect(c.env.ACCESS_TEAM_DOMAIN && c.env.ACCESS_AUD ? "/cdn-cgi/access/logout" : "/");
+  const access = !!(c.req.header("cf-access-jwt-assertion") || /CF_Authorization=/.test(c.req.header("cookie") ?? ""));
+  return c.redirect(access ? "/cdn-cgi/access/logout" : "/");
 });
 
 export default r;

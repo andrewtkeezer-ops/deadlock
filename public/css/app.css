@@ -55,10 +55,11 @@ body.rail-collapsed .rail:not(.peek) nav a .lb{opacity:0;transform:translateX(-8
 .rail nav a.active{color:var(--cream)}.rail nav a.active .ic{color:var(--accent);filter:drop-shadow(0 0 8px rgba(232,199,106,.55))}
 .rail nav a .rp{position:absolute;border-radius:50%;background:rgba(232,199,106,.35);transform:scale(0);animation:ripple .6s ease-out forwards;pointer-events:none}
 @keyframes ripple{to{transform:scale(4);opacity:0}}
-.rail .toggle{margin:4px 12px 8px;height:34px;border-radius:9px;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--muted);display:flex;align-items:center;justify-content:center;gap:8px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;padding:0;cursor:pointer;transition:background .2s,color .2s}
-.rail .toggle:hover{color:var(--text);background:rgba(255,255,255,.08)}.rail .toggle svg{width:16px;height:16px;transition:transform .4s var(--ease)}body.rail-collapsed .rail .toggle svg{transform:rotate(180deg)}body.rail-collapsed .rail:not(.peek) .toggle span{display:none}
+.rail .toggle{align-self:flex-end;margin:4px 20px 8px;width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--muted);display:grid;place-items:center;padding:0;cursor:pointer;transition:background .2s,color .2s,margin .32s var(--ease)}
+.rail .toggle:hover{color:var(--text);background:rgba(255,255,255,.08)}.rail .toggle svg{width:16px;height:16px;transition:transform .4s var(--ease)}body.rail-collapsed .rail .toggle svg{transform:rotate(180deg)}body.rail-collapsed .rail:not(.peek) .toggle{margin-right:23px}
 .rail .who{padding:12px 12px 4px;border-top:1px solid var(--line);display:flex;align-items:center;gap:4px;position:relative}
 .rail .who a{display:flex;align-items:center;gap:12px;color:var(--text);padding:8px;border-radius:10px;white-space:nowrap;transition:background .18s}.rail .who a:hover{background:rgba(255,255,255,.06)}.rail .who a:first-child{flex:1;min-width:0}
+.rail .who .av.gg{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;flex:none;border:2px solid var(--line2);background:#fff;color:#1a1200;font:700 16px Reaver,sans-serif}
 .rail .who img.av{width:36px;height:36px;border-radius:50%;flex:none;border:2px solid var(--line2);box-shadow:0 0 0 0 rgba(73,209,126,.5);transition:box-shadow .3s,transform .3s}.rail .who a:hover img.av{box-shadow:0 0 0 4px rgba(73,209,126,.25);transform:scale(1.05)}
 .rail .who .nm{opacity:1;transition:opacity .18s;font-size:13px;line-height:1.2;overflow:hidden;text-overflow:ellipsis}.rail .who .nm small{display:block;color:var(--muted)}
 body.rail-collapsed .rail:not(.peek) .who .nm,body.rail-collapsed .rail:not(.peek) a.out .lb{opacity:0}
