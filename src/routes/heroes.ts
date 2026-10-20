@@ -99,6 +99,9 @@ r.get("/:id/best-build", async (c) => {
   return c.json({ sample_games: games.length, builds: scored });
 });
 
+/** Gun numbers for the DPS calculator. */
+r.get("/:id/weapon", async (c) => c.json(await new DeadlockApi(c.env).heroWeapon(Number(c.req.param("id")))));
+
 /** The hero's four abilities (icons, descriptions, tiers, numbers). */
 r.get("/:id/abilities", async (c) => c.json(await new DeadlockApi(c.env).heroAbilities(Number(c.req.param("id")))));
 

@@ -89,6 +89,7 @@ export async function identify(c: Context<{ Bindings: Env; Variables: { user?: I
   const { email, name, picture } = s;
   if (email === env.SUPER_ADMIN_EMAIL.toLowerCase()) {
     await env.DB.prepare("INSERT OR IGNORE INTO members(email, role, invited_by) VALUES (?, 'admin', 'system')").bind(email).run();
+    c.executionCtx.waitUntil(env.DB.prepare("UPDATE members SET last_seen=unixepoch(), accepted_at=COALESCE(accepted_at, unixepoch()) WHERE email=?").bind(email).run());
     return { email, name, picture, role: "admin" };
   }
   const m = await env.DB.prepare("SELECT role FROM members WHERE email=?").bind(email).first<{ role: Identity["role"] }>();

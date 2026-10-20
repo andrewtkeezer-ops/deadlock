@@ -142,6 +142,23 @@ export class DeadlockApi {
           gloat: h.images?.hero_card_gloat, critical: h.images?.hero_card_critical, vertical: h.images?.top_bar_vertical_image_webp,
           background: h.images?.background_image_webp ?? h.images?.background_image, name: h.images?.name_image } })));
   }
+  /** The hero's gun: numbers the DPS calculator needs, plus the per-level bullet-damage upgrade and which levels grant it. */
+  async heroWeapon(heroId: number) {
+    const raw = await this.asset<RawHero & { items?: Record<string, string>; standard_level_up_upgrades?: Record<string, number>; level_info?: Record<string, { use_standard_upgrade?: boolean; required_gold?: number }> }>(`/v1/assets/heroes/${heroId}`, undefined, 86400);
+    const cls = raw.items?.weapon_primary; if (!cls) return null;
+    type W = { id: number; class_name: string; name?: string; image_webp?: string; image?: string; weapon_info?: Record<string, number | string | boolean | unknown> };
+    const weapons = await this.asset<W[]>(`/v1/assets/items?type=weapon`, (r) => (r as W[]).map((w) => ({ id: w.id, class_name: w.class_name, name: w.name, image_webp: w.image_webp, image: w.image, weapon_info: w.weapon_info })), 86400);
+    const w = weapons.find((x) => x.class_name === cls); if (!w?.weapon_info) return null;
+    const wi = w.weapon_info as Record<string, number>; const pick = (k: string) => (typeof wi[k] === "number" ? wi[k] : 0);
+    const lv = raw.level_info ?? {}; const upgradeLevels = Object.entries(lv).filter(([, v]) => v?.use_standard_upgrade).map(([k]) => Number(k)).sort((a, b) => a - b);
+    const ss = (raw as unknown as { starting_stats?: Record<string, { value: number }> }).starting_stats ?? {};
+    return { class_name: cls, name: w.name, image: w.image_webp ?? w.image,
+      bullet_damage: pick("bullet_damage"), bullets: pick("bullets") || 1, burst: pick("burst_shot_count") || 1, cycle_time: pick("cycle_time"), intra_burst: pick("intra_burst_cycle_time"), clip_size: pick("clip_size"), reload_duration: pick("reload_duration"),
+      falloff: { start: pick("damage_falloff_start_range"), end: pick("damage_falloff_end_range"), end_scale: pick("damage_falloff_end_scale") || 0 }, range: pick("range"), crit: pick("crit_bonus_start") || 1,
+      dps_listed: pick("damage_per_second"), sustained_listed: pick("damage_per_second_with_reload"),
+      bullet_damage_per_upgrade: raw.standard_level_up_upgrades?.MODIFIER_VALUE_BASE_BULLET_DAMAGE_FROM_LEVEL ?? 0, upgrade_levels: upgradeLevels, max_level: Math.max(1, ...Object.keys(lv).map(Number)),
+      max_health: ss.max_health?.value ?? 0, health_per_upgrade: raw.standard_level_up_upgrades?.MODIFIER_VALUE_BASE_HEALTH_FROM_LEVEL ?? 0, melee_light: ss.light_melee_damage?.value ?? 0, melee_heavy: ss.heavy_melee_damage?.value ?? 0 };
+  }
   /** A hero's four signature abilities with icon, description, upgrade tiers and key numbers. */
   async heroAbilities(heroId: number) {
     const raw = await this.asset<RawHero & { items?: Record<string, string> }>(`/v1/assets/heroes/${heroId}`, undefined, 86400);
