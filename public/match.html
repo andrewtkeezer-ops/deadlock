@@ -5,42 +5,99 @@ main{max-width:1300px}
 .sum{display:flex;gap:18px;flex-wrap:wrap;color:var(--muted);font-size:13px}
 .team{border-radius:12px;padding:12px;border:1px solid var(--line);margin:14px 0;background:var(--panel)}.team h2{margin:0 0 8px;display:flex;gap:12px;align-items:baseline;font-family:var(--fh);text-transform:uppercase}.team.amber h2{color:#e4b94f}.team.sapph h2{color:#4ab3ff}.team .res{font-size:13px;font-family:var(--fb);text-transform:none}
 .sb{width:100%;border-collapse:collapse}.sb th{font-size:11px;text-transform:uppercase;color:var(--muted);padding:6px 8px;text-align:left}.sb td{padding:6px 8px;border-top:1px solid var(--line);vertical-align:middle;white-space:nowrap}
-.sb tr.me td{background:#1b2015}.sb .hero{display:flex;align-items:center;gap:8px}.sb .hero img{width:40px;height:52px;object-fit:cover;border-radius:6px}.sb .hero .n{line-height:1.2}.sb .hero .n small{display:block;color:var(--muted);font-size:11px}
+.sb tr.me td{background:#1b2015}.sb tr.p{cursor:pointer}.sb tr.p:hover td{background:rgba(232,199,106,.06)}.sb .hero{display:flex;align-items:center;gap:8px}.sb .hero img{width:40px;height:52px;object-fit:cover;border-radius:6px}.sb .hero .n{line-height:1.2}.sb .hero .n small{display:block;color:var(--muted);font-size:11px}
 .sb .items img{width:26px;height:26px}.bar{height:6px;background:#262a38;border-radius:3px;min-width:80px}.bar i{display:block;height:100%;border-radius:3px}
 .mvp{background:var(--accent);color:#1a1200;font-size:10px;font-weight:700;padding:1px 5px;border-radius:3px;margin-left:6px}.lane{font-size:10px;color:var(--muted);border:1px solid var(--line);border-radius:3px;padding:0 4px;margin-left:4px}
-.tabs button{margin-right:6px}.sb .num{text-align:right}@media(max-width:720px){.mhead .score{font-size:28px}.sb .hero img{width:32px;height:42px}.sb td,.sb th{padding:4px 6px}}
+.sb .num{text-align:right}@media(max-width:720px){.mhead .score{font-size:28px}.sb .hero img{width:32px;height:42px}.sb td,.sb th{padding:4px 6px}}
+/* detail drawer under a player row */
+.sb tr.det td{background:rgba(0,0,0,.25);padding:14px 12px 16px;white-space:normal}.det .dg{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:18px}@media(max-width:900px){.det .dg{grid-template-columns:1fr}}
+.det h4{margin:0 0 8px;font:600 11px/1 var(--fh);letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+.tl{display:flex;flex-wrap:wrap;gap:6px}.tl .it{position:relative;width:34px}.tl .it img{width:34px;height:34px;display:block}.tl .it .t{display:block;text-align:center;font:600 10px/1 var(--fh);color:var(--dim);margin-top:3px;font-variant-numeric:tabular-nums}.tl .it.sold img{opacity:.35;filter:grayscale(1)}
+.kv2{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13px}.kv2 b{font-family:var(--fh);font-variant-numeric:tabular-nums;text-align:right}.kv2 span{color:var(--muted)}
+.split{display:flex;height:8px;border-radius:4px;overflow:hidden;background:rgba(255,255,255,.06);margin:6px 0 8px}.split i{display:block;height:100%}
+/* graph + timeline */
+.graph{position:relative}.graph canvas{width:100%;height:auto;display:block}.graph .cap{display:flex;gap:16px;justify-content:center;color:var(--muted);font-size:12px;margin-top:6px}.graph .cap i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:middle;margin-right:4px}
+.feed{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:4px 18px;max-height:360px;overflow:auto;padding-right:6px;scrollbar-width:thin}.feed .ev{display:flex;align-items:center;gap:8px;font-size:13px;padding:3px 0;border-bottom:1px dotted var(--line2)}.feed .ev .t{font:600 11px var(--fh);color:var(--dim);width:38px;font-variant-numeric:tabular-nums}.feed .ev img{width:22px;height:22px;border-radius:5px}.feed .ev .ar{color:var(--dim)}.feed .ev.obj .ic{width:22px;height:22px;border-radius:5px;display:inline-grid;place-items:center;font-size:12px}.feed .ev.a .ic{background:rgba(228,185,79,.2);color:#e4b94f}.feed .ev.s .ic{background:rgba(74,179,255,.2);color:#4ab3ff}
+.mx{border-collapse:collapse;font-variant-numeric:tabular-nums}.mx th{padding:4px;font-weight:400}.mx th img{width:30px;height:30px;border-radius:6px;display:block}.mx td{padding:0;width:44px;height:30px;text-align:center;font:600 11px var(--fh);border:1px solid rgba(0,0,0,.4);color:var(--cream)}.mx .rh{text-align:left;padding-right:6px}.mx .rh img{width:30px;height:30px;border-radius:6px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}@media(max-width:1000px){.two{grid-template-columns:1fr}}
+.sec h2{display:flex;align-items:baseline;gap:10px}.sec h2 small{font:400 12px var(--fb);color:var(--muted);text-transform:none;letter-spacing:0}
 </style></head>
 <body><main>
 <div class="card mhead" id="head">Loading…</div>
+<div class="two"><div class="card sec"><h2 style="margin-top:0">Soul lead <small>team net worth difference over the match</small></h2><div class="graph"><canvas id="lead" width="1100" height="300"></canvas><div class="cap"><span><i style="background:#e4b94f"></i>Amber ahead</span><span><i style="background:#4ab3ff"></i>Sapphire ahead</span><span><i style="background:var(--loss)"></i>death</span><span><i style="background:var(--cream)"></i>objective</span></div></div></div>
+<div class="card sec"><h2 style="margin-top:0">Timeline <small>kills and objectives</small></h2><div id="feed" class="feed muted">Loading…</div></div></div>
 <div id="teams"></div>
+<div class="card sec"><h2 style="margin-top:0">Who hit whom <small>hero damage dealt, rows → columns. Click a player row above for their item timeline and accuracy.</small></h2><div class="two" id="matrix"></div></div>
 <details class="muted" style="margin-top:16px"><summary>Raw data</summary><pre id="raw"></pre></details></main>
 <script type="module">
-import { api, h, $, dur, fmt, heroes, items, itemImg, rankBadge, shell, showError, kda, ratio, kdaOf, KDA } from "/js/app.js";
+import { api, h, $, dur, fmt, heroes, items, itemImg, rankBadge, shell, showError, kda, ratio, kdaOf, KDA, pct } from "/js/app.js";
 shell("/");
 const id = new URLSearchParams(location.search).get("id");
+const OBJ = { 0: "Patron", 1: "Guardian · lane 1", 2: "Guardian · lane 2", 3: "Guardian · lane 3", 4: "Guardian · lane 4", 5: "Walker · lane 1", 6: "Walker · lane 2", 7: "Walker · lane 3", 8: "Walker · lane 4", 9: "Weakened Patron", 10: "Shrine 1", 11: "Shrine 2", 12: "Base guardians · lane 1", 13: "Base guardians · lane 2", 14: "Base guardians · lane 3", 15: "Base guardians · lane 4" };
+const mm = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 try {
   const [m, hs, its, tracked, assets] = await Promise.all([api(`/players/match/${id}`), heroes(), items(), api("/players"), api("/assets")]);
   const mi = m.match_info; const hero = (x) => hs.find((y) => y.id === x), item = (x) => its.find((y) => y.id === x);
-  const names = new Map((await api(`/players/steam-names?ids=${mi.players.map((p) => p.account_id).join(",")}`)).map((p) => [p.account_id, p]));
+  const names = new Map((await api(`/players/steam-names?ids=${mi.players.map((p) => p.account_id).join(",")}`).catch(() => [])).map((p) => [p.account_id, p]));
   const friends = new Set(tracked.map((p) => p.account_id)); document.title = `Match ${mi.match_id} · Soul Scribe`;
+  const bySlot = new Map(mi.players.map((p) => [p.player_slot, p])); const pname = (p) => names.get(p.account_id)?.name ?? String(p.account_id);
   const last = (p) => p.stats?.[p.stats.length - 1] ?? {};
   const kills = (t) => mi.players.filter((p) => p.team === t).reduce((s, p) => s + p.kills, 0);
   const rankName = (b) => { if (!b) return "–"; const r = assets.ranks.find((x) => x.tier === Math.floor(b / 10)); return r ? `${r.name} ${b % 10 || ""}` : b; };
   $("#head").replaceChildren(h("div", { class: "score" }, h("span", { class: "amber" }, String(kills(0))), h("span", { class: "muted", style: "font-size:18px" }, "vs"), h("span", { class: "sapph" }, String(kills(1)))),
-    h("div", {}, h("div", {}, h("strong", {}, mi.winning_team === 0 ? "Amber Hand victory" : "Sapphire Flame victory")), h("div", { class: "sum" }, h("span", {}, new Date(mi.start_time * 1000).toLocaleString()), h("span", {}, `Length ${dur(mi.duration_s)}`), h("span", {}, `Avg rank: ${rankName(mi.average_badge_team0)} vs ${rankName(mi.average_badge_team1)}`), m.banned_hero_ids?.length ? h("span", {}, `Bans: ${m.banned_hero_ids.map((x) => hero(x)?.name).join(", ")}`) : "", h("span", {}, `Match ${mi.match_id}`))));
+    h("div", {}, h("div", {}, h("strong", {}, mi.winning_team === 0 ? "Amber Hand victory" : "Sapphire Flame victory")), h("div", { class: "sum" }, h("span", {}, new Date(mi.start_time * 1000).toLocaleString()), h("span", {}, `Length ${dur(mi.duration_s)}`), h("span", {}, `Avg rank: ${rankName(mi.average_badge_team0)} vs ${rankName(mi.average_badge_team1)}`), m.banned_hero_ids?.length ? h("span", {}, "Bans: " + m.banned_hero_ids.map((b) => hero(b)?.name ?? b).join(", ")) : "")));
+
+  // ---- soul lead graph (team net worth difference from per-player snapshots) + event markers
+  const times = [...new Set(mi.players.flatMap((p) => (p.stats || []).map((s) => s.time_stamp_s)))].sort((a, b) => a - b);
+  const nwAt = (p, t) => { let v = 0; for (const s of p.stats || []) { if (s.time_stamp_s <= t) v = s.net_worth; else break; } return v; };
+  const series = times.map((t) => ({ t, d: mi.players.reduce((s, p) => s + (p.team === 0 ? 1 : -1) * nwAt(p, t), 0) }));
+  const deaths = mi.players.flatMap((p) => (p.death_details || []).map((d) => ({ t: d.game_time_s, victim: p, killer: bySlot.get(d.killer_player_slot) }))).sort((a, b) => a.t - b.t);
+  const objs = (mi.objectives || []).filter((o) => o.destroyed_time_s).map((o) => ({ t: o.destroyed_time_s, team: o.team, name: OBJ[o.team_objective_id] ?? `Objective ${o.team_objective_id}` })).sort((a, b) => a.t - b.t);
+  (() => { const cv = $("#lead"), c = cv.getContext("2d"), W = cv.width, H = cv.height, L = 54, R = 16, T = 18, B = 30; if (series.length < 2) { c.fillStyle = "#8f93a3"; c.font = "14px Jost,sans-serif"; c.fillText("No timeline data in this match's replay.", L, H / 2); return; }
+    const T1 = Math.max(mi.duration_s, times[times.length - 1]); const amp = Math.max(2000, ...series.map((s) => Math.abs(s.d))); const X = (t) => L + t / T1 * (W - L - R), Y = (d) => T + (1 - (d + amp) / (2 * amp)) * (H - T - B);
+    c.strokeStyle = "rgba(247,233,213,.08)"; c.lineWidth = 1; for (let i = -2; i <= 2; i++) { const y = Y(amp * i / 2); c.beginPath(); c.moveTo(L, y); c.lineTo(W - R, y); c.stroke(); c.fillStyle = "#8f93a3"; c.font = "11px Jost,sans-serif"; c.textAlign = "right"; c.fillText((i > 0 ? "+" : "") + fmt(amp * i / 2), L - 6, y + 4); }
+    c.textAlign = "center"; for (let t = 0; t <= T1; t += 300) { c.fillText(mm(t), X(t), H - 10); }
+    const pts = [{ t: 0, d: 0 }, ...series]; const fill = (sign) => { c.beginPath(); c.moveTo(X(0), Y(0)); for (let i = 1; i < pts.length; i++) { const a = pts[i - 1], b = pts[i]; if ((a.d >= 0) !== (b.d >= 0)) { const tz = a.t + (0 - a.d) / (b.d - a.d) * (b.t - a.t); c.lineTo(X(tz), Y(0)); } c.lineTo(X(b.t), Y(sign * Math.max(0, sign * b.d))); } c.lineTo(X(pts[pts.length - 1].t), Y(0)); c.closePath(); c.fillStyle = sign > 0 ? "rgba(228,185,79,.28)" : "rgba(74,179,255,.28)"; c.fill(); }; fill(1); fill(-1);
+    c.beginPath(); pts.forEach((p, i) => (i ? c.lineTo(X(p.t), Y(p.d)) : c.moveTo(X(p.t), Y(p.d)))); c.strokeStyle = "#f1e6c4"; c.lineWidth = 2.5; c.lineJoin = "round"; c.stroke();
+    for (const d of deaths) { c.fillStyle = d.victim.team === 0 ? "rgba(228,185,79,.9)" : "rgba(74,179,255,.9)"; c.beginPath(); c.arc(X(d.t), H - B + 6, 3, 0, Math.PI * 2); c.fill(); }
+    for (const o of objs) { c.strokeStyle = o.team === 0 ? "rgba(228,185,79,.5)" : "rgba(74,179,255,.5)"; c.setLineDash([3, 4]); c.beginPath(); c.moveTo(X(o.t), T); c.lineTo(X(o.t), H - B); c.stroke(); c.setLineDash([]); }
+  })();
+  const evs = [...deaths.map((d) => ({ t: d.t, el: h("div", { class: "ev" }, h("span", { class: "t" }, mm(d.t)), d.killer ? [h("img", { src: hero(d.killer.hero_id)?.images?.icon, alt: "", title: pname(d.killer) }), h("span", {}, hero(d.killer.hero_id)?.name ?? "?")] : h("span", { class: "muted" }, "Environment"), h("span", { class: "ar" }, "killed"), h("img", { src: hero(d.victim.hero_id)?.images?.icon, alt: "", title: pname(d.victim) }), h("span", {}, hero(d.victim.hero_id)?.name ?? "?")) })),
+    ...objs.map((o) => ({ t: o.t, el: h("div", { class: "ev obj " + (o.team === 0 ? "a" : "s") }, h("span", { class: "t" }, mm(o.t)), h("span", { class: "ic" }, "⌂"), h("span", {}, `${o.team === 0 ? "Amber" : "Sapphire"} lost ${o.name}`)) }))].sort((a, b) => a.t - b.t);
+  $("#feed").className = "feed"; $("#feed").replaceChildren(evs.length ? evs.map((e) => e.el) : h("span", { class: "muted" }, "No events recorded."));
+
+  // ---- scoreboards with expandable player detail
   const maxDmg = Math.max(1, ...mi.players.map((p) => last(p).player_damage || 0)), maxNw = Math.max(1, ...mi.players.map((p) => p.net_worth));
   const finalItems = (p) => { const held = new Map(); for (const it of p.items ?? []) { if (!item(it.item_id)) continue; if (it.sold_time_s) held.delete(it.item_id); else held.set(it.item_id, it); } return [...held.values()].slice(0, 12); };
-  const row = (p) => { const s = last(p), n = names.get(p.account_id), hx = hero(p.hero_id); return h("tr", { class: friends.has(p.account_id) ? "me" : "" },
-    h("td", {}, h("div", { class: "hero" }, hx?.images?.card ? h("img", { src: hx.images.card, alt: "" }) : "", h("div", { class: "n" }, friends.has(p.account_id) ? h("a", { href: `/player.html?id=${p.account_id}` }, n?.name ?? p.account_id) : h("span", {}, n?.name ?? String(p.account_id)), p.mvp_rank === 1 ? h("span", { class: "mvp" }, "MVP") : "", h("small", {}, hx?.name ?? p.hero_id, h("span", { class: "lane" }, `lane ${p.assigned_lane ?? "?"}`), ` · lvl ${p.level}`)))),
+  const detail = (p) => { const s = last(p); const shots = (s.shots_hit || 0) + (s.shots_missed || 0); const acc = shots ? s.shots_hit / shots : null; const hb = s.hero_bullets_hit || 0, crit = s.hero_bullets_hit_crit || 0;
+    const src = (s.gold_sources || []).reduce((a, g) => { a[g.source] = (a[g.source] || 0) + (g.gold || 0); return a; }, {}); const SRC = { 1: ["Hero kills", "var(--loss)"], 2: ["Lane creeps", "var(--accent)"], 3: ["Neutrals", "var(--soul)"], 4: ["Bosses", "var(--spirit)"], 5: ["Treasure", "var(--sapph)"], 6: ["Denies", "var(--cream)"] }; const tot = Object.values(src).reduce((a, b) => a + b, 0) || 1;
+    const bought = (p.items || []).filter((it) => item(it.item_id)).sort((a, b) => a.game_time_s - b.game_time_s);
+    return h("tr", { class: "det" }, h("td", { colspan: 9 }, h("div", { class: "det dg" },
+      h("div", {}, h("h4", {}, `Item timeline · ${bought.length} bought`), h("div", { class: "tl" }, ...bought.map((it) => h("div", { class: "it" + (it.sold_time_s ? " sold" : ""), title: it.sold_time_s ? `sold at ${mm(it.sold_time_s)}` : "" }, itemImg(item(it.item_id), 34), h("span", { class: "t" }, mm(it.game_time_s)))))),
+      h("div", {}, h("h4", {}, "Combat"), h("div", { class: "kv2" }, h("b", {}, acc == null ? "–" : pct(acc)), h("span", {}, `gun accuracy (${fmt(s.shots_hit)} / ${fmt(shots)})`), h("b", {}, hb ? pct(crit / hb) : "–"), h("span", {}, "headshot rate on heroes"), h("b", {}, fmt(s.player_damage)), h("span", {}, "hero damage"), h("b", {}, fmt(s.player_damage_taken)), h("span", {}, "damage taken"), h("b", {}, fmt(s.damage_mitigated)), h("span", {}, "mitigated"), h("b", {}, fmt((s.player_healing || 0) + (s.self_healing || 0))), h("span", {}, "healing"), h("b", {}, `${s.bullet_kills || 0} / ${s.ability_kills || 0} / ${s.melee_kills || 0}`), h("span", {}, "kills by gun / ability / melee"), h("b", {}, fmt(s.boss_damage)), h("span", {}, "objective damage"))),
+      h("div", {}, h("h4", {}, "Where the souls came from"), h("div", { class: "split" }, ...Object.entries(src).filter(([, v]) => v > 0).map(([k, v]) => h("i", { style: `width:${v / tot * 100}%;background:${SRC[k]?.[1] || "#666"}`, title: `${SRC[k]?.[0] || "Other"}: ${fmt(v)}` }))), h("div", { class: "kv2" }, ...Object.entries(src).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).flatMap(([k, v]) => [h("b", {}, fmt(v)), h("span", {}, h("i", { style: `display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;background:${SRC[k]?.[1] || "#666"}` }), SRC[k]?.[0] || "Other")]), h("b", {}, fmt(p.net_worth * 60 / Math.max(1, mi.duration_s))), h("span", {}, "souls per minute"), h("b", {}, `${p.last_hits} / ${p.denies}`), h("span", {}, "last hits / denies"))))));
+  };
+  const row = (p) => { const s = last(p), n = names.get(p.account_id), hx = hero(p.hero_id); const tr = h("tr", { class: "p" + (friends.has(p.account_id) ? " me" : ""), title: "Click for item timeline and combat detail" },
+    h("td", {}, h("div", { class: "hero" }, hx?.images?.card ? h("img", { src: hx.images.card, alt: "" }) : "", h("div", { class: "n" }, friends.has(p.account_id) ? h("a", { href: `/player.html?id=${p.account_id}`, onclick: (e) => e.stopPropagation() }, n?.name ?? p.account_id) : h("span", {}, n?.name ?? String(p.account_id)), p.mvp_rank === 1 ? h("span", { class: "mvp" }, "MVP") : "", h("small", {}, hx?.name ?? p.hero_id, h("span", { class: "lane" }, `lane ${p.assigned_lane ?? "?"}`), ` · lvl ${p.level}`)))),
     h("td", {}, kda(p.kills, p.deaths, p.assists, { size: "sm" })), h("td", { class: "num" }, ratio(kdaOf(p.kills, p.deaths, p.assists), KDA)),
     h("td", {}, h("div", { class: "num" }, fmt(p.net_worth)), h("div", { class: "bar" }, h("i", { style: `width:${p.net_worth / maxNw * 100}%;background:var(--accent)` }))),
     h("td", {}, h("div", { class: "num" }, fmt(s.player_damage)), h("div", { class: "bar" }, h("i", { style: `width:${(s.player_damage || 0) / maxDmg * 100}%;background:var(--loss)` }))),
     h("td", { class: "num" }, fmt(s.player_damage_taken)), h("td", { class: "num" }, fmt((s.player_healing || 0) + (s.teammate_healing || 0))), h("td", { class: "num" }, `${p.last_hits}/${p.denies}`),
-    h("td", { class: "items" }, ...finalItems(p).map((it) => itemImg(item(it.item_id), 26)))); };
+    h("td", { class: "items" }, ...finalItems(p).map((it) => itemImg(item(it.item_id), 26))));
+    tr.onclick = () => { const open = tr.nextElementSibling?.classList.contains("det"); tr.parentElement.querySelectorAll("tr.det").forEach((x) => x.remove()); if (!open) tr.after(detail(p)); }; return tr; };
   const table = (t, cls, label) => { const ps = mi.players.filter((p) => p.team === t).sort((a, b) => a.player_slot - b.player_slot);
-    return h("div", { class: "team " + cls }, h("h2", {}, label, h("span", { class: "res muted" }, mi.winning_team === t ? "Victory" : "Defeat", ` · ${fmt(ps.reduce((s, p) => s + p.net_worth, 0))} souls`)),
+    return h("div", { class: "team " + cls }, h("h2", {}, label, h("span", { class: "res muted" }, mi.winning_team === t ? "Victory" : "Defeat", ` · ${fmt(ps.reduce((s, p) => s + p.net_worth, 0))} souls · ${fmt(ps.reduce((s, p) => s + (last(p).player_damage || 0), 0))} hero damage`)),
       h("div", { style: "overflow:auto" }, h("table", { class: "sb" }, h("thead", {}, h("tr", {}, ...["Player", "K / D / A", "KDA", "Souls", "Hero damage", "Taken", "Healing", "LH/DN", "Final items"].map((x) => h("th", {}, x)))), h("tbody", {}, ...ps.map(row))))); };
   $("#teams").replaceChildren(table(0, "amber", "Amber Hand"), table(1, "sapph", "Sapphire Flame"));
+
+  // ---- damage matrix (cumulative per sample; take the last value per source → target)
+  const dm = mi.damage_matrix; const dealt = new Map();
+  for (const d of dm?.damage_dealers || []) for (const srcd of d.damage_sources || []) for (const t of srcd.damage_to_players || []) { const k = `${d.dealer_player_slot}:${t.target_player_slot}`; dealt.set(k, (dealt.get(k) || 0) + (t.damage?.[t.damage.length - 1] || 0)); }
+  const grid = (from, to) => { const A = mi.players.filter((p) => p.team === from).sort((a, b) => a.player_slot - b.player_slot), Bp = mi.players.filter((p) => p.team === to).sort((a, b) => a.player_slot - b.player_slot); const mx = Math.max(1, ...A.flatMap((a) => Bp.map((b) => dealt.get(`${a.player_slot}:${b.player_slot}`) || 0)));
+    const col = from === 0 ? "228,185,79" : "74,179,255";
+    return h("div", {}, h("h4", { style: "margin:0 0 6px;font:600 11px/1 var(--fh);letter-spacing:.18em;text-transform:uppercase;color:" + (from === 0 ? "#e4b94f" : "#4ab3ff") }, `${from === 0 ? "Amber" : "Sapphire"} → ${to === 0 ? "Amber" : "Sapphire"}`), h("div", { style: "overflow:auto" }, h("table", { class: "mx" }, h("thead", {}, h("tr", {}, h("th", {}), ...Bp.map((b) => h("th", { title: `${pname(b)} (${hero(b.hero_id)?.name})` }, h("img", { src: hero(b.hero_id)?.images?.icon, alt: "" }))))),
+      h("tbody", {}, ...A.map((a) => h("tr", {}, h("th", { class: "rh", title: `${pname(a)} (${hero(a.hero_id)?.name})` }, h("img", { src: hero(a.hero_id)?.images?.icon, alt: "" })), ...Bp.map((b) => { const v = dealt.get(`${a.player_slot}:${b.player_slot}`) || 0; return h("td", { style: `background:rgba(${col},${(0.08 + 0.75 * v / mx).toFixed(2)})`, title: `${hero(a.hero_id)?.name} dealt ${fmt(v)} to ${hero(b.hero_id)?.name}` }, v ? fmt(v) : ""); }))))))); };
+  $("#matrix").replaceChildren(dm?.damage_dealers?.length ? [grid(0, 1), grid(1, 0)] : h("span", { class: "muted" }, "No damage breakdown in this replay."));
   $("#raw").textContent = JSON.stringify(m, null, 1).slice(0, 30000);
 } catch (e) { showError($("#head"), e); }
 </script></body></html>
