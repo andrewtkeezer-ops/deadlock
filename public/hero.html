@@ -60,7 +60,7 @@ main{--hero:var(--accent);--hero-soft:color-mix(in srgb,var(--hero) 18%,transpar
 .st .lean{align-self:flex-start;font-family:Reaver;text-transform:uppercase;letter-spacing:.1em;font-size:11px;color:var(--lc);border:1px solid var(--lc);border-radius:5px;padding:3px 8px;background:color-mix(in srgb,var(--lc) 12%,transparent)}
 .st b.title{font-family:Reaver;font-size:17px;letter-spacing:.02em;line-height:1.15}.st .fav{color:var(--muted);font-size:12px;margin-top:-6px}
 .st .mix{display:flex;height:6px;border-radius:3px;overflow:hidden;background:rgba(255,255,255,.06)}.st .mix i{display:block}
-.st .cats{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;align-items:center;font-size:12px;color:#cfd3e6}.st .cats .items{display:flex;flex-wrap:wrap;gap:2px}.st .cats .items img{width:26px;height:26px;border-radius:5px;margin:0}
+.st .cats{display:grid;grid-template-columns:minmax(64px,96px) minmax(0,1fr);gap:8px 12px;align-items:start;font-size:12px;color:#cfd3e6}.st .cats .lb{line-height:1.25;padding-top:4px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow-wrap:anywhere}.st .cats .items{display:flex;flex-wrap:wrap;gap:2px;min-width:0}.st .cats .items img{width:26px;height:26px;border-radius:5px;margin:0}
 .st .act{margin-top:auto;display:flex;gap:8px;padding-top:6px}.st .act button.add{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:10px;background:var(--lc);color:#0d0a02;border:0;border-radius:10px;padding:11px 14px;font-weight:700;font-size:14px;box-shadow:0 8px 22px color-mix(in srgb,var(--lc) 35%,transparent)}.st .act button.add:hover{filter:brightness(1.08)}
 .st .act button.add .pl{width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.25);display:grid;place-items:center;font-size:16px;line-height:1}
 .st .act a.more{display:grid;place-items:center;width:44px;border-radius:10px;border:1px solid var(--line2);background:rgba(255,255,255,.05);color:var(--text);font-weight:700;letter-spacing:.1em}.st .act a.more:hover{background:rgba(255,255,255,.12)}
@@ -152,7 +152,7 @@ async function importBuild(b, btn) { btn.disabled = true; btn.textContent = "Cop
 const LEAN = { weapon: "Weapon / Gun", spirit: "Spirit", vitality: "Survivability", balanced: "Balanced" };
 const buildCard = (lean, b) => h("div", { class: "st " + lean }, h("div", { class: "lean" }, b?.lean_label ?? LEAN[lean] ?? lean),
   b ? [h("b", { class: "title" }, b.name), h("div", { class: "fav" }, `+${b.favorites.toLocaleString()} favourites · ${b.item_count} items · updated ${ago(b.updated)}`), mixBar(b.share),
-    h("div", { class: "cats" }, ...b.categories.slice(0, 4).flatMap((cat) => [h("span", {}, cat.name), h("div", { class: "items" }, ...cat.items.slice(0, 12).map((i) => itemImg(item(i), 26)))])),
+    h("div", { class: "cats" }, ...b.categories.slice(0, 4).flatMap((cat) => [h("span", { class: "lb", title: cat.name }, cat.name), h("div", { class: "items" }, ...cat.items.slice(0, 12).map((i) => itemImg(item(i), 26)))])),
     h("div", { class: "act" }, h("button", { class: "add", onclick: (e) => importBuild(b, e.currentTarget) }, h("span", { class: "pl" }, "+"), "Add to my builds"))]
     : h("span", { class: "empty" }, "No clear build of this type in the top 40."));
 (async () => { try { const st = await api(`/heroes/${id}/starter-builds`); $("#starters").replaceChildren(...["weapon", "spirit", "vitality", "balanced"].map((k) => buildCard(k, st[k]))); } catch (e) { showError($("#starters"), e); } })();
