@@ -24,6 +24,7 @@ main{max-width:1300px}
 <p style="margin:10px 0 0"><input type="text" id="desc" placeholder="How to play it (optional)" style="width:100%"></p>
 <div class="tot" style="margin-top:10px"><b id="total">0</b><span class="muted">souls total</span><span id="owner" class="muted" style="margin-left:auto"></span></div>
 <div id="syncRow" class="sync" hidden><label><input type="checkbox" id="syncWanted"> <b>Send to my in-game builds</b></label><span id="syncStatus" class="muted"></span></div></div>
+<details class="card" id="coachCard" open><summary style="cursor:pointer;font:600 13px var(--fh);letter-spacing:.14em;text-transform:uppercase;color:var(--cream)">Coach <span class="muted" style="font:400 12px var(--fb);letter-spacing:0;text-transform:none">· when you'll afford each phase, slot limits, what to buy first</span></summary><div id="coach" style="margin-top:12px"></div></details>
 <details class="card" id="dpsCard" open><summary style="cursor:pointer;font:600 13px var(--fh);letter-spacing:.14em;text-transform:uppercase;color:var(--cream)">Damage calculator <span class="muted" style="font:400 12px var(--fb);letter-spacing:0;text-transform:none">· raw gun numbers for everything in this build</span></summary><div id="dps" style="margin-top:12px"></div></details>
 <div class="card help" id="help"><b>1</b> Click a phase to make it the target <b>2</b> Click items on the right to add them <b>3</b> Drag items between phases, add notes <span class="x" id="helpx" title="Hide">×</span></div>
 <div class="ed">
@@ -35,6 +36,7 @@ main{max-width:1300px}
 <script type="module">
 import { api, h, $, fmt, ago, heroes, items, me, withTip, shell } from "/js/app.js";
 import { dpsPanel } from "/js/dps.js";
+import { analyse, coachPanel } from "/js/coach.js";
 shell("/library.html");
 const qs = new URLSearchParams(location.search); const id = qs.get("id");
 const [hs, its, who, cats, groups] = await Promise.all([heroes(), items(), me(), api("/library/categories"), api("/library/stat-groups")]);
@@ -59,7 +61,8 @@ if (!who.account_id) $("#owner").textContent = "Sign in through Steam (top right
 const heroImg = () => { $("#heroimg").src = hs.find((y) => y.id === +$("#hero").value)?.images?.card || ""; }; heroImg();
 $("#hero").addEventListener("change", () => dps.setHero(+$("#hero").value));
 let drag = null;
-const SPM = 1150; // typical souls per minute; used for the "about when" estimate
+let SPM = 1150; let myGames = 0; // squad-typical souls per minute until we know the player's own pace
+if (who.account_id) api(`/players/${who.account_id}`).then((d) => { const ms = d.matches || []; if (ms.length >= 3) { SPM = Math.round(ms.reduce((s, m) => s + m.net_worth * 60 / Math.max(1, m.duration_s), 0) / ms.length); myGames = ms.length; render(); } }).catch(() => {});
 function render() { let total = 0; let running = 0;
   if (target >= build.details.mod_categories.length) target = 0;
   $("#phases").replaceChildren(...build.details.mod_categories.map((cat, ci) => { const souls = cat.mods.reduce((s, m) => s + (item(m.ability_id)?.cost || 0), 0); total += souls; running += souls; const mins = Math.round(running / SPM);
@@ -70,6 +73,7 @@ function render() { let total = 0; let running = 0;
       h("h3", {}, canEdit() ? h("input", { type: "text", value: cat.name, onchange: (e) => (cat.name = e.target.value), onclick: (e) => e.stopPropagation() }) : h("span", { style: "flex:1;font-family:var(--fh);text-transform:uppercase" }, cat.name), canEdit() ? h("span", { class: "addhere", onclick: (e) => { e.stopPropagation(); target = ci; render(); } }, target === ci ? "✚ Adding here" : "Add here") : ""),
       h("div", { class: "meta" }, h("span", {}, "Phase ", h("b", {}, fmt(souls)), " souls"), h("span", {}, "Running total ", h("b", {}, fmt(running))), h("span", {}, "About ", h("b", {}, mins ? `${mins} min` : "start"), " into the game")), mods); }));
   dps.update(build.details.mod_categories.flatMap((c) => c.mods.map((m) => item(m.ability_id))));
+  try { $("#coach").replaceChildren(coachPanel(analyse(build, its, { spm: SPM, games: myGames, heroName: hs.find((x) => x.id === +$("#hero").value)?.name }))); } catch (e) { console.warn("coach", e); }
   $("#total").textContent = fmt(total); const tgt = build.details.mod_categories[target]; $("#adding").replaceChildren("Adding to ", h("b", {}, tgt?.name || "—"), " · click a phase to change"); renderTidy(); }
 const STD = ["Lane", "Early", "Mid", "Late", "Situational"];
 function renderTidy() { if (!canEdit()) return $("#tidy").replaceChildren();

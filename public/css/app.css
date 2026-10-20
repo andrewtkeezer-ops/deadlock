@@ -279,3 +279,9 @@ img.iimg{transition:transform .2s var(--snap),box-shadow .2s}img.iimg:hover{tran
 
 /* warm navigation: the frame is already on screen, only the content arrives */
 html.warm .rail,html.warm .rail::before{animation:none}html.warm .rail nav a{animation:none}html.warm .rail .brand img{animation:none}html.warm .rail nav .pill{transition:none}html.warm .atmo .fog,html.warm .atmo .base{animation-delay:-20s}html.warm .page{animation-duration:.35s}
+
+/* build coach */
+.coach .sum{font-size:14px;color:var(--muted);margin-bottom:10px}.coach .sum b{color:var(--cream);font-family:var(--fh)}
+.coach .tl{display:flex;gap:3px;margin:0 0 14px;height:44px}.coach .seg{min-width:0;background:linear-gradient(180deg,rgba(232,199,106,.22),rgba(232,199,106,.08));border:1px solid rgba(232,199,106,.25);border-radius:6px;padding:5px 8px;overflow:hidden;white-space:nowrap}.coach .seg b{display:block;font:600 11px var(--fh);letter-spacing:.08em;text-transform:uppercase;color:var(--cream);overflow:hidden;text-overflow:ellipsis}.coach .seg span{font:600 10px var(--fh);color:var(--muted)}
+.coach .tips{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:8px}.coach .t{display:flex;gap:10px;padding:10px 12px;border-radius:10px;background:rgba(0,0,0,.22);border:1px solid var(--line)}.coach .t .i{font-size:16px;line-height:1.2;flex:none}.coach .t.warn{border-color:rgba(229,87,79,.4)}.coach .t.warn .i{color:var(--loss)}.coach .t.tip .i{color:var(--accent)}.coach .t.good{border-color:rgba(151,218,121,.3)}.coach .t.good .i{color:var(--win)}
+.coach .t b{display:block;font:600 13px var(--fh);color:var(--cream);margin-bottom:3px}.coach .t p{margin:0;font-size:13px;line-height:1.45;color:var(--muted)}
