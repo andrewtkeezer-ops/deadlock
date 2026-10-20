@@ -123,10 +123,10 @@ export function shell(active) {
       who.append(a); if (p?.mmr_rank) try { const b = await rankBadge(p.mmr_rank); b.style.height = "26px"; a.querySelector("small").replaceChildren(b, " ", p.mmr_score != null ? String(Math.round(p.mmr_score)) : ""); } catch {}
     } else {
       // Signed in through the Google door (Cloudflare Access) but no Steam account linked yet: show who they are + a link to connect Steam.
-      if (m.email || m.access) who.append(h("a", { href: "/setup.html", title: "Connect your Steam account" }, h("span", { class: "av gg" }, "G"), h("span", { class: "nm" }, m.email ?? "Signed in with Google", h("small", {}, m.role === "admin" ? "Admin · connect Steam" : "Connect Steam"))));
+      if (m.email || m.signed_in) who.append(h("a", { href: "/setup.html", title: "Connect your Steam account" }, h("span", { class: "av gg" }, "G"), h("span", { class: "nm" }, m.email ?? "Signed in with Google", h("small", {}, m.role === "admin" ? "Admin · connect Steam" : "Connect Steam"))));
       else who.append(h("a", { href: "/api/auth/steam/login", title: "Sign in through Steam" }, h("img", { class: "steam", src: "https://community.cloudflare.steamstatic.com/public/images/signinthroughsteam/sits_small.png", alt: "Sign in through Steam" })));
     }
-    if (m.account_id || m.email || m.access) { const out = h("a", { class: "out", href: "/api/auth/steam/logout", title: "Sign out" }); out.innerHTML = `<span class="ic">${ICONS.out}</span><span class="lb">Sign out</span>`; who.after(out); }
+    if (m.account_id || m.email || m.signed_in) { const out = h("a", { class: "out", href: "/api/auth/google/logout", title: "Sign out" }); out.innerHTML = `<span class="ic">${ICONS.out}</span><span class="lb">Sign out</span>`; who.after(out); }
   }).catch(() => {});
   if (!reduced) alive();
 }

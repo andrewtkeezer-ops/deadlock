@@ -19,7 +19,7 @@
 .vig{position:fixed;inset:0;pointer-events:none;background:radial-gradient(85% 75% at 50% 42%,transparent 50%,rgba(0,0,0,.65) 100%)}
 .ui{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;z-index:2}
 .mark{width:min(22vw,180px);filter:drop-shadow(0 0 30px rgba(73,209,126,.55)) drop-shadow(0 10px 20px rgba(0,0,0,.6));animation:rise .9s .1s var(--ease) both,float 6s 1s ease-in-out infinite}
-.word{width:min(60vw,640px);margin-top:-6px;filter:drop-shadow(0 6px 24px rgba(0,0,0,.8));animation:rise .9s .25s var(--ease) both}
+.word{width:min(62vw,680px);margin-top:0;filter:drop-shadow(0 6px 24px rgba(0,0,0,.8));animation:rise .9s .25s var(--ease) both}
 .tag{margin:18px 0 26px;font-size:clamp(11px,1.2vw,14px);letter-spacing:.42em;text-transform:uppercase;color:var(--cream);text-shadow:0 2px 12px rgba(0,0,0,.9);animation:rise .9s .4s var(--ease) both}.tag i{color:var(--soul);font-style:normal;margin:0 .6em}
 .rule{width:120px;height:1px;background:linear-gradient(90deg,transparent,rgba(241,230,196,.6),transparent);position:relative;margin-bottom:26px;animation:rise .9s .5s var(--ease) both}.rule::after{content:"◆";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:var(--soul);font-size:9px;background:transparent}
 .btn{position:relative;display:inline-flex;align-items:center;gap:0;border:1px solid rgba(73,209,126,.55);border-radius:12px;background:rgba(6,16,11,.72);backdrop-filter:blur(10px);box-shadow:0 0 0 1px rgba(0,0,0,.6),0 20px 50px rgba(0,0,0,.6),0 0 40px rgba(73,209,126,.18);color:var(--cream);text-decoration:none;overflow:hidden;transition:transform .2s var(--ease),box-shadow .2s;animation:rise .9s .6s var(--ease) both}
@@ -38,11 +38,10 @@
 <div class="scene" role="img" aria-label="A green-lit city at night: a gargoyle, candles and an old book in the foreground, a glowing compass tower beyond."></div>
 <div class="fog"></div><div class="candle c1"></div><div class="candle c2"></div><div class="candle c3"></div><div class="beacon"></div><div class="vig"></div>
 <div class="ui">
-  <img class="mark" src="/img/icon.png" alt="">
   <img class="word" src="/img/logo.webp" alt="Soul Scribe">
   <div class="tag">Track<i>✦</i>Build<i>✦</i>Climb</div>
   <div class="rule"></div>
-  <a class="btn" id="go" href="https://deadlock.andrewtkeezer.workers.dev/"><span class="g"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.3l6.7-6.7C35.6 2.3 30.1 0 24 0 14.6 0 6.5 5.4 2.6 13.3l7.8 6C12.3 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4 7.1-10 7.1-17.5z"/><path fill="#FBBC05" d="M10.4 28.7c-.5-1.5-.8-3-.8-4.7s.3-3.2.8-4.7l-7.8-6C.9 16.5 0 20.1 0 24s.9 7.5 2.6 10.7l7.8-6z"/><path fill="#34A853" d="M24 48c6.1 0 11.2-2 15-5.5l-7.5-5.8c-2 1.4-4.6 2.3-7.5 2.3-6.3 0-11.7-4.1-13.6-9.8l-7.8 6C6.5 42.6 14.6 48 24 48z"/></svg></span><span class="t">Continue with Google</span><span class="a">→</span></a>
+  <a class="btn" id="go" href="https://deadlock.andrewtkeezer.workers.dev/api/auth/google/login"><span class="g"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.3l6.7-6.7C35.6 2.3 30.1 0 24 0 14.6 0 6.5 5.4 2.6 13.3l7.8 6C12.3 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4 7.1-10 7.1-17.5z"/><path fill="#FBBC05" d="M10.4 28.7c-.5-1.5-.8-3-.8-4.7s.3-3.2.8-4.7l-7.8-6C.9 16.5 0 20.1 0 24s.9 7.5 2.6 10.7l7.8-6z"/><path fill="#34A853" d="M24 48c6.1 0 11.2-2 15-5.5l-7.5-5.8c-2 1.4-4.6 2.3-7.5 2.3-6.3 0-11.7-4.1-13.6-9.8l-7.8 6C6.5 42.6 14.6 48 24 48z"/></svg></span><span class="t">Continue with Google</span><span class="a">→</span></a>
   <div class="legal">By continuing, you agree to our <a href="/terms.html">Terms of Service</a> and <a href="/privacy.html">Privacy Policy</a>.</div>
 </div>
 <div class="enter"></div>

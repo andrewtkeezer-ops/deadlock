@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import type { Env } from "../types";
 import { DeadlockApi, type SteamProfile } from "../deadlock";
 import { syncPlayer } from "../sync";
-import type { Identity } from "../auth";
+import { clearCookies, type Identity } from "../auth";
 
 /**
  * "Sign in through Steam" via OpenID 2.0. No Steam API key needed.
@@ -62,11 +62,10 @@ r.get("/me", (c) => {
   return c.json({ account_id: id ? Number(id) : null });
 });
 
-/** Sign out: drop the Steam cookie, and when Cloudflare Access is the door, end that session too (it bounces back to "/"). */
+/** Sign out (same as /api/auth/google/logout — kept for old links). */
 r.get("/logout", (c) => {
-  c.header("set-cookie", "squad_steam=; Path=/; Max-Age=0; SameSite=Lax; Secure");
-  const access = !!(c.req.header("cf-access-jwt-assertion") || /CF_Authorization=/.test(c.req.header("cookie") ?? ""));
-  return c.redirect(access ? "/cdn-cgi/access/logout" : "/");
+  for (const h of clearCookies()) c.header("set-cookie", h, { append: true });
+  return c.redirect(/CF_Authorization=/.test(c.req.header("cookie") ?? "") ? "/cdn-cgi/access/logout" : "/");
 });
 
 export default r;

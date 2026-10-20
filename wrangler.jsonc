@@ -6,7 +6,7 @@
   "compatibility_flags": ["nodejs_compat"],
 
   // Static site lives in /public; the Worker handles /api/* and falls through to assets.
-  "assets": { "directory": "./public", "binding": "ASSETS", "not_found_handling": "404-page", "run_worker_first": ["/api/*"] },
+  "assets": { "directory": "./public", "binding": "ASSETS", "not_found_handling": "404-page", "run_worker_first": ["/api/*", "/", "/*.html"] },
 
   // Free tier: 5 GB storage, 5M reads/day. Run `npm run db:create` and paste the id here.
   "d1_databases": [
@@ -26,7 +26,10 @@
     // Optional: free key from deadlock-api doubles the rate limit and gets queue priority.
     // Set as a secret instead: `wrangler secret put DEADLOCK_API_KEY`
     "ADMIN_TOKEN": "change-me",
-    // Cloudflare Access: set both to turn on invite-only Google login (see README).
+    // Invite-only Google login handled by the Worker (see README). Client ID is public; put GOOGLE_CLIENT_SECRET and
+    // SESSION_SECRET in as secrets (`npx wrangler secret put ...` or Workers → Settings → Variables). Empty = open/dev mode.
+    "GOOGLE_CLIENT_ID": "",
+    // Legacy Cloudflare Access door — only consulted when GOOGLE_CLIENT_ID is empty. Remove the Access app once Google sign-in works.
     "ACCESS_TEAM_DOMAIN": "spring-base-00a6.cloudflareaccess.com",
     "ACCESS_AUD": "",
     "SUPER_ADMIN_EMAIL": "andrew@brandbutter.ca",

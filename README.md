@@ -42,24 +42,23 @@ Before the first build, the D1 database and KV namespace must exist and their ID
 Set `ADMIN_TOKEN` and (optionally) `DEADLOCK_API_KEY` under the Worker's Settings → Variables and Secrets.
 Every push to `main` then redeploys.
 
-## Invite-only Google login (Cloudflare Access)
+## Invite-only Google login (handled by the Worker)
 
-Free for up to 50 users. One-time setup in the Cloudflare dashboard:
+Signed-out visitors to `/` see the Soul Scribe welcome page (`public/welcome.html`) with **Continue with Google**.
+The Worker runs the Google OAuth code flow itself and sets a signed `squad_session` cookie; every page and `/api/*`
+then requires that the email is `SUPER_ADMIN_EMAIL` or on the `members` table (Admin → invite). No Cloudflare Access needed.
 
-1. Zero Trust → Settings → Authentication → add **Google** as a login method (needs a Google OAuth client; Cloudflare's
-   page walks through it). Optionally remove the default one-time-PIN method so only Google works.
-2. Zero Trust → Access → Applications → Add → Self-hosted. Domain: the Worker's hostname
-   (`deadlock-squad.<account>.workers.dev` or a custom domain). Policy: Allow → Include → **Everyone**
-   (the Worker does the real invite check — see below). Session: 1 month.
-3. Copy the app's **Application Audience (AUD) tag** and your team domain (`<team>.cloudflareaccess.com`) into
-   `wrangler.jsonc` → `ACCESS_AUD` and `ACCESS_TEAM_DOMAIN`. Set `SUPER_ADMIN_EMAIL` to you. Push.
+1. Google Cloud console → APIs & Services → Credentials → **Create credentials → OAuth client ID → Web application**.
+   Authorized redirect URI: `https://deadlock.andrewtkeezer.workers.dev/api/auth/google/callback` (add your custom
+   domain's too, later). If the consent screen is "External", add the squad's emails as test users or publish it.
+2. `wrangler.jsonc` → `GOOGLE_CLIENT_ID` = the client ID. Then secrets (Workers → Settings → Variables, or CLI):
+   `npx wrangler secret put GOOGLE_CLIENT_SECRET` and `npx wrangler secret put SESSION_SECRET` (any long random string).
+3. Push / deploy. Visit the site signed out → welcome page → Google → back in. Sign out is in the menu footer.
+4. **Remove the Cloudflare Access application** for the hostname (Zero Trust → Access → Applications), otherwise Access
+   still intercepts every visit before the Worker and sends people straight to Google.
 
-Now every visitor sees Google sign-in. Signed-in users whose email isn't in the `members` table get a 403 from every
-API call; the super admin is always allowed and auto-created. Invite people from **/admin.html** — they just sign in with
-the Google account you invited. With `ACCESS_*` empty (local dev) there is no auth and `x-admin-token` still works.
-
-Note: static HTML is served by Cloudflare's asset layer before the Worker runs, so uninvited-but-Google-signed-in users
-can load the page shells; all data comes from `/api/*`, which they can't reach.
+With `GOOGLE_CLIENT_ID` empty (local dev) there is no auth: everything is open and everyone is admin.
+Legacy: if `GOOGLE_CLIENT_ID` is empty but `ACCESS_TEAM_DOMAIN` + `ACCESS_AUD` are set, the old Access JWT check is used instead.
 
 ## Adding friends
 

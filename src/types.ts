@@ -5,9 +5,13 @@ export type Env = {
   DEADLOCK_API: string;
   DEADLOCK_API_KEY?: string;
   ADMIN_TOKEN: string;
-  // Cloudflare Access (Zero Trust). Leave empty for local dev → no auth.
-  ACCESS_TEAM_DOMAIN?: string;  // e.g. brandbutter.cloudflareaccess.com
-  ACCESS_AUD?: string;          // Application Audience (AUD) tag from the Access app
+  // Google sign-in handled by the Worker (see README). Leave GOOGLE_CLIENT_ID empty for local dev → no auth.
+  GOOGLE_CLIENT_ID?: string;     // var: OAuth 2.0 Web client ID
+  GOOGLE_CLIENT_SECRET?: string; // secret
+  SESSION_SECRET?: string;       // secret: random string that signs the session cookie
+  // Legacy: Cloudflare Access (Zero Trust) in front of the hostname. Only used if GOOGLE_CLIENT_ID is unset.
+  ACCESS_TEAM_DOMAIN?: string;
+  ACCESS_AUD?: string;
   SUPER_ADMIN_EMAIL: string;
   SUPER_ADMIN_ACCOUNT_ID?: string;
 };

@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
 import type { Env } from "./types";
 import { syncAll, syncPlayer } from "./sync";
@@ -10,7 +10,8 @@ import library from "./routes/builds-library";
 import analytics from "./routes/analytics";
 import admin from "./routes/admin";
 import steam from "./routes/steam";
-import { requireMember, steamAccount, isSuperAdmin, type Identity } from "./auth";
+import google from "./routes/google";
+import { requireMember, steamAccount, isSuperAdmin, identify, whoIs, authConfigured, hasAnySignIn, type Identity } from "./auth";
 
 const app = new Hono<{ Bindings: Env; Variables: { user?: Identity } }>();
 app.use("/api/*", cors());
@@ -34,14 +35,14 @@ app.post("/api/ingest/notify", async (c) => {
   c.executionCtx.waitUntil(new Promise((r) => setTimeout(r, 20000)).then(() => syncPlayer(c.env, new DeadlockApi(c.env), accountId)).catch((e) => console.error("notify sync", e)));
   return c.json({ ok: true, queued: true });
 });
+app.route("/api/auth/google", google);
 app.use("/api/*", requireMember);
-app.get("/api/me", (c) => {
+app.get("/api/me", async (c) => {
   const steam = steamAccount(c.req.header("cookie")); const sup = isSuperAdmin(c.env, steam);
   const u = c.get("user");
-  // Did this browser come through the Cloudflare Access (Google) login page? True even when ACCESS_AUD isn't set yet and we can't read the email.
-  const access = !!(c.req.header("cf-access-jwt-assertion") || /CF_Authorization=/.test(c.req.header("cookie") ?? ""));
-  if (u) return c.json({ ...u, account_id: steam, access, super: sup || u.email === c.env.SUPER_ADMIN_EMAIL.toLowerCase(), role: sup ? "admin" : u.role });
-  return c.json({ email: null, role: sup ? "admin" : "member", account_id: steam, access, super: sup, unconfigured: !c.env.ACCESS_TEAM_DOMAIN || !c.env.ACCESS_AUD });
+  const signed_in = !!u || hasAnySignIn(c);
+  if (u) return c.json({ ...u, account_id: steam, signed_in, super: sup || u.email === c.env.SUPER_ADMIN_EMAIL.toLowerCase(), role: sup ? "admin" : u.role });
+  return c.json({ email: null, role: sup ? "admin" : "member", account_id: steam, signed_in, super: sup, unconfigured: !authConfigured(c.env) });
 });
 
 app.route("/api/players", players);
@@ -58,7 +59,24 @@ app.onError((err, c) => {
   return c.json({ error: "internal", message: err.message.slice(0, 300) }, 500);
 });
 
-// Anything that isn't /api/* is a static file in /public.
+/**
+ * The front door. Pages (/, *.html) are only for signed-in members; everyone else gets the Soul Scribe welcome page
+ * at "/" with the Google button. Static files (css/js/img) and the legal pages are public. wrangler.jsonc sends
+ * "/", "/*.html" and /api/* to the Worker first; everything else is served straight from /public.
+ */
+const PUBLIC_PAGES = new Set(["/welcome.html", "/terms.html", "/privacy.html", "/404.html"]);
+const welcome = (c: Context<{ Bindings: Env; Variables: { user?: Identity } }>, qs = "") => c.env.ASSETS.fetch(new Request(new URL("/welcome.html" + qs, c.req.url), { headers: c.req.raw.headers }));
+app.get("*", async (c) => {
+  const path = new URL(c.req.url).pathname;
+  const isPage = path === "/" || path.endsWith(".html");
+  if (!isPage || PUBLIC_PAGES.has(path) || !authConfigured(c.env)) return c.env.ASSETS.fetch(c.req.raw);
+  const id = await identify(c);
+  if (id && id !== "unconfigured") return c.env.ASSETS.fetch(c.req.raw);
+  if (path !== "/") return c.redirect("/");
+  const who = await whoIs(c);
+  const page = await welcome(c, who ? `?denied=${encodeURIComponent(who.email)}` : "");
+  return new Response(page.body, { status: 200, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
+});
 app.notFound((c) => c.env.ASSETS.fetch(c.req.raw));
 
 export default {
