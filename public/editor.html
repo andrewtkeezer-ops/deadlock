@@ -3,7 +3,12 @@
 main{max-width:1300px}
 .top{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.top img.hero{width:48px;height:62px;object-fit:cover;border-radius:8px}.top input#title{flex:1;min-width:200px;font-size:16px}
 .ed{display:grid;grid-template-columns:1fr 340px;gap:16px}@media(max-width:900px){.ed{grid-template-columns:1fr}.picker{position:static;max-height:none}}
-.phase{margin-bottom:12px;border-left:4px solid var(--line)}.phase.target{border-left-color:var(--accent)}.phase h3{margin:0 0 6px;display:flex;gap:8px;align-items:center;cursor:pointer}.phase h3 input{flex:1;font-family:var(--fh);font-size:15px;text-transform:uppercase}.phase h3 .souls{color:var(--muted);font-size:12px;font-family:var(--fb);text-transform:none}
+.phase{margin-bottom:12px;border-left:4px solid var(--line);cursor:pointer;transition:border-color .15s,box-shadow .15s}.phase.target{border-left-color:var(--accent);box-shadow:0 0 0 1px rgba(232,199,106,.35),0 0 30px rgba(232,199,106,.08)}
+.phase .addhere{font-size:11px;letter-spacing:.12em;text-transform:uppercase;border:1px solid var(--line2);border-radius:999px;padding:3px 10px;color:var(--muted);white-space:nowrap}.phase.target .addhere{background:var(--accent);color:#1a1200;border-color:transparent;font-weight:700}
+.phase .meta{display:flex;gap:14px;font-size:12px;color:var(--muted);margin:-2px 0 8px;font-family:var(--fb)}.phase .meta b{color:var(--text);font-weight:600}
+.help{display:flex;gap:14px;align-items:center;font-size:13px;color:var(--muted)}.help b{color:var(--accent);font-family:var(--fh);margin-right:4px}.help .x{margin-left:auto;cursor:pointer}
+.tidy{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px}.tidy button{font-size:12px;padding:6px 10px}
+.mod.unknown{opacity:.6;border-style:dashed}.picker .adding{font-size:12px;color:var(--muted);margin:0 0 6px}.picker .adding b{color:var(--accent)}.phase h3{margin:0 0 6px;display:flex;gap:8px;align-items:center;cursor:pointer}.phase h3 input{flex:1;font-family:var(--fh);font-size:15px;text-transform:uppercase}.phase h3 .souls{color:var(--muted);font-size:12px;font-family:var(--fb);text-transform:none}
 .mods{display:flex;flex-wrap:wrap;gap:8px;min-height:56px;padding:8px;border:1px dashed var(--line);border-radius:8px}.mods.over{border-color:var(--accent);background:#1c1f13}
 .mod{display:flex;align-items:center;gap:6px;background:#1f2230;border-radius:8px;padding:4px 6px;font-size:13px;cursor:grab;border:1px solid transparent}.mod.weapon{border-color:var(--weapon)}.mod.spirit{border-color:var(--spirit)}.mod.vitality{border-color:var(--vitality)}.mod img{width:34px;height:34px;border-radius:6px}.mod.dragging{opacity:.4}
 .mod .note{width:100px;background:transparent;border:0;border-bottom:1px solid var(--line);color:var(--muted);font-size:12px}.mod .x{padding:0 6px;line-height:1.4;color:var(--muted)}
@@ -17,11 +22,12 @@ main{max-width:1300px}
 <div class="card"><div class="top"><img class="hero" id="heroimg" alt=""><select id="hero"></select><input type="text" id="title" placeholder="Build name"><button class="primary" id="save">Save</button><button id="fork" hidden>Fork a copy</button><button id="del" hidden>Delete</button><span id="msg"></span></div>
 <p style="margin:10px 0 0"><input type="text" id="desc" placeholder="How to play it (optional)" style="width:100%"></p>
 <div class="tot" style="margin-top:10px"><b id="total">0</b><span class="muted">souls total</span><span id="owner" class="muted" style="margin-left:auto"></span></div></div>
+<div class="card help" id="help"><b>1</b> Click a phase to make it the target <b>2</b> Click items on the right to add them <b>3</b> Drag items between phases, add notes <span class="x" id="helpx" title="Hide">×</span></div>
 <div class="ed">
-<div id="phases"></div>
+<div><div class="tidy" id="tidy"></div><div id="phases"></div></div>
 <div class="card picker"><input type="text" id="search" placeholder="Search items…" style="width:100%"><div class="seg"><button data-slot="" class="primary">All</button><button data-slot="weapon">Weapon</button><button data-slot="vitality">Vitality</button><button data-slot="spirit">Spirit</button></div>
 <div id="chips" style="display:flex;flex-wrap:wrap;gap:4px;margin:4px 0"></div>
-<p class="muted" style="font-size:12px;margin:4px 0 8px">Click an item to add it to the highlighted phase. Drag items between phases to reorder.</p><div id="items"></div></div>
+<p class="adding" id="adding"></p><div id="items"></div></div>
 </div></main>
 <script type="module">
 import { api, h, $, fmt, heroes, items, me, withTip, shell } from "/js/app.js";
@@ -43,19 +49,32 @@ if (id) { $("#owner").textContent = mine ? "Your build" : `By ${build.author_nam
 if (!who.account_id) $("#owner").textContent = "Sign in through Steam (top right) to save builds.";
 const heroImg = () => { $("#heroimg").src = hs.find((y) => y.id === +$("#hero").value)?.images?.card || ""; }; heroImg();
 let drag = null;
-function render() { let total = 0;
-  $("#phases").replaceChildren(...build.details.mod_categories.map((cat, ci) => { const souls = cat.mods.reduce((s, m) => s + (item(m.ability_id)?.cost || 0), 0); total += souls;
+const SPM = 1150; // typical souls per minute; used for the "about when" estimate
+function render() { let total = 0; let running = 0;
+  if (target >= build.details.mod_categories.length) target = 0;
+  $("#phases").replaceChildren(...build.details.mod_categories.map((cat, ci) => { const souls = cat.mods.reduce((s, m) => s + (item(m.ability_id)?.cost || 0), 0); total += souls; running += souls; const mins = Math.round(running / SPM);
     const mods = h("div", { class: "mods", ondragover: (e) => { e.preventDefault(); mods.classList.add("over"); }, ondragleave: () => mods.classList.remove("over"), ondrop: (e) => { e.preventDefault(); mods.classList.remove("over"); if (!drag) return; const [fc, fi] = drag; const [mv] = build.details.mod_categories[fc].mods.splice(fi, 1); let idx = cat.mods.length; const after = e.target.closest(".mod"); if (after) idx = [...mods.children].indexOf(after); if (fc === ci && fi < idx) idx--; cat.mods.splice(idx, 0, mv); drag = null; render(); } },
-      ...cat.mods.map((m, mi) => { const it = item(m.ability_id); const el = h("div", { class: "mod " + (it?.slot || ""), draggable: canEdit() ? "true" : "false", ondragstart: () => { drag = [ci, mi]; el.classList.add("dragging"); }, ondragend: () => el.classList.remove("dragging") },
-        it?.image ? withTip(h("img", { src: it.image, alt: it.name }), it) : "", h("span", {}, it?.name ?? m.ability_id), canEdit() ? h("input", { class: "note", placeholder: "note", value: m.annotation || "", onchange: (e) => (m.annotation = e.target.value || null) }) : (m.annotation ? h("span", { class: "muted", style: "font-size:12px" }, m.annotation) : ""), canEdit() ? h("button", { class: "x", title: "remove", onclick: () => { cat.mods.splice(mi, 1); render(); } }, "×") : ""); return el; }));
-    return h("div", { class: "card phase" + (target === ci ? " target" : "") }, h("h3", { onclick: () => { target = ci; render(); } }, canEdit() ? h("input", { type: "text", value: cat.name, onchange: (e) => (cat.name = e.target.value), onclick: (e) => e.stopPropagation() }) : h("span", { style: "flex:1;font-family:var(--fh);text-transform:uppercase" }, cat.name), h("span", { class: "souls" }, `${fmt(souls)} souls`)), mods); }));
-  $("#total").textContent = fmt(total); }
+      ...cat.mods.map((m, mi) => { const it = item(m.ability_id); const el = h("div", { class: "mod " + (it?.slot || "") + (it ? "" : " unknown"), title: it ? "" : "This item is no longer in the shop", draggable: canEdit() ? "true" : "false", ondragstart: () => { drag = [ci, mi]; el.classList.add("dragging"); }, ondragend: () => el.classList.remove("dragging") },
+        it?.image ? withTip(h("img", { src: it.image, alt: it.name }), it) : "", h("span", {}, it?.name ?? "Unknown item (removed)"), canEdit() ? h("input", { class: "note", placeholder: "note", value: m.annotation || "", onchange: (e) => (m.annotation = e.target.value || null) }) : (m.annotation ? h("span", { class: "muted", style: "font-size:12px" }, m.annotation) : ""), canEdit() ? h("button", { class: "x", title: "remove", onclick: () => { cat.mods.splice(mi, 1); render(); } }, "×") : ""); return el; }));
+    return h("div", { class: "card phase" + (target === ci ? " target" : ""), onclick: (e) => { if (e.target.closest("input,button,.mod")) return; target = ci; render(); } },
+      h("h3", {}, canEdit() ? h("input", { type: "text", value: cat.name, onchange: (e) => (cat.name = e.target.value), onclick: (e) => e.stopPropagation() }) : h("span", { style: "flex:1;font-family:var(--fh);text-transform:uppercase" }, cat.name), canEdit() ? h("span", { class: "addhere", onclick: (e) => { e.stopPropagation(); target = ci; render(); } }, target === ci ? "✚ Adding here" : "Add here") : ""),
+      h("div", { class: "meta" }, h("span", {}, "Phase ", h("b", {}, fmt(souls)), " souls"), h("span", {}, "Running total ", h("b", {}, fmt(running))), h("span", {}, "About ", h("b", {}, mins ? `${mins} min` : "start"), " into the game")), mods); }));
+  $("#total").textContent = fmt(total); const tgt = build.details.mod_categories[target]; $("#adding").replaceChildren("Adding to ", h("b", {}, tgt?.name || "—"), " · click a phase to change"); renderTidy(); }
+const STD = ["Lane", "Early", "Mid", "Late", "Situational"];
+function renderTidy() { if (!canEdit()) return $("#tidy").replaceChildren();
+  $("#tidy").replaceChildren(
+    h("button", { title: "Rename phases to Lane / Early / Mid / Late / Situational, in order", onclick: () => { build.details.mod_categories.forEach((c, i) => (c.name = STD[Math.min(i, STD.length - 1)] + (i >= STD.length ? ` ${i - STD.length + 2}` : ""))); render(); } }, "Rename phases to standard"),
+    h("button", { title: "Sort items in every phase by tier, then cost", onclick: () => { build.details.mod_categories.forEach((c) => c.mods.sort((a, b) => ((item(a.ability_id)?.tier || 9) - (item(b.ability_id)?.tier || 9)) || ((item(a.ability_id)?.cost || 0) - (item(b.ability_id)?.cost || 0)))); render(); } }, "Sort items by tier"),
+    h("button", { title: "Remove items that no longer exist in the shop", onclick: () => { build.details.mod_categories.forEach((c) => (c.mods = c.mods.filter((m) => item(m.ability_id)))); render(); } }, "Remove unknown items"),
+    h("button", { onclick: () => { build.details.mod_categories.push({ name: `Phase ${build.details.mod_categories.length + 1}`, mods: [] }); target = build.details.mod_categories.length - 1; render(); } }, "+ Add phase"),
+    build.details.mod_categories.length > 1 ? h("button", { onclick: () => { if (confirm("Remove the current target phase and its items?")) { build.details.mod_categories.splice(target, 1); target = 0; render(); } } }, "Remove target phase") : ""); }
 function renderPicker() { const q = $("#search").value.toLowerCase(), heroId = +$("#hero").value;
   const strength = (i) => statSel.size ? [...statSel].reduce((s, k) => s + (i.leans?.[k] || 0), 0) / statSel.size : 0;
   const rows = its.filter((i) => (!slotFilter || i.slot === slotFilter) && (!q || i.name.toLowerCase().includes(q) || (i.stats || []).some((s) => s.label.toLowerCase().includes(q))) && (!i.heroes?.length || i.heroes.includes(heroId)) && (!statSel.size || [...statSel].every((k) => (i.leans?.[k] || 0) > 0)))
     .sort((a, b) => statSel.size ? strength(b) - strength(a) : ((a.slot ?? "").localeCompare(b.slot ?? "") || a.tier - b.tier || a.name.localeCompare(b.name)));
   $("#items").replaceChildren(...rows.map((i) => withTip(h("div", { class: "pick", onclick: () => { if (!canEdit()) return; build.details.mod_categories[target].mods.push({ ability_id: i.id, annotation: null }); render(); } }, i.image ? h("img", { src: i.image, alt: "" }) : "", h("span", {}, i.name, " ", h("span", { class: "chip " + i.slot, style: "font-size:10px;padding:0 5px" }, `T${i.tier}`)), h("span", { class: "cost" }, fmt(i.cost))), i))); }
 $("#search").oninput = renderPicker; document.querySelectorAll("[data-slot]").forEach((b) => (b.onclick = () => { slotFilter = b.dataset.slot; document.querySelectorAll("[data-slot]").forEach((x) => (x.className = x === b ? "primary" : "")); renderPicker(); })); $("#hero").onchange = () => { heroImg(); renderPicker(); };
+try { if (localStorage.getItem("editorHelpSeen")) $("#help").hidden = true; } catch {} $("#helpx").onclick = () => { $("#help").hidden = true; try { localStorage.setItem("editorHelpSeen", "1"); } catch {} };
 render(); renderChips(); renderPicker();
 const payload = () => ({ hero_id: +$("#hero").value, title: $("#title").value, description: $("#desc").value, details: build.details });
 $("#save").onclick = async () => { const msg = $("#msg"); try { if (id && mine) { await api(`/library/${id}`, { method: "PUT", body: payload() }); msg.className = "ok"; msg.textContent = "Saved."; } else { const r = await api("/library", { method: "POST", body: payload() }); location.href = `/editor.html?id=${r.id}`; } } catch (e) { msg.className = "error"; msg.textContent = e.message; } };

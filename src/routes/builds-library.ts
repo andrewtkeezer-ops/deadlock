@@ -84,7 +84,8 @@ r.post("/import", async (c) => {
   const rows = await new DeadlockApi(c.env).get<{ hero_build: { hero_build_id: number; name: string; description?: string; author_account_id: number; details?: { mod_categories?: ModCategory[] } } }[]>(`/v1/builds`, { build_id: b.ingame_build_id, only_latest: "true", limit: 1 }, 3600);
   const src = rows[0]?.hero_build; if (!src) return c.json({ error: "build not found" }, 404);
   const player = await c.env.DB.prepare("SELECT name FROM players WHERE account_id=?").bind(me).first<{ name: string }>();
-  const details = sanitize({ mod_categories: (src.details?.mod_categories ?? []).map((cat) => ({ name: cat.name, description: cat.description, mods: cat.mods })) });
+  const known = new Set((await new DeadlockApi(c.env).items()).map((i) => i.id));
+  const details = sanitize({ mod_categories: (src.details?.mod_categories ?? []).map((cat) => ({ name: (cat.name || "").trim() || "Items", description: cat.description, mods: cat.mods.filter((m) => known.has(m.ability_id)) })).filter((cat) => cat.mods.length) });
   const res = await c.env.DB.prepare("INSERT INTO builds(hero_id, author, account_id, title, description, priorities, items, details, updated_at) VALUES (?,?,?,?,?,'{}','[]',?,?)")
     .bind(b.hero_id, player?.name ?? String(me), me, src.name.slice(0, 60), `Copied from in-game build #${src.hero_build_id} by ${src.author_account_id}. ${(src.description ?? "").slice(0, 400)}`.trim(), JSON.stringify(details), Math.floor(Date.now() / 1000)).run();
   return c.json({ ok: true, id: res.meta.last_row_id });
