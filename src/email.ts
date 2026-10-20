@@ -1,9 +1,8 @@
 import type { Env } from "./types";
-import { gmailLink, gmailSend } from "./gmail";
 
 /**
- * Invite email. Preferred: the super admin's connected Gmail (see gmail.ts). Fallback: Resend when
- * RESEND_API_KEY is set. Otherwise returns { sent: false } and the admin shares the link by hand.
+ * Invite email. Sends through Resend (https://resend.com, free tier 3k/month) when RESEND_API_KEY and
+ * INVITE_FROM are set; otherwise returns { sent: false } and the admin shares the link by hand.
  */
 export type Invite = { to: string; inviter: string; link: string; origin: string };
 
@@ -26,12 +25,10 @@ export const inviteText = (i: Invite) => `${i.inviter} invited you to Soul Scrib
 const esc = (s: string) => s.replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch] as string));
 
 export async function sendInvite(env: Env, i: Invite): Promise<{ sent: boolean; reason?: string }> {
-  const subject = `${i.inviter} invited you to Soul Scribe`;
-  if (await gmailLink(env)) return gmailSend(env, { to: i.to, subject, text: inviteText(i), html: inviteHtml(i) });
-  if (!env.RESEND_API_KEY) return { sent: false, reason: "No email sender connected — connect Gmail in Admin" };
+  if (!env.RESEND_API_KEY) return { sent: false, reason: "email not configured (RESEND_API_KEY)" };
   const from = env.INVITE_FROM || "Soul Scribe <onboarding@resend.dev>";
   const res = await fetch("https://api.resend.com/emails", { method: "POST", headers: { authorization: `Bearer ${env.RESEND_API_KEY}`, "content-type": "application/json" },
-    body: JSON.stringify({ from, to: [i.to], subject, html: inviteHtml(i), text: inviteText(i) }) });
+    body: JSON.stringify({ from, to: [i.to], subject: `${i.inviter} invited you to Soul Scribe`, html: inviteHtml(i), text: inviteText(i) }) });
   if (!res.ok) return { sent: false, reason: `Resend ${res.status}: ${(await res.text()).slice(0, 200)}` };
   return { sent: true };
 }

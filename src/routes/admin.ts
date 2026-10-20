@@ -4,44 +4,13 @@ import { syncAll, syncPlayer } from "../sync";
 import { DeadlockApi, type SteamProfile } from "../deadlock";
 import { bigAvatar } from "../deadlock";
 import { requireAdmin, type Identity } from "../auth";
-import { sendInvite, inviteText, inviteHtml } from "../email";
-import { GMAIL_SCOPE, gmailLink, saveGmailLink, gmailSend } from "../gmail";
+import { sendInvite, inviteText } from "../email";
 
 const admin = new Hono<{ Bindings: Env; Variables: { user?: Identity } }>();
 
 admin.use("*", requireAdmin);
 
 admin.post("/sync", async (c) => c.json(await syncAll(c.env)));
-
-/** Gmail sender: one-time OAuth consent (gmail.send) by the admin; refresh token kept in settings. */
-admin.get("/gmail", async (c) => { const l = await gmailLink(c.env); return c.json({ connected: !!l, email: l?.email ?? null, connected_at: l?.connected_at ?? null, resend: !!c.env.RESEND_API_KEY }); });
-admin.get("/gmail/connect", (c) => {
-  if (!c.env.GOOGLE_CLIENT_ID) return c.text("Google sign-in isn't configured", 500);
-  const origin = new URL(c.req.url).origin, state = crypto.randomUUID();
-  const p = new URLSearchParams({ client_id: c.env.GOOGLE_CLIENT_ID, redirect_uri: `${origin}/api/admin/gmail/callback`, response_type: "code", scope: GMAIL_SCOPE, state, access_type: "offline", prompt: "consent", include_granted_scopes: "true" });
-  c.header("set-cookie", `squad_gmail=${state}; Path=/; Max-Age=600; HttpOnly; SameSite=Lax; Secure`);
-  return c.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${p}`);
-});
-admin.get("/gmail/callback", async (c) => {
-  const url = new URL(c.req.url); const code = url.searchParams.get("code"), state = url.searchParams.get("state");
-  const expected = /squad_gmail=([^;]+)/.exec(c.req.header("cookie") ?? "")?.[1];
-  if (!code || !state || state !== expected) return c.redirect("/admin.html?gmail=state");
-  const res = await fetch("https://oauth2.googleapis.com/token", { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ code, client_id: c.env.GOOGLE_CLIENT_ID!, client_secret: c.env.GOOGLE_CLIENT_SECRET!, redirect_uri: `${url.origin}/api/admin/gmail/callback`, grant_type: "authorization_code" }) });
-  const j = (await res.json()) as { refresh_token?: string; id_token?: string; scope?: string };
-  if (!res.ok || !j.refresh_token) { console.error("gmail token", res.status, j); return c.redirect("/admin.html?gmail=token"); }
-  if (!/gmail\.send/.test(j.scope ?? "")) return c.redirect("/admin.html?gmail=scope");
-  const claims = j.id_token ? (JSON.parse(atob(j.id_token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))) as { email?: string }) : {};
-  await saveGmailLink(c.env, { refresh_token: j.refresh_token, email: claims.email ?? "", connected_at: Math.floor(Date.now() / 1000) });
-  c.header("set-cookie", "squad_gmail=; Path=/; Max-Age=0");
-  return c.redirect("/admin.html?gmail=ok");
-});
-admin.delete("/gmail", async (c) => { await saveGmailLink(c.env, null); return c.json({ ok: true }); });
-admin.post("/gmail/test", async (c) => {
-  const l = await gmailLink(c.env); if (!l) return c.json({ error: "Gmail not connected" }, 400);
-  const origin = new URL(c.req.url).origin, i = { to: l.email, inviter: c.get("user")?.name || "You", link: `${origin}/`, origin };
-  return c.json(await gmailSend(c.env, { to: l.email, subject: "Soul Scribe test invite", text: inviteText(i), html: inviteHtml(i) }));
-});
 
 /** Add a friend: { account_id, name }. Pulls their history immediately. */
 admin.post("/players", async (c) => {
