@@ -20,7 +20,7 @@ const enc = new TextEncoder();
 const b64url = (s: string) => Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0));
 const toB64url = (b: ArrayBuffer | Uint8Array) => btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 async function hmacKey(env: Env) {
-  const secret = env.SESSION_SECRET || env.GOOGLE_CLIENT_SECRET || env.ADMIN_TOKEN;
+  const secret = env.SESSION_SECRET || env.GOOGLE_CLIENT_SECRET || "dev-only-not-secret";
   return crypto.subtle.importKey("raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign", "verify"]);
 }
 /** payload.signature, HMAC-SHA256 with SESSION_SECRET. */
@@ -109,14 +109,12 @@ export async function requireMember(c: Context<{ Bindings: Env; Variables: { use
   return next();
 }
 
-/** /api/admin routes: super admin / admins, with the shared token as a fallback for local dev. */
+/** /api/admin routes: admins only (role from the members table, or the super admin by email / Steam account). */
 export async function requireAdmin(c: Context<{ Bindings: Env; Variables: { user?: Identity } }>, next: Next) {
   const user = c.get("user");
   if (user?.role === "admin") return next();
   if (isSuperAdmin(c.env, steamAccount(c.req.header("cookie")))) return next();
-  // Auth not configured yet (open/testing mode): everything is admin. Turn on Google sign-in before sharing the URL widely.
+  // Auth not configured yet (local dev / open mode): everything is admin. Turn on Google sign-in before sharing the URL widely.
   if (!authConfigured(c.env)) return next();
-  const token = c.req.header("x-admin-token") ?? c.req.query("token");
-  if (!user && token && token === c.env.ADMIN_TOKEN) return next();
   return c.json({ error: "unauthorized" }, 401);
 }

@@ -20,7 +20,6 @@ npx wrangler login
 npm run db:create                 # paste the database_id into wrangler.jsonc
 npx wrangler kv namespace create CACHE   # paste the id into wrangler.jsonc
 npm run db:migrate:local && npm run db:migrate
-npx wrangler secret put ADMIN_TOKEN       # replaces the "change-me" default in prod
 npm run dev                        # http://localhost:8787
 npm run deploy                     # → https://deadlock-squad.<you>.workers.dev
 ```
@@ -39,7 +38,7 @@ Repo: https://github.com/andrewtkeezer-ops/deadlock. In the Cloudflare dashboard
 
 Before the first build, the D1 database and KV namespace must exist and their IDs must be in `wrangler.jsonc`
 (create them in the dashboard under Storage & Databases, or with `wrangler d1 create` / `wrangler kv namespace create`).
-Set `ADMIN_TOKEN` and (optionally) `DEADLOCK_API_KEY` under the Worker's Settings → Variables and Secrets.
+Set (optionally) `DEADLOCK_API_KEY` under the Worker's Settings → Variables and Secrets.
 Every push to `main` then redeploys.
 
 ## Invite-only Google login (handled by the Worker)
@@ -70,7 +69,6 @@ Admins can also search Steam names / paste profile URLs on **/admin.html**.
 1. Each friend installs the ingest tool (the **Setup** page has the one-line PowerShell command).
    Without it, their matches are mostly invisible to every tracker, not just this one.
 2. Setup page → paste Steam profile URL → it converts to `account_id` → "Add & import" (needs the admin token).
-   Or: `curl -X POST https://<site>/api/admin/players -H "x-admin-token: …" -d '{"account_id":123,"name":"Matt"}'`
 3. The cron (`17 * * * *`) re-syncs everyone hourly. Force one: `POST /api/admin/sync`.
 
 ## Free-tier budget (10 players)

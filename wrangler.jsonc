@@ -25,14 +25,13 @@
     "DEADLOCK_API": "https://api.deadlock-api.com",
     // Optional: free key from deadlock-api doubles the rate limit and gets queue priority.
     // Set as a secret instead: `wrangler secret put DEADLOCK_API_KEY`
-    "ADMIN_TOKEN": "change-me",
     // Invite-only Google login handled by the Worker (see README). Client ID is public; put GOOGLE_CLIENT_SECRET and
     // SESSION_SECRET in as secrets (`npx wrangler secret put ...` or Workers → Settings → Variables). Empty = open/dev mode.
     "GOOGLE_CLIENT_ID": "504167665145-g7669fpagkja094217eokd3mhdmu85v4.apps.googleusercontent.com",
     // Legacy Cloudflare Access door — only consulted when GOOGLE_CLIENT_ID is empty. Remove the Access app once Google sign-in works.
     "ACCESS_TEAM_DOMAIN": "spring-base-00a6.cloudflareaccess.com",
     "ACCESS_AUD": "",
-    "SUPER_ADMIN_EMAIL": "andrew@brandbutter.ca",
+    "SUPER_ADMIN_EMAIL": "andrewtkeezer@gmail.com",
     // Steam account_id of the super admin (works in open mode and under Access).
     "SUPER_ADMIN_ACCOUNT_ID": "894896"
   },

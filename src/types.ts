@@ -4,7 +4,6 @@ export type Env = {
   ASSETS: Fetcher;
   DEADLOCK_API: string;
   DEADLOCK_API_KEY?: string;
-  ADMIN_TOKEN: string;
   // Google sign-in handled by the Worker (see README). Leave GOOGLE_CLIENT_ID empty for local dev → no auth.
   GOOGLE_CLIENT_ID?: string;     // var: OAuth 2.0 Web client ID
   GOOGLE_CLIENT_SECRET?: string; // secret
