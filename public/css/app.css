@@ -64,7 +64,7 @@ a{color:var(--accent);text-decoration:none}a:hover{color:var(--cream)}
 .rail nav a .lb{opacity:1;transform:none;transition:opacity .18s,transform .32s var(--ease),letter-spacing .3s}
 .rail nav a:hover{color:#1a1200}.rail nav a:hover .ix{color:rgba(26,18,0,.5)}.rail nav a:hover .ic{transform:scale(1.15) rotate(-6deg);color:var(--ink)}.rail nav a:hover .lb{letter-spacing:.16em}
 .rail nav a.active{color:#1a1200}.rail nav a.active .ix{color:rgba(26,18,0,.5)}.rail nav a.active .ic{color:var(--ink)}
-.rail nav:hover a.active:not(:hover){color:var(--muted)}.rail nav:hover a.active:not(:hover) .ic{color:inherit}.rail nav:hover a.active:not(:hover) .ix{color:var(--dim)}
+
 .rail nav a .rp{position:absolute;border-radius:50%;background:rgba(221,102,56,.35);transform:scale(0);animation:ripple .6s ease-out forwards;pointer-events:none}
 @keyframes ripple{to{transform:scale(4);opacity:0}}
 .rail .who{padding:12px 12px 4px;border-top:1px solid var(--line);display:flex;align-items:center;gap:4px;position:relative}
