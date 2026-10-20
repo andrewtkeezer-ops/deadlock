@@ -143,7 +143,7 @@ const murow = (hid, wr) => { const hh = hs.find((y) => y.id === hid); return [hh
   $("#sbuilds").parentElement.insertBefore(h("div", { class: "proven" }, h("strong", {}, "Squad's proven build: "), h("a", { href: `/editor.html?id=${top.id}` }, top.title), h("span", { class: "muted" }, ` — used in ${top.games_using} of ${bb.sample_games} recent squad games, ${pct(top.win_rate)} win rate`)), $("#sbuilds")); } catch {} })();
 (async () => { try { const b = await api(`/library?hero_id=${id}`);
   $("#sbuilds").classList.remove("muted");
-  $("#sbuilds").replaceChildren(b.length ? b.map((r) => h("div", { class: "row" }, h("a", { href: `/editor.html?id=${r.id}` }, h("strong", {}, r.title)), h("span", { class: "muted" }, ` by ${r.author_name ?? r.author}`), h("div", { class: "items" }, ...r.preview.map((i) => item(i)?.image ? h("img", { src: item(i).image, title: item(i).name }) : "")))) : h("span", { class: "muted" }, "No squad builds yet. ", h("a", { href: `/editor.html?hero=${id}` }, "Make one.")));
+  $("#sbuilds").replaceChildren(...(b.length ? b.map((r) => h("div", { class: "row" }, h("a", { href: `/editor.html?id=${r.id}` }, h("strong", {}, r.title)), h("span", { class: "muted" }, ` by ${r.author_name ?? r.author}`), h("div", { class: "items" }, ...r.preview.map((i) => item(i)?.image ? h("img", { src: item(i).image, title: item(i).name }) : "")))) : [h("span", { class: "muted" }, "No squad builds yet. ", h("a", { href: `/editor.html?hero=${id}` }, "Make one."))]));
   $("#sbuilds").parentElement.append(h("a", { class: "plus", href: `/editor.html?hero=${id}`, title: "New squad build" }, "+")); } catch (e) { showError($("#sbuilds"), e); } })();
 
 // ---- builds ----
