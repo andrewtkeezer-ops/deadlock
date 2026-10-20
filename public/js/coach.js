@@ -63,3 +63,39 @@ export function coachPanel(result) {
   return h("div", { class: "coach" }, h("div", { class: "sum" }, h("b", {}, fmt(result.total)), " souls total · ", h("b", {}, `${Math.round(result.endMin)} min`), ` to complete at ${fmt(result.spm)} souls/min`), bar,
     tips.length ? h("div", { class: "tips" }, ...tips.map((t) => h("div", { class: "t " + t.level }, h("span", { class: "i" }, icon[t.level]), h("div", {}, h("b", {}, t.title), h("p", {}, t.body))))) : h("p", { class: "muted" }, "Add items to phases and the coach will comment on pacing, slots and upgrade order."));
 }
+
+/**
+ * Sell plan: early items (T1/T2 bought in the first phases) that aren't upgraded later and could be swapped for a
+ * stronger late item of the same flavour. Returns Map<ability_id, { sellAtMin, reason, replacements: [{item, why, gain}] }>.
+ */
+export function sellPlan(build, items, { spm = 1150 } = {}) {
+  const byId = new Map(items.map((i) => [i.id, i])), byClass = new Map(items.map((i) => [i.class_name, i]));
+  const cats = build.details?.mod_categories ?? [];
+  const inBuild = new Set(cats.flatMap((c) => c.mods.map((m) => m.ability_id)));
+  const upgradedLater = new Set(); for (const c of cats) for (const m of c.mods) for (const comp of byId.get(m.ability_id)?.components || []) { const ci = byClass.get(comp); if (ci) upgradedLater.add(ci.id); }
+  let running = 0; const out = new Map();
+  cats.forEach((cat, ci) => {
+    for (const m of cat.mods) {
+      const it = byId.get(m.ability_id); if (!it) continue;
+      const boughtAt = running; running += it.cost || 0;
+      if (it.tier > 2 || boughtAt > 10000 || upgradedLater.has(it.id)) continue;
+      const leans = Object.entries(it.leans || {}).sort((a, b) => b[1] - a[1]); if (!leans.length) continue;
+      const top = leans.slice(0, 2).map(([k]) => k);
+      // direct upgrades first (pay the difference), then same-slot T3/T4 items that lean the same way
+      const direct = items.filter((x) => (x.components || []).includes(it.class_name) && !inBuild.has(x.id)).map((x) => ({ item: x, score: 10 + x.tier, why: `upgrades from ${it.name} — pay the difference (${fmt(x.cost - it.cost)})` }));
+      const similar = items.filter((x) => x.slot === it.slot && x.tier >= 3 && !inBuild.has(x.id) && x.id !== it.id && (!x.heroes?.length || x.heroes.includes(build.hero_id)))
+        .map((x) => { const sim = top.reduce((s, k) => s + (x.leans?.[k] || 0), 0); return { item: x, score: sim * x.tier, why: `${top.map((k) => k.replace(/_/g, " ")).join(" + ")} like ${it.name}, but T${x.tier}` }; })
+        .filter((r) => r.score > 0.3);
+      const picks = [...direct, ...similar].sort((a, b) => b.score - a.score).filter((r, i, a) => a.findIndex((q) => q.item.id === r.item.id) === i).slice(0, 3);
+      if (!picks.length) continue;
+      const gain = (x) => (x.stats || []).slice(0, 3).map((st) => `${st.value} ${st.label}`).join(" · ");
+      out.set(it.id, { sellAtMin: Math.round(Math.max(18, 20000 / spm)), phase: ci, reason: `${it.name} is a T${it.tier} lane item; once slots fill (~${Math.round(Math.max(18, 20000 / spm))} min) it's the first thing to sell.`, replacements: picks.map((r) => ({ item: r.item, why: r.why, gain: gain(r.item) })) });
+    }
+  });
+  return out;
+}
+
+/** Tooltip body for a sell suggestion. `onAdd(item)` adds the replacement to the build. */
+export function sellTip(plan, onAdd) {
+  return h("div", { class: "itip selltip" }, h("div", { class: "t" }, "↻ Sell this later"), h("p", { class: "desc" }, plan.reason), h("div", { class: "reps" }, ...plan.replacements.map((r) => h("div", { class: "rep", onclick: () => onAdd?.(r.item) }, r.item.image ? h("img", { src: r.item.image, alt: "" }) : "", h("div", {}, h("b", {}, r.item.name, " ", h("span", { class: "muted" }, `T${r.item.tier} · ${fmt(r.item.cost)}`)), h("small", {}, r.why), r.gain ? h("small", { class: "gain" }, r.gain) : "")))), onAdd ? h("p", { class: "muted hint" }, "Click a replacement to add it to the last phase.") : "");
+}

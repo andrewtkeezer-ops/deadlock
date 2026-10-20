@@ -36,7 +36,8 @@ main{max-width:1300px}
 <script type="module">
 import { api, h, $, fmt, ago, heroes, items, me, withTip, shell } from "/js/app.js";
 import { dpsPanel } from "/js/dps.js";
-import { analyse, coachPanel } from "/js/coach.js";
+import { analyse, coachPanel, sellPlan, sellTip } from "/js/coach.js";
+
 shell("/library.html");
 const qs = new URLSearchParams(location.search); const id = qs.get("id");
 const [hs, its, who, cats, groups] = await Promise.all([heroes(), items(), me(), api("/library/categories"), api("/library/stat-groups")]);
@@ -63,12 +64,25 @@ $("#hero").addEventListener("change", () => dps.setHero(+$("#hero").value));
 let drag = null;
 let SPM = 1150; let myGames = 0; // squad-typical souls per minute until we know the player's own pace
 if (who.account_id) api(`/players/${who.account_id}`).then((d) => { const ms = d.matches || []; if (ms.length >= 3) { SPM = Math.round(ms.reduce((s, m) => s + m.net_worth * 60 / Math.max(1, m.duration_s), 0) / ms.length); myGames = ms.length; render(); } }).catch(() => {});
+let sellPop = null;
+function closeSellTip() { sellPop?.remove(); sellPop = null; document.removeEventListener("mousedown", onSellDoc); }
+function onSellDoc(e) { if (sellPop && !sellPop.contains(e.target)) closeSellTip(); }
+function openSellTip(anchor, plan) { if (sellPop?.dataset.for === String(plan.phase + ":" + anchor.textContent)) return closeSellTip(); closeSellTip();
+  sellPop = sellTip(plan, canEdit() ? (rep) => { const last = build.details.mod_categories[build.details.mod_categories.length - 1]; if (!last.mods.some((x) => x.ability_id === rep.id)) { last.mods.push({ ability_id: rep.id }); closeSellTip(); render(); } } : null);
+  sellPop.dataset.for = String(plan.phase + ":" + anchor.textContent); sellPop.style.position = "fixed"; sellPop.style.animation = "none"; document.body.append(sellPop);
+  const r = anchor.getBoundingClientRect(), w = sellPop.offsetWidth, hgt = sellPop.offsetHeight; let x = Math.min(r.left, innerWidth - w - 8), y = r.bottom + 8; if (y + hgt > innerHeight - 8) y = Math.max(8, r.top - hgt - 8); sellPop.style.left = x + "px"; sellPop.style.top = y + "px";
+  setTimeout(() => document.addEventListener("mousedown", onSellDoc), 0); }
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeSellTip(); });
 function render() { let total = 0; let running = 0;
   if (target >= build.details.mod_categories.length) target = 0;
+  let sells = new Map(); try { sells = sellPlan(build, its, { spm: SPM }); } catch (e) { console.warn("sell plan", e); }
   $("#phases").replaceChildren(...build.details.mod_categories.map((cat, ci) => { const souls = cat.mods.reduce((s, m) => s + (item(m.ability_id)?.cost || 0), 0); total += souls; running += souls; const mins = Math.round(running / SPM);
     const mods = h("div", { class: "mods", ondragover: (e) => { e.preventDefault(); mods.classList.add("over"); }, ondragleave: () => mods.classList.remove("over"), ondrop: (e) => { e.preventDefault(); mods.classList.remove("over"); if (!drag) return; const [fc, fi] = drag; const [mv] = build.details.mod_categories[fc].mods.splice(fi, 1); let idx = cat.mods.length; const after = e.target.closest(".mod"); if (after) idx = [...mods.children].indexOf(after); if (fc === ci && fi < idx) idx--; cat.mods.splice(idx, 0, mv); drag = null; render(); } },
       ...cat.mods.map((m, mi) => { const it = item(m.ability_id); const el = h("div", { class: "mod " + (it?.slot || "") + (it ? "" : " unknown"), title: it ? "" : "This item is no longer in the shop", draggable: canEdit() ? "true" : "false", ondragstart: () => { drag = [ci, mi]; el.classList.add("dragging"); }, ondragend: () => el.classList.remove("dragging") },
-        it?.image ? withTip(h("img", { src: it.image, alt: it.name }), it) : "", h("span", {}, it?.name ?? (retired.get(m.ability_id) ? `${retired.get(m.ability_id).name} · no longer in the shop` : "Unknown item (removed from the game)")), canEdit() ? h("input", { class: "note", placeholder: "note", value: m.annotation || "", onchange: (e) => (m.annotation = e.target.value || null) }) : (m.annotation ? h("span", { class: "muted", style: "font-size:12px" }, m.annotation) : ""), canEdit() ? h("button", { class: "x", title: "remove", onclick: () => { cat.mods.splice(mi, 1); render(); } }, "×") : ""); return el; }));
+        it?.image ? withTip(h("img", { src: it.image, alt: it.name }), it) : "", h("span", {}, it?.name ?? (retired.get(m.ability_id) ? `${retired.get(m.ability_id).name} · no longer in the shop` : "Unknown item (removed from the game)")), canEdit() ? h("input", { class: "note", placeholder: "note", value: m.annotation || "", onchange: (e) => (m.annotation = e.target.value || null) }) : (m.annotation ? h("span", { class: "muted", style: "font-size:12px" }, m.annotation) : ""), canEdit() ? h("button", { class: "x", title: "remove", onclick: () => { cat.mods.splice(mi, 1); render(); } }, "×") : "");
+        const plan = it && sells.get(it.id); if (plan) { el.classList.add("sell"); const badge = h("span", { class: "sellb", title: "This lane item is worth selling later — click for replacements" }, "↻ ", h("i", {}, `sell ~${plan.sellAtMin}m`)); el.append(badge);
+          badge.addEventListener("click", (e) => { e.stopPropagation(); openSellTip(badge, plan); }); }
+        return el; }));
     return h("div", { class: "card phase" + (target === ci ? " target" : ""), onclick: (e) => { if (e.target.closest("input,button,.mod")) return; target = ci; render(); } },
       h("h3", {}, canEdit() ? h("input", { type: "text", value: cat.name, onchange: (e) => (cat.name = e.target.value), onclick: (e) => e.stopPropagation() }) : h("span", { style: "flex:1;font-family:var(--fh);text-transform:uppercase" }, cat.name), canEdit() ? h("span", { class: "addhere", onclick: (e) => { e.stopPropagation(); target = ci; render(); } }, target === ci ? "✚ Adding here" : "Add here") : ""),
       h("div", { class: "meta" }, h("span", {}, "Phase ", h("b", {}, fmt(souls)), " souls"), h("span", {}, "Running total ", h("b", {}, fmt(running))), h("span", {}, "About ", h("b", {}, mins ? `${mins} min` : "start"), " into the game")), mods); }));
