@@ -242,7 +242,7 @@ main a:not(.btn):not(.dl):not(.pd):not(.hc):not(.ht){background-image:linear-gra
 /* display titles: letters slam in, paper-cut depth, cream→gold fill, wave on hover */
 .ph h1{transform:rotate(-1.5deg);transform-origin:left bottom;animation:none;line-height:.95}
 h1 .ch{display:inline-block;will-change:transform;animation:chIn .75s var(--snap) both;animation-delay:calc(.08s + var(--i) * 26ms);background:linear-gradient(180deg,var(--cream) 0%,var(--cream) 55%,var(--accent) 100%);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none;filter:drop-shadow(0 3px 0 rgba(181,141,42,.9)) drop-shadow(0 6px 0 rgba(30,22,8,.9)) drop-shadow(0 16px 28px rgba(0,0,0,.6));transition:transform .18s var(--snap)}
-h1 .sp{display:inline-block;width:.32em}
+h1 .w{display:inline-block;white-space:nowrap}
 @keyframes chIn{0%{opacity:0;transform:translateY(-.6em) rotate(-10deg) scale(1.25)}55%{opacity:1;transform:translateY(.08em) rotate(2deg) scale(.96)}100%{opacity:1;transform:none}}
 h1 .ch.wave{animation:chWave .55s var(--snap) var(--d,0ms) both}
 @keyframes chWave{0%{transform:none}30%{transform:translateY(-.22em) rotate(-6deg) scale(1.08);filter:drop-shadow(-3px 0 0 var(--sapph)) drop-shadow(3px 0 0 var(--ink)) drop-shadow(0 16px 28px rgba(0,0,0,.6))}100%{transform:none}}

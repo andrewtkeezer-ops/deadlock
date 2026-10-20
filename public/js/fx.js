@@ -13,11 +13,8 @@ export function splitTitle(el) {
   const walk = (node) => {
     for (const n of [...node.childNodes]) {
       if (n.nodeType === 3) {
-        const frag = document.createDocumentFragment();
-        for (const ch of n.textContent) {
-          if (ch === " " || ch === "\n") { frag.append(h("span", { class: "sp", "aria-hidden": "true" }, " ")); continue; }
-          frag.append(h("span", { class: "ch", style: `--i:${i++}`, "aria-hidden": "true" }, ch));
-        }
+        const frag = document.createDocumentFragment(); const parts = n.textContent.split(/(\s+)/);
+        for (const part of parts) { if (!part) continue; if (/^\s+$/.test(part)) { frag.append(" "); continue; } frag.append(h("span", { class: "w", "aria-hidden": "true" }, ...[...part].map((ch) => h("span", { class: "ch", style: `--i:${Math.min(i++, 40)}` }, ch)))); }
         n.replaceWith(frag);
       } else if (n.nodeType === 1 && !n.classList.contains("sticker") && !n.matches("small,.muted,.chip,.tag,img")) walk(n);
     }
