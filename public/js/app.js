@@ -136,6 +136,7 @@ export function shell(active) {
   const rail = h("aside", { class: "rail" }, h("a", { class: "brand", href: "/", title: "Soul Scribe" }, h("img", { class: "mark", src: "/img/icon.png", alt: "" }), h("img", { class: "word", src: "/img/logo.webp", alt: "Soul Scribe" })), nav, who);
   document.body.prepend(rail);
   pageHeader();
+  import("/js/fx.js").then((fx) => fx.polish()).catch((e) => console.warn("polish layer skipped", e));
   // sliding active pill + hover preview + click ripple
   function movePill(target) { const a = target || nav.querySelector("a.active"); if (!a) { pill.style.opacity = 0; return; } pill.style.top = a.offsetTop + "px"; pill.style.opacity = 1; }
   requestAnimationFrame(() => movePill());
@@ -190,7 +191,7 @@ function alive() {
   const page = document.querySelector(".page"); watch(page); shimmer(page); mo.observe(page, { childList: true, subtree: true });
   document.body.append(h("div", { class: "progress" }));
   // numbers tick up the first time they appear (stat tiles, podium, hero header)
-  const NUMS = ".tile b:not(.kda b),.stat b,.pd .kv b:not(.kda b),.kv b:not(.kda b),.tile .ratio";
+  const NUMS = ".tile b:not(.kda b),.stat b,.pd .kv b:not(.kda b),.kv b:not(.kda b),.tile .ratio,.mhead .score .amber,.mhead .score .sapph,.rec b";
   const seen = new WeakSet();
   const nio = new IntersectionObserver((es) => es.forEach((e) => { if (!e.isIntersecting) return; nio.unobserve(e.target); tick(e.target); }), { threshold: .4 });
   function tick(el) { if (seen.has(el)) return; seen.add(el); const m = /^([\d,]*\.?\d+)(%?)$/.exec(el.textContent.trim()); if (!m) return; const to = parseFloat(m[1].replace(/,/g, "")); const dec = (m[1].split(".")[1] || "").length; countUp(el, to, { decimals: dec, suffix: m[2], ms: 900 }); }

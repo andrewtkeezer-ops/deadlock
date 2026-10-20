@@ -237,3 +237,42 @@ main a:not(.btn):not(.dl):not(.pd):not(.hc):not(.ht){background-image:linear-gra
 .dps .out{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:8px}.dps .st{background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:10px;padding:10px 12px;position:relative}.dps .st b{font:600 22px/1.1 var(--fh);display:block;color:var(--cream)}.dps .st:first-child b,.dps .st:nth-child(2) b{color:var(--accent)}.dps .st span{display:block;color:var(--muted);font:600 9px/1 var(--fh);letter-spacing:.16em;text-transform:uppercase;margin-top:5px}.dps .st small{display:block;color:var(--dim);font-size:11px;margin-top:4px}
 
 .hicon.ini{display:inline-grid;place-items:center;border-radius:7px;background:rgba(247,233,213,.08);border:1px solid var(--line2);color:var(--muted);font:600 11px var(--fh);vertical-align:middle}
+
+/* ===================== polish layer — "City Never Sleeps" ===================== */
+/* display titles: letters slam in, paper-cut depth, cream→gold fill, wave on hover */
+.ph h1{transform:rotate(-1.5deg);transform-origin:left bottom;animation:none;line-height:.95}
+h1 .ch{display:inline-block;will-change:transform;animation:chIn .75s var(--snap) both;animation-delay:calc(.08s + var(--i) * 26ms);background:linear-gradient(180deg,var(--cream) 0%,var(--cream) 55%,var(--accent) 100%);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none;filter:drop-shadow(0 3px 0 rgba(181,141,42,.9)) drop-shadow(0 6px 0 rgba(30,22,8,.9)) drop-shadow(0 16px 28px rgba(0,0,0,.6));transition:transform .18s var(--snap)}
+h1 .sp{display:inline-block;width:.32em}
+@keyframes chIn{0%{opacity:0;transform:translateY(-.6em) rotate(-10deg) scale(1.25)}55%{opacity:1;transform:translateY(.08em) rotate(2deg) scale(.96)}100%{opacity:1;transform:none}}
+h1 .ch.wave{animation:chWave .55s var(--snap) var(--d,0ms) both}
+@keyframes chWave{0%{transform:none}30%{transform:translateY(-.22em) rotate(-6deg) scale(1.08);filter:drop-shadow(-3px 0 0 var(--sapph)) drop-shadow(3px 0 0 var(--ink)) drop-shadow(0 16px 28px rgba(0,0,0,.6))}100%{transform:none}}
+h1:not(.ph h1) .ch{animation-delay:calc(var(--i) * 18ms)}
+/* section titles: an orange plate slides in behind the words on hover (the reference's highlighted-word plates) */
+h2.plated{position:relative;isolation:isolate;display:inline-block;padding:0 4px;margin-left:-4px;transition:color .25s;cursor:default}
+h2.plated::before{content:"";position:absolute;left:-12px;top:6%;height:88%;width:4px;background:var(--ink);transform:rotate(-1.4deg);border-radius:3px;z-index:-1;transition:width .38s var(--snap);box-shadow:0 3px 0 rgba(0,0,0,.45)}
+h2.plated:hover{color:#fff}h2.plated:hover::before{width:calc(100% + 24px)}h2.plated:hover small,h2.plated:hover .muted,h2.plated:hover span{color:rgba(255,255,255,.75)!important}
+h2.plated::after{display:none}
+/* magnetic buttons + glint */
+.mag{transform:translate(var(--mx,0),var(--my,0)) !important;transition:transform .15s var(--ease),box-shadow .2s!important}
+.mag::after{transform:translateX(120%)!important}
+/* cascade: rows and tiles arrive one after another */
+.cas{animation:casIn .55s var(--ease) both;animation-delay:calc(var(--k,0) * 38ms)}
+tr.cas{animation-name:rowIn}
+@keyframes casIn{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes rowIn{from{opacity:0}to{opacity:1}}
+/* portraits pop */
+img.hicon{transition:transform .22s var(--snap),box-shadow .22s,filter .22s}img.hicon:hover{transform:scale(1.28) rotate(-4deg);box-shadow:0 8px 18px rgba(0,0,0,.65),0 0 0 2px var(--accent);filter:saturate(1.2);position:relative;z-index:3}
+/* rain, flicker, parallax */
+.rain{position:fixed;inset:0;z-index:0;pointer-events:none;mix-blend-mode:screen;opacity:.55}
+.flick{animation:flick .9s steps(1,end)}
+@keyframes flick{0%{opacity:1}8%{opacity:.35}12%{opacity:1}20%{opacity:.6}24%{opacity:1}60%{opacity:1}64%{opacity:.5}68%{opacity:1}100%{opacity:1}}
+.atmo .base,.atmo .mark,.atmo .beams{translate:var(--px,0) var(--py,0);transition:translate .25s linear}
+.atmo .mark{translate:calc(var(--px,0) * 2.2) calc(var(--py,0) * 2.2)}
+/* links: underline draws in from the left */
+main p a:not(.btn):not(.dl),main td a,main .muted a{background:linear-gradient(var(--accent),var(--accent)) no-repeat 0 100%/0 1px;transition:background-size .25s var(--ease),color .2s}main p a:not(.btn):not(.dl):hover,main td a:hover,main .muted a:hover{background-size:100% 1px}
+/* cards get a paper-edge lift and a tilt shadow on hover */
+.card:hover{box-shadow:0 22px 50px rgba(0,0,0,.5),inset 0 1px 0 rgba(247,233,213,.1)}
+@media (prefers-reduced-motion:reduce){h1 .ch,.cas,.flick{animation:none!important}.rain{display:none}.mag{transform:none!important}h2.plated::before{transition:none}}
+@media (max-width:860px){.ph h1{transform:none}.rain{opacity:.35}}
+
+img.iimg{transition:transform .2s var(--snap),box-shadow .2s}img.iimg:hover{transform:scale(1.22);box-shadow:0 8px 18px rgba(0,0,0,.6);position:relative;z-index:3}
