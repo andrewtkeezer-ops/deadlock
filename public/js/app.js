@@ -164,10 +164,12 @@ export function shell(active) {
 }
 
 /** Eyebrow sticker above the page title, in the Deadlock site's postcard voice. Pages with their own hero header (hero.html) opt out with data-ph="off". */
+/** Canonical page key: Cloudflare serves /heroes.html as /heroes, so look up by the .html form either way. */
+export function pageKey() { const p = location.pathname.replace(/\/+$/, "") || "/"; if (p === "/" || p === "/index" || p === "/index.html") return "/"; return p.endsWith(".html") ? p : p + ".html"; }
 const EYEBROWS = { "/": "The squad standings", "/index.html": "The squad standings", "/heroes.html": "Meet the locals", "/counters.html": "Know your enemy", "/heatmap.html": "Where it happens", "/library.html": "The playbook", "/items.html": "The corner shop", "/setup.html": "Get connected", "/admin.html": "Back office", "/player.html": "Squad member", "/match.html": "Match report", "/editor.html": "Build editor", "/builds.html": "Build wizard" };
 function pageHeader() {
   const main = document.querySelector("main"); if (!main || main.dataset.ph === "off") return;
-  const eyebrow = main.dataset.eyebrow || EYEBROWS[location.pathname]; if (!eyebrow) return;
+  const eyebrow = main.dataset.eyebrow || EYEBROWS[pageKey()]; if (!eyebrow) return;
   const h1 = main.querySelector("h1"); if (!h1 || h1.closest(".ph")) return;
   const wrap = h("div", { class: "ph" }, h("div", { class: "ph-top" }, h("span", { class: "sticker" }, eyebrow)));
   h1.replaceWith(wrap); wrap.append(h1);

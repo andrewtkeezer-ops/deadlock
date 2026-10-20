@@ -1,6 +1,6 @@
 // Guided tour: a "Take a tour" button on each page (never automatic). Steps spotlight real elements and explain
 // what they're for. Steps whose element isn't on the page (or is hidden) are skipped.
-import { h } from "/js/app.js";
+import { h, pageKey } from "/js/app.js";
 
 const RAIL = ".rail nav";
 const TOURS = {
@@ -88,11 +88,10 @@ const TOURS = {
 
 const visible = (el) => el && el.offsetParent !== null && el.getBoundingClientRect().height > 0;
 
-export function tourAvailable() { const p = location.pathname === "/index.html" ? "/" : location.pathname; return !!TOURS[p]; }
+export function tourAvailable() { return !!TOURS[pageKey()]; }
 
 export function startTour() {
-  const p = location.pathname === "/index.html" ? "/" : location.pathname;
-  const steps = (TOURS[p] || []).map(([sel, title, body]) => ({ el: document.querySelector(sel), title, body })).filter((s) => visible(s.el));
+  const steps = (TOURS[pageKey()] || []).map(([sel, title, body]) => ({ el: document.querySelector(sel), title, body })).filter((s) => visible(s.el));
   if (!steps.length) return;
   let i = 0; const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const spot = h("div", { class: "tour-spot" }); const card = h("div", { class: "tour-card", role: "dialog", "aria-live": "polite" }); const dim = h("div", { class: "tour-dim" }, spot, card);
