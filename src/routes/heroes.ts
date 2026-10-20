@@ -60,10 +60,13 @@ r.get("/suggest", async (c) => {
   const out = heroes
     .filter((h) => h.player_selectable !== false && !h.disabled && !taken.has(h.id))
     .map((h) => {
-      const synWr = allies.map((a) => syn.get(`${h.id}:${a}`)).filter((x): x is number => x !== undefined);
-      const ctrWr = enemies.map((e) => ctr.get(`${h.id}:${e}`)).filter((x): x is number => x !== undefined);
+      const synD = allies.map((a) => ({ id: a, wr: syn.get(`${h.id}:${a}`) })).filter((x): x is { id: number; wr: number } => x.wr !== undefined);
+      const ctrD = enemies.map((e) => ({ id: e, wr: ctr.get(`${h.id}:${e}`) })).filter((x): x is { id: number; wr: number } => x.wr !== undefined);
+      const synWr = synD.map((x) => x.wr), ctrWr = ctrD.map((x) => x.wr);
+      const bestWith = synD.length ? synD.reduce((b, x) => (x.wr > b.wr ? x : b)) : null, bestVs = ctrD.length ? ctrD.reduce((b, x) => (x.wr > b.wr ? x : b)) : null, worstVs = ctrD.length ? ctrD.reduce((b, x) => (x.wr < b.wr ? x : b)) : null;
       return { hero_id: h.id, name: h.name, synergy: avg(synWr), counter: avg(ctrWr),
-        score: (avg(synWr) - 0.5) + (avg(ctrWr) - 0.5), samples: synWr.length + ctrWr.length };
+        score: (avg(synWr) - 0.5) + (avg(ctrWr) - 0.5), samples: synWr.length + ctrWr.length,
+        best_with: bestWith, best_vs: bestVs, worst_vs: worstVs, tags: h.tags ?? [], hero_type: h.hero_type ?? null };
     })
     .sort((a, b) => b.score - a.score);
   return c.json({ allies, enemies, suggestions: out });

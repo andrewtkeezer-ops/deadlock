@@ -6,11 +6,11 @@
 .slot{width:64px;height:64px;border-radius:8px;border:2px dashed #3a3f55;display:flex;align-items:center;justify-content:center;color:#3a3f55;font-size:24px;cursor:pointer;background:#0f1118;position:relative}.slot img{width:100%;height:100%;object-fit:cover;border-radius:6px}.slot.filled{border-style:solid;border-color:var(--accent)}.slot .x{position:absolute;top:-8px;right:-8px;background:#000;border-radius:50%;width:20px;height:20px;font-size:12px;line-height:20px;text-align:center;color:#fff}
 .vs{font-family:var(--fh);font-size:28px;color:var(--muted);align-self:center;padding:30px 0}
 .picker{display:grid;grid-template-columns:repeat(auto-fill,minmax(54px,1fr));gap:6px;margin-top:10px}.picker img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;cursor:pointer;border:2px solid transparent;opacity:.9}.picker img:hover{border-color:var(--accent);opacity:1}.picker img.taken{opacity:.25;pointer-events:none}
-.sug .r{display:grid;grid-template-columns:40px 1fr 90px 90px 90px 60px;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line)}.sug .r:first-child{color:var(--accent)}
+.sug .r{display:grid;grid-template-columns:40px 1.2fr 70px 80px 80px 1.6fr 90px;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line)}.sug .r:first-child{color:var(--accent)}.sug .why{font-size:12px;color:var(--muted);line-height:1.3}.sug .why b{color:var(--cream);font-weight:600}.sug .me{font-size:12px}.sug .me b{font-family:var(--fh)}.sug .star{color:var(--accent);margin-right:4px}@media(max-width:800px){.sug .r{grid-template-columns:36px 1fr 60px 70px}.sug .r>:nth-child(n+5){display:none}}
 .mu{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}.mu .r{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--line)}
 </style></head>
 <body><main>
-<h1>Draft helper <span class="muted" style="font-family:Radiance;font-size:12px;letter-spacing:.14em;text-transform:uppercase;vertical-align:middle;margin-left:10px;border:1px solid var(--line2);border-radius:999px;padding:3px 10px">In development</span></h1><p class="muted">Fill in the heroes already locked on each side; Soul Scribe ranks what's left by synergy with your team and win rate against theirs. <span id="pickingFor"></span></p>
+<h1>Draft helper</h1><p class="muted">Fill in the heroes already locked on each side; Soul Scribe ranks what's left by synergy with your team and win rate against theirs, and marks the ones you personally do well on. <span id="pickingFor"></span></p>
 <div class="board">
 <div class="team ally"><h3>Your team</h3><div class="slots" id="allySlots"></div></div>
 <div class="vs">VS</div>
@@ -22,6 +22,7 @@
 </main>
 <script type="module">
 import { api, h, $, pct, heroes, heroIcon, shell, showError } from "/js/app.js";
+const meP = (async () => { try { const m = await (await fetch("/api/me")).json(); if (!m.account_id) return new Map(); const d = await api(`/players/${m.account_id}`); return new Map(d.heroes.map((r) => [r.hero_id, r])); } catch { return new Map(); } })();
 shell("/counters.html");
 const hs = await heroes(); const picks = { allies: [], enemies: [] }; let side = "allies";
 const hx = (id) => hs.find((x) => x.id === id);
@@ -29,9 +30,15 @@ function renderSlots() { for (const [k, el, n] of [["allies", $("#allySlots"), 6
 function renderPicker() { const q = $("#q").value.toLowerCase(); const taken = new Set([...picks.allies, ...picks.enemies]);
   $("#picker").replaceChildren(...hs.filter((x) => !q || x.name.toLowerCase().includes(q)).map((x) => h("img", { src: x.images?.card || x.images?.icon, title: x.name, alt: x.name, class: taken.has(x.id) ? "taken" : "", onclick: () => { if (picks[side].length < 6) { picks[side].push(x.id); render(); } } }))); }
 async function suggest() { const out = $("#out"); if (!picks.allies.length && !picks.enemies.length) { out.className = "sug muted"; out.textContent = "Add at least one hero."; return; } out.textContent = "Thinking…";
-  try { const r = await api(`/heroes/suggest?allies=${picks.allies}&enemies=${picks.enemies}`); out.className = "sug";
-    out.replaceChildren(h("div", { class: "r muted", style: "font-size:12px;text-transform:uppercase" }, h("span"), h("span", {}, "Hero"), h("span", {}, "Score"), h("span", {}, "With allies"), h("span", {}, "Vs enemies"), h("span", {}, "Data")),
-      ...r.suggestions.slice(0, 12).map((s) => h("div", { class: "r" }, heroIcon(hx(s.hero_id), 36), h("a", { href: `/hero.html?id=${s.hero_id}` }, s.name), h("b", {}, (s.score * 100).toFixed(1)), h("span", { class: s.synergy >= .5 ? "win" : "loss" }, pct(s.synergy)), h("span", { class: s.counter >= .5 ? "win" : "loss" }, pct(s.counter)), h("span", { class: "muted" }, String(s.samples))))); } catch (e) { showError(out, e); } }
+  try { const [r, mine] = await Promise.all([api(`/heroes/suggest?allies=${picks.allies}&enemies=${picks.enemies}`), meP]); out.className = "sug";
+    // comfort bonus: your own win rate on the hero (needs 3+ games) nudges the ranking
+    const rows = r.suggestions.map((s) => { const m = mine.get(s.hero_id); const comfort = m && m.games >= 3 ? (m.wins / m.games - 0.5) * 0.5 : 0; return { ...s, m, total: s.score + comfort }; }).sort((a, b) => b.total - a.total);
+    const nm = (id) => hx(id)?.name ?? "?";
+    out.replaceChildren(h("div", { class: "r muted", style: "font-size:12px;text-transform:uppercase" }, h("span"), h("span", {}, "Hero"), h("span", {}, "Score"), h("span", {}, "With allies"), h("span", {}, "Vs enemies"), h("span", {}, "Why"), h("span", {}, "You")),
+      ...rows.slice(0, 12).map((s) => h("div", { class: "r" }, heroIcon(hx(s.hero_id), 36), h("a", { href: `/hero.html?id=${s.hero_id}` }, s.m && s.m.games >= 3 && s.m.wins / s.m.games >= .55 ? h("span", { class: "star", title: "You win a lot on this hero" }, "★") : "", s.name), h("b", {}, (s.total * 100).toFixed(1)), h("span", { class: s.synergy >= .5 ? "win" : "loss" }, s.best_with ? pct(s.synergy) : "–"), h("span", { class: s.counter >= .5 ? "win" : "loss" }, s.best_vs ? pct(s.counter) : "–"),
+        h("div", { class: "why" }, s.best_vs ? [h("b", {}, `${pct(s.best_vs.wr)} vs ${nm(s.best_vs.id)}`), s.worst_vs && s.worst_vs.id !== s.best_vs.id ? ` · weak into ${nm(s.worst_vs.id)} (${pct(s.worst_vs.wr)})` : ""] : "", s.best_with ? [s.best_vs ? h("br") : "", `pairs with ${nm(s.best_with.id)} (${pct(s.best_with.wr)})`] : "", !s.best_vs && !s.best_with ? "not enough data" : ""),
+        h("div", { class: "me" }, s.m ? [h("b", { class: s.m.wins / s.m.games >= .5 ? "win" : "loss" }, pct(s.m.wins / s.m.games)), h("span", { class: "muted" }, ` · ${s.m.games}g`)] : h("span", { class: "muted" }, "never played")))));
+    if (!mine.size) out.append(h("p", { class: "muted", style: "font-size:12px;margin:10px 0 0" }, "Sign in through Steam and your own hero record will factor in (★ = heroes you win on).")); } catch (e) { showError(out, e); } }
 function render() { renderSlots(); renderPicker(); suggest(); $("#pickingFor").textContent = `Adding to: ${side === "allies" ? "your team" : "enemy team"}.`; }
 $("#toAlly").onclick = () => { side = "allies"; $("#toAlly").className = "primary"; $("#toEnemy").className = ""; render(); }; $("#toEnemy").onclick = () => { side = "enemies"; $("#toEnemy").className = "primary"; $("#toAlly").className = ""; render(); }; $("#q").oninput = renderPicker;
 render();
