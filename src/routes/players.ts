@@ -34,23 +34,6 @@ r.get("/", async (c) => {
   return c.json(results.map((p) => ({ ...p, avatar_url: bigAvatar(p.avatar_url) })));
 });
 
-/** One friend's profile: recent matches + per-hero breakdown + MMR history. */
-r.get("/:id", async (c) => {
-  const id = Number(c.req.param("id"));
-  const player = await c.env.DB.prepare("SELECT * FROM players WHERE account_id=?").bind(id).first<Player>();
-  if (!player) return c.json({ error: "not tracked" }, 404);
-  const [matches, heroes, mmr, ingest] = await Promise.all([
-    c.env.DB.prepare("SELECT * FROM player_matches WHERE account_id=? ORDER BY start_time DESC LIMIT 50").bind(id).all(),
-    c.env.DB.prepare(
-      `SELECT hero_id, COUNT(*) games, SUM(won) wins, AVG(kills) k, AVG(deaths) d, AVG(assists) a, SUM(kills) kills, SUM(deaths) deaths, SUM(assists) assists
-         FROM player_matches WHERE account_id=? GROUP BY hero_id ORDER BY games DESC`
-    ).bind(id).all(),
-    c.env.DB.prepare("SELECT ts, score, rank FROM mmr_history WHERE account_id=? ORDER BY ts").bind(id).all(),
-    new DeadlockApi(c.env).ingestStatus(id).catch(() => null),
-  ]);
-  return c.json({ player: { ...player, avatar_url: bigAvatar(player.avatar_url) }, matches: matches.results, heroes: heroes.results, mmr: mmr.results, ingest });
-});
-
 /** Full 12-player match detail, fetched on demand and cached forever in D1. */
 r.get("/match/:matchId", async (c) => {
   const matchId = Number(c.req.param("matchId"));
@@ -74,6 +57,24 @@ r.get("/steam-names", async (c) => {
 r.get("/global/:region", async (c) => {
   const region = c.req.param("region") as "NAmerica";
   return c.json(await new DeadlockApi(c.env).leaderboard(region));
+});
+
+// Catch-all for a single account id — must stay LAST or it swallows /steam-names, /match/… etc.
+/** One friend's profile: recent matches + per-hero breakdown + MMR history. */
+r.get("/:id{[0-9]+}", async (c) => {
+  const id = Number(c.req.param("id"));
+  const player = await c.env.DB.prepare("SELECT * FROM players WHERE account_id=?").bind(id).first<Player>();
+  if (!player) return c.json({ error: "not tracked" }, 404);
+  const [matches, heroes, mmr, ingest] = await Promise.all([
+    c.env.DB.prepare("SELECT * FROM player_matches WHERE account_id=? ORDER BY start_time DESC LIMIT 50").bind(id).all(),
+    c.env.DB.prepare(
+      `SELECT hero_id, COUNT(*) games, SUM(won) wins, AVG(kills) k, AVG(deaths) d, AVG(assists) a, SUM(kills) kills, SUM(deaths) deaths, SUM(assists) assists
+         FROM player_matches WHERE account_id=? GROUP BY hero_id ORDER BY games DESC`
+    ).bind(id).all(),
+    c.env.DB.prepare("SELECT ts, score, rank FROM mmr_history WHERE account_id=? ORDER BY ts").bind(id).all(),
+    new DeadlockApi(c.env).ingestStatus(id).catch(() => null),
+  ]);
+  return c.json({ player: { ...player, avatar_url: bigAvatar(player.avatar_url) }, matches: matches.results, heroes: heroes.results, mmr: mmr.results, ingest });
 });
 
 export default r;
