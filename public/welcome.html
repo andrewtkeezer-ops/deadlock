@@ -2,10 +2,11 @@
 <title>Soul Scribe — Sign in</title><meta name="description" content="Track your Deadlock games, build your loadouts, climb the ranks. Private squad stats.">
 <link rel="icon" type="image/png" href="/img/icon.png"><link rel="preload" as="image" href="/img/bg.jpg">
 <style>
-@font-face{font-family:Radiance;src:url(https://assets-bucket.deadlock-api.com/assets-api-res/fonts/radiance-semibold.otf) format("opentype");font-weight:600;font-display:swap}
-@font-face{font-family:Reaver;src:url(https://assets-bucket.deadlock-api.com/assets-api-res/fonts/reaver-bold.otf) format("opentype");font-weight:700;font-display:swap}
+@font-face{font-family:Jost;src:url(https://cdn.fastly.steamstatic.com/apps/deadlock/fonts/Jost-400-Book.ttf) format("truetype");font-weight:400;font-display:swap}
+@font-face{font-family:Oracle;src:url(https://cdn.fastly.steamstatic.com/apps/deadlock/fonts/VALVEOracle-SemiBold.woff2) format("woff2");font-weight:600;font-display:swap}
+@font-face{font-family:Pulp;src:url(https://cdn.fastly.steamstatic.com/apps/deadlock/fonts/VALVEPulp-Bold.woff2) format("woff2");font-weight:400 800;font-display:swap}
 :root{--soul:#49d17e;--soul2:#1f8a4c;--cream:#f1e6c4;--ease:cubic-bezier(.2,.8,.2,1)}
-*{box-sizing:border-box}html,body{height:100%;margin:0;background:#06100b;color:#ece7d8;font:15px/1.5 Radiance,system-ui,sans-serif;overflow:hidden}
+*{box-sizing:border-box}html,body{height:100%;margin:0;background:#06100b;color:#ece7d8;font:15px/1.5 Jost,system-ui,sans-serif;overflow:hidden}
 .scene{position:fixed;inset:-3%;background:#06100b url(/img/bg.jpg) center/cover no-repeat;animation:kb 45s ease-in-out infinite alternate;will-change:transform}
 @media(max-width:1200px){.scene{background-image:url(/img/bg-1200.jpg)}}
 @keyframes kb{from{transform:scale(1) translate(0,0)}to{transform:scale(1.06) translate(-1%,.5%)}}
@@ -25,7 +26,7 @@
 .btn{position:relative;display:inline-flex;align-items:center;gap:0;border:1px solid rgba(73,209,126,.55);border-radius:12px;background:rgba(6,16,11,.72);backdrop-filter:blur(10px);box-shadow:0 0 0 1px rgba(0,0,0,.6),0 20px 50px rgba(0,0,0,.6),0 0 40px rgba(73,209,126,.18);color:var(--cream);text-decoration:none;overflow:hidden;transition:transform .2s var(--ease),box-shadow .2s;animation:rise .9s .6s var(--ease) both}
 .btn:hover{transform:translateY(-2px);box-shadow:0 0 0 1px rgba(0,0,0,.6),0 26px 60px rgba(0,0,0,.65),0 0 60px rgba(73,209,126,.35)}
 .btn .g{width:64px;height:64px;display:flex;align-items:center;justify-content:center;border-right:1px solid rgba(73,209,126,.35);position:relative}.btn .g::before{content:"";position:absolute;inset:10px;border-radius:50%;box-shadow:0 0 18px rgba(73,209,126,.5),inset 0 0 12px rgba(73,209,126,.25)}
-.btn .g svg{width:28px;height:28px}.btn .t{padding:0 44px 0 26px;font-family:Reaver;font-size:22px;letter-spacing:.03em}.btn .a{position:absolute;right:18px;top:50%;transform:translateY(-50%);color:var(--cream);transition:transform .2s}.btn:hover .a{transform:translate(4px,-50%)}
+.btn .g svg{width:28px;height:28px}.btn .t{padding:0 44px 0 26px;font-family:Oracle;font-weight:600;font-size:20px;letter-spacing:.06em;text-transform:uppercase;letter-spacing:.03em}.btn .a{position:absolute;right:18px;top:50%;transform:translateY(-50%);color:var(--cream);transition:transform .2s}.btn:hover .a{transform:translate(4px,-50%)}
 .btn::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.14) 50%,transparent 70%);transform:translateX(-120%)}.btn:hover::after{animation:sheen .9s ease-out}
 @keyframes sheen{from{transform:translateX(-120%)}to{transform:translateX(120%)}}
 .note{display:none;margin-top:18px;max-width:520px;padding:12px 18px;border-radius:10px;border:1px solid rgba(229,87,79,.5);background:rgba(20,8,8,.75);backdrop-filter:blur(8px);color:#f3d9d6;font-size:13px;line-height:1.5;animation:rise .6s var(--ease) both}.note:not([hidden]){display:block}.note b{color:#fff}.note a{color:var(--soul);text-decoration:none}

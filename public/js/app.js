@@ -97,12 +97,14 @@ export function shell(active) {
     const page = h("div", { class: "page" }); const mains = [...document.body.querySelectorAll(":scope > main")]; mains.forEach((m) => { if (active !== "/heroes.html") m.classList.add("stagger"); page.append(m); }); document.body.append(page);
   }
   const links = [["/", "Leaderboard", "trophy"], ["/heroes.html", "Heroes", "hero"], ["/counters.html", "Draft", "swords"], ["/heatmap.html", "Map", "map"], ["/library.html", "Builds", "book"], ["/items.html", "Items", "bag"], ["/setup.html", "Setup", "gear"]];
-  const mk = ([href, label, ic]) => { const a = h("a", { href, class: href === active ? "active" : "" }); a.innerHTML = `<span class="ic">${ICONS[ic]}</span><span class="lb">${label}</span>`; return a; };
+  let ix = 0;
+  const mk = ([href, label, ic]) => { const a = h("a", { href, class: href === active ? "active" : "" }); a.innerHTML = `<span class="ix">${String(++ix).padStart(2, "0")}</span><span class="ic">${ICONS[ic]}</span><span class="lb">${label}</span>`; return a; };
   const pill = h("span", { class: "pill" });
   const nav = h("nav", {}, pill, ...links.map(mk));
   const who = h("div", { class: "who" });
   const rail = h("aside", { class: "rail" }, h("a", { class: "brand", href: "/", title: "Soul Scribe" }, h("img", { class: "mark", src: "/img/icon.png", alt: "" }), h("img", { class: "word", src: "/img/logo.webp", alt: "Soul Scribe" })), nav, who);
   document.body.prepend(rail);
+  pageHeader();
   // sliding active pill + hover preview + click ripple
   function movePill(target) { const a = target || nav.querySelector("a.active"); if (!a) { pill.style.opacity = 0; return; } pill.style.top = a.offsetTop + "px"; pill.style.opacity = 1; }
   requestAnimationFrame(() => movePill());
@@ -122,6 +124,16 @@ export function shell(active) {
     if (m.account_id || m.email || m.signed_in) { const out = h("a", { class: "out", href: "/api/auth/google/logout", title: "Sign out" }); out.innerHTML = `<span class="ic">${ICONS.out}</span><span class="lb">Sign out</span>`; who.after(out); }
   }).catch(() => {});
   if (!reduced) alive();
+}
+
+/** Eyebrow sticker above the page title, in the Deadlock site's postcard voice. Pages with their own hero header (hero.html) opt out with data-ph="off". */
+const EYEBROWS = { "/": "The squad standings", "/index.html": "The squad standings", "/heroes.html": "Meet the locals", "/counters.html": "Know your enemy", "/heatmap.html": "Where it happens", "/library.html": "The playbook", "/items.html": "The corner shop", "/setup.html": "Get connected", "/admin.html": "Back office", "/player.html": "Squad member", "/match.html": "Match report", "/editor.html": "Build editor", "/builds.html": "Build wizard" };
+function pageHeader() {
+  const main = document.querySelector("main"); if (!main || main.dataset.ph === "off") return;
+  const eyebrow = main.dataset.eyebrow || EYEBROWS[location.pathname]; if (!eyebrow) return;
+  const h1 = main.querySelector("h1"); if (!h1 || h1.closest(".ph")) return;
+  const wrap = h("div", { class: "ph" }, h("span", { class: "sticker" }, eyebrow));
+  h1.replaceWith(wrap); wrap.append(h1);
 }
 
 /** Site-wide "alive" layer: pointer spotlight + tilt on glass, scroll reveals, loading shimmer, cursor halo. (Searchlight beams are pure CSS in .atmo.) */
@@ -145,6 +157,14 @@ function alive() {
   const shimmer = (root) => root.querySelectorAll?.("*").forEach((el) => { if (el.childElementCount === 0 && el.textContent.trim() === "Loading…") el.classList.add("ld"); });
   const mo = new MutationObserver((ms) => ms.forEach((m) => { m.addedNodes.forEach((n) => { if (n.nodeType === 1) { watch(n); shimmer(n); if (n.classList?.contains("ld")) n.classList.remove("ld"); } }); if (m.type === "childList" && m.target.classList?.contains("ld") && m.target.textContent.trim() !== "Loading…") m.target.classList.remove("ld"); }));
   const page = document.querySelector(".page"); watch(page); shimmer(page); mo.observe(page, { childList: true, subtree: true });
+  document.body.append(h("div", { class: "progress" }));
+  // numbers tick up the first time they appear (stat tiles, podium, hero header)
+  const NUMS = ".tile b,.stat b,.pd .kv b,.kv b";
+  const seen = new WeakSet();
+  const nio = new IntersectionObserver((es) => es.forEach((e) => { if (!e.isIntersecting) return; nio.unobserve(e.target); tick(e.target); }), { threshold: .4 });
+  function tick(el) { if (seen.has(el)) return; seen.add(el); const m = /^([\d,]*\.?\d+)(%?)$/.exec(el.textContent.trim()); if (!m) return; const to = parseFloat(m[1].replace(/,/g, "")); const dec = (m[1].split(".")[1] || "").length; countUp(el, to, { decimals: dec, suffix: m[2], ms: 900 }); }
+  const watchNums = (root) => root.querySelectorAll?.(NUMS).forEach((el) => nio.observe(el));
+  watchNums(page); new MutationObserver((ms) => ms.forEach((m) => m.addedNodes.forEach((n) => { if (n.nodeType === 1) { if (n.matches?.(NUMS)) nio.observe(n); watchNums(n); } }))).observe(page, { childList: true, subtree: true });
 }
 /** Count-up animation for a number element. */
 export function countUp(el, to, { decimals = 0, suffix = "", ms = 700 } = {}) { const start = performance.now(); const from = 0; const step = (t) => { const k = Math.min(1, (t - start) / ms); const v = from + (to - from) * (1 - Math.pow(1 - k, 3)); el.textContent = v.toFixed(decimals).replace(/\B(?=(\d{3})+(?!\d))/g, ",") + suffix; if (k < 1) requestAnimationFrame(step); }; requestAnimationFrame(step); return el; }

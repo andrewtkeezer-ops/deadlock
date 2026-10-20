@@ -1,18 +1,24 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Soul Scribe</title><link rel="icon" type="image/png" href="/img/favicon.png"><link rel="apple-touch-icon" href="/img/icon.png"><link rel="stylesheet" href="/css/app.css">
 <style>
-.lb td{vertical-align:middle}.lb .p{display:flex;align-items:center;gap:10px}.lb .p img.av{width:36px;height:36px;border-radius:50%}.lb .pos{font-family:Reaver;font-size:20px;color:var(--muted);width:30px}
+.lb td{vertical-align:middle}.lb .p{display:flex;align-items:center;gap:10px}.lb .p img.av{width:36px;height:36px;border-radius:50%}.lb .pos{font-family:var(--fh);font-size:20px;color:var(--muted);width:30px}
 .lb tr:first-child .pos{color:var(--accent)}.lb .wr{min-width:120px}.lb .wr .bar{margin-top:4px}.lb .streak{font-size:12px;color:var(--muted)}
 .recent .hero{display:flex;align-items:center;gap:8px}.recent .items img{width:22px;height:22px}
-.hdr{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap}.hdr select{margin-left:auto}
+.hdr{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap}.hdr select{margin-left:auto}
 .empty{text-align:center;padding:40px 20px}.empty p{color:var(--muted)}
-.podium{display:grid;grid-template-columns:1fr 1.15fr 1fr;gap:14px;align-items:end;margin:18px 0 6px}@media(max-width:860px){.podium{grid-template-columns:1fr}}
-.pd{position:relative;text-align:center;padding:22px 14px 16px;border-radius:16px;background:var(--panel);border:1px solid var(--line);backdrop-filter:blur(12px);overflow:hidden;transition:transform .2s var(--ease)}.pd:hover{transform:translateY(-4px)}
-.pd::after{content:"";position:absolute;inset:0;background:radial-gradient(60% 50% at 50% 0%,rgba(232,199,106,.18),transparent 70%);pointer-events:none}.pd.first{padding-top:30px;border-color:rgba(232,199,106,.45);box-shadow:0 0 40px rgba(232,199,106,.12)}
-.pd .pos{position:absolute;top:10px;left:14px;font-family:Reaver;font-size:22px;color:var(--accent)}.pd img.av{width:72px;height:72px;border-radius:50%;border:3px solid var(--line2);box-shadow:0 8px 20px rgba(0,0,0,.6)}.pd.first img.av{width:92px;height:92px;border-color:var(--accent)}
-.pd .n{font-family:Reaver;font-size:18px;margin:8px 0 2px;letter-spacing:.03em}.pd .r{display:flex;justify-content:center;align-items:center;gap:8px;color:var(--muted);font-size:12px}.pd .kv{display:flex;justify-content:center;gap:16px;margin-top:10px}.pd .kv b{font-family:Reaver;font-size:18px;display:block}.pd .kv span{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.podium{display:grid;grid-template-columns:1fr 1.12fr 1fr;gap:22px;align-items:end;margin:26px auto 18px;padding:0 10px;max-width:880px}@media(max-width:860px){.podium{grid-template-columns:1fr;padding:0}}
+.pd{--tilt:0deg;position:relative;text-align:center;padding:14px 14px 18px;background:var(--paper2);color:#1d1510;border-radius:4px;box-shadow:0 18px 40px rgba(0,0,0,.6),inset 0 0 0 1px rgba(0,0,0,.08);transform:rotate(var(--tilt));transition:transform .35s var(--snap),box-shadow .3s}
+.pd:nth-child(1){--tilt:-2.2deg}.pd:nth-child(3){--tilt:2deg}.pd:hover{transform:rotate(0) translateY(-6px) scale(1.03);box-shadow:0 28px 60px rgba(0,0,0,.7)}
+.pd .photo{position:relative;height:150px;background:#111 center/cover no-repeat;border-radius:2px;overflow:hidden;filter:saturate(.9) contrast(1.05)}.pd .photo img{width:100%;height:100%;object-fit:cover;display:block}.pd .photo::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 60%,rgba(0,0,0,.45));mix-blend-mode:multiply}
+.pd .pos{position:absolute;top:-12px;left:-10px;z-index:2}.pd .pos .sticker{font-size:14px;padding:8px 12px 7px}
+.pd.first .pos .sticker{background:var(--accent);color:#1a1200}
+.pd .n{font:600 20px/1.1 var(--fh);margin:12px 0 2px;letter-spacing:.02em;color:#1d1510}.pd .r{display:flex;justify-content:center;align-items:center;gap:8px;color:rgba(29,21,16,.6);font:600 11px/1 var(--fh);letter-spacing:.14em;text-transform:uppercase}
+.pd .kv{display:flex;justify-content:center;gap:18px;margin-top:12px;padding-top:10px;border-top:2px dotted rgba(29,21,16,.2)}.pd .kv b{font:600 20px/1 var(--fh);display:block}.pd .kv span{font:600 9px/1 var(--fh);letter-spacing:.16em;text-transform:uppercase;color:rgba(29,21,16,.55);display:block;margin-top:5px}
+.pd .kv .win{color:#2f7d3e}.pd .kv .loss{color:#b9321f}
+.pd.first{padding-top:16px}.pd.first .photo{height:180px}.pd.first .photo{outline:3px solid var(--accent);outline-offset:-3px}
+.lb .pos{font:600 18px var(--fh);color:var(--muted);width:30px}.lb tr:first-child .pos{color:var(--accent)}
 </style></head>
 <body><main>
-<div class="hdr"><h1>Leaderboard</h1><span class="muted" id="count"></span><select id="days"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option><option value="3650">All time</option></select></div>
+<div class="hdr"><h1>Leaderboard</h1><span class="muted" id="count" style="align-self:flex-end;margin-bottom:28px"></span><select id="days" style="align-self:flex-end;margin-bottom:26px"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option><option value="3650">All time</option></select></div>
 <div id="podium" class="podium"></div>
 <div id="out" class="card">Loading…</div>
 <h2>Recent games</h2><div id="recent" class="card recent">Loading…</div>
@@ -27,7 +33,7 @@ async function load() {
     $("#count").textContent = players.length ? `${players.length} tracked` : "";
     if (!players.length) return out.replaceChildren(h("div", { class: "empty" }, h("h2", {}, "Nobody here yet"), h("p", {}, "Sign in through Steam to add yourself, then install the uploader so your games flow in."), h("a", { class: "dl", href: "/api/auth/steam/login" }, "Sign in through Steam")));
     const top = players.slice(0, 3); const order = top.length === 3 ? [top[1], top[0], top[2]] : top;
-    $("#podium").replaceChildren(...await Promise.all(order.map(async (p) => { const i = players.indexOf(p); const wr = p.games ? p.wins / p.games : null; return h("a", { class: "pd" + (i === 0 ? " first" : ""), href: `/player.html?id=${p.account_id}` }, h("span", { class: "pos" }, `#${i + 1}`), p.avatar_url ? h("img", { class: "av", src: p.avatar_url, alt: "" }) : h("div", { class: "av" }), h("div", { class: "n" }, p.name), h("div", { class: "r" }, await rankBadge(p.mmr_rank), p.mmr_score != null ? String(Math.round(p.mmr_score)) : ""),
+    $("#podium").replaceChildren(...await Promise.all(order.map(async (p) => { const i = players.indexOf(p); const wr = p.games ? p.wins / p.games : null; return h("a", { class: "pd" + (i === 0 ? " first" : ""), href: `/player.html?id=${p.account_id}` }, h("span", { class: "pos" }, h("span", { class: "sticker" + (i === 2 ? " r" : "") }, `#${i + 1}`)), h("div", { class: "photo" }, p.avatar_url ? h("img", { src: p.avatar_url, alt: "" }) : ""), h("div", { class: "n" }, p.name), h("div", { class: "r" }, await rankBadge(p.mmr_rank), p.mmr_score != null ? String(Math.round(p.mmr_score)) : ""),
       h("div", { class: "kv" }, h("div", {}, h("b", { class: wr == null ? "" : wr >= .5 ? "win" : "loss" }, wr == null ? "–" : pct(wr)), h("span", {}, "win rate")), h("div", {}, h("b", {}, String(p.games)), h("span", {}, "games")), h("div", {}, h("b", {}, fmt(p.souls_per_min)), h("span", {}, "spm")))); })));
     const rows = await Promise.all(players.map(async (p, i) => {
       const wr = p.games ? p.wins / p.games : null;

@@ -1,8 +1,8 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Player · Soul Scribe</title><link rel="icon" type="image/png" href="/img/favicon.png"><link rel="stylesheet" href="/css/app.css">
 <style>
 .phead{display:flex;gap:20px;align-items:center;flex-wrap:wrap}.phead .av{width:84px;height:84px;border-radius:12px;border:2px solid var(--line)}.phead h1{margin:0}
-.phead .rank{display:flex;align-items:center;gap:10px}.phead .rank b{font-family:Reaver;font-size:22px;display:block}.phead .rank span{color:var(--muted);font-size:12px;text-transform:uppercase}
-.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:16px 0}.tile{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px}.tile b{font-family:Reaver;font-size:24px;display:block}.tile span{color:var(--muted);font-size:12px;text-transform:uppercase}
+.phead .rank{display:flex;align-items:center;gap:10px}.phead .rank b{font-family:var(--fh);font-size:22px;display:block}.phead .rank span{color:var(--muted);font-size:12px;text-transform:uppercase}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:16px 0}.tile{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px}.tile b{font-family:var(--fh);font-size:24px;display:block}.tile span{color:var(--muted);font-size:12px;text-transform:uppercase}
 .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:900px){.cols{grid-template-columns:1fr}}
 .hrows .r{display:grid;grid-template-columns:36px 1fr 70px 110px 90px;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line)}.hrows .r .bar{height:6px}
 .matches td{vertical-align:middle}.matches .hero{display:flex;align-items:center;gap:8px}
@@ -46,7 +46,7 @@ try {
   // MMR chart
   const c = $("#mmr").getContext("2d"), pts = d.mmr.filter((x) => x.score != null);
   if (pts.length > 1) { const xs = pts.map((x) => x.ts), ys = pts.map((x) => x.score), x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys) - 5, y1 = Math.max(...ys) + 5;
-    c.strokeStyle = "#262a38"; c.lineWidth = 1; for (let i = 0; i <= 4; i++) { const y = 20 + i * 55; c.beginPath(); c.moveTo(40, y); c.lineTo(890, y); c.stroke(); c.fillStyle = "#8f93a3"; c.font = "12px Radiance"; c.fillText(Math.round(y1 - (y1 - y0) * i / 4), 2, y + 4); }
+    c.strokeStyle = "#262a38"; c.lineWidth = 1; for (let i = 0; i <= 4; i++) { const y = 20 + i * 55; c.beginPath(); c.moveTo(40, y); c.lineTo(890, y); c.stroke(); c.fillStyle = "#8f93a3"; c.font = "12px var(--fb)"; c.fillText(Math.round(y1 - (y1 - y0) * i / 4), 2, y + 4); }
     c.strokeStyle = "#e4b94f"; c.lineWidth = 2.5; c.beginPath(); pts.forEach((pt, i) => { const x = 40 + (pt.ts - x0) / (x1 - x0 || 1) * 850, y = 240 - (pt.score - y0) / (y1 - y0) * 220; i ? c.lineTo(x, y) : c.moveTo(x, y); }); c.stroke();
     $("#mmrnote").textContent = `${pts.length} snapshots since ${new Date(x0 * 1000).toLocaleDateString()}`; }
   else $("#mmrnote").textContent = "MMR history builds up after a few hourly syncs.";

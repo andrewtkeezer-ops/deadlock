@@ -1,7 +1,7 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Heroes · Soul Scribe</title><link rel="icon" type="image/png" href="/img/favicon.png"><link rel="stylesheet" href="/css/app.css">
 <style>
 main{max-width:none;padding:0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
-.topbar{display:flex;align-items:center;gap:14px;padding:18px 28px 12px;position:relative;z-index:5}.topbar h1{margin:0;font-size:28px}.topbar .sp{flex:1}.topbar .hint{color:var(--muted);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+.topbar{display:flex;align-items:center;gap:14px;padding:18px 28px 12px;position:relative;z-index:5}.topbar h1{margin:0;font-size:34px}.topbar .sp{flex:1}.topbar .hint{color:var(--muted);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
 .filters{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.filters .chipb{padding:4px 10px;font-size:12px}
 .select{flex:1;display:grid;grid-template-columns:minmax(440px,34%) 1fr;gap:0;min-height:0;overflow:hidden}.gridwrap{position:relative;z-index:2}
 /* grid of all heroes, no scrolling */
@@ -25,9 +25,9 @@ main{max-width:none;padding:0;height:100vh;display:flex;flex-direction:column;ov
 .hcard .frame{position:absolute;inset:8px;border:1px solid rgba(232,199,106,.35);border-radius:9px;pointer-events:none}
 .stage.in .hcard{animation:cardIn .55s var(--ease) both}.stage.in .info>*{animation:rise .5s var(--ease) both}.stage.in .info>*:nth-child(2){animation-delay:.05s}.stage.in .info>*:nth-child(3){animation-delay:.1s}.stage.in .info>*:nth-child(4){animation-delay:.15s}.stage.in .info>*:nth-child(5){animation-delay:.2s}.stage.in .info>*:nth-child(6){animation-delay:.25s}.stage.in .bg{animation:bgIn .7s ease both}.stage.in .sweep{animation:sweep .8s .15s ease-out both}
 @keyframes cardIn{from{opacity:0;transform:translateX(40px) rotateY(-14deg) scale(.96)}to{opacity:1;transform:none}}@keyframes bgIn{from{opacity:0;transform:scale(1.08)}to{opacity:1;transform:scale(1.03)}}@keyframes sweep{0%{transform:translateX(-120%);opacity:1}100%{transform:translateX(120%);opacity:0}}
-.info{min-width:0}.stage .name{height:76px;max-width:100%;filter:drop-shadow(0 4px 14px rgba(0,0,0,.9))}.stage h2.name{font-family:Reaver;font-size:56px;margin:0;line-height:1}
-.tags{margin:12px 0 16px}.tag{display:inline-block;background:color-mix(in srgb,var(--tint) 75%,#1f6fd0);color:#fff;font-weight:700;font-size:12px;padding:4px 10px;border-radius:4px;margin:0 6px 6px 0;text-transform:uppercase;letter-spacing:.06em;box-shadow:0 3px 10px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.2)}
-.stats{display:flex;gap:24px;margin:6px 0 14px;flex-wrap:wrap}.stat b{display:block;font-size:28px;font-family:Reaver;line-height:1.1}.stat span{color:var(--muted);font-size:11px;letter-spacing:.16em;text-transform:uppercase}
+.info{min-width:0}.stage .name{height:76px;max-width:100%;filter:drop-shadow(0 4px 14px rgba(0,0,0,.9))}.stage h2.name{font-family:var(--fh);font-size:56px;margin:0;line-height:1}
+.tags{margin:12px 0 16px}.tag{display:inline-block;border:1px solid rgba(247,233,213,.3);background:rgba(10,8,8,.55);backdrop-filter:blur(6px);color:#e8e0cf;font:600 11px/1 var(--fh);padding:7px 11px 6px;border-radius:6px;margin:0 6px 6px 0;text-transform:uppercase;letter-spacing:.14em}
+.stats{display:flex;gap:24px;margin:6px 0 14px;flex-wrap:wrap}.stat b{display:block;font-size:28px;font-family:var(--fh);line-height:1.1}.stat span{color:var(--muted);font-size:11px;letter-spacing:.16em;text-transform:uppercase}
 .abrow{display:flex;gap:12px;margin:8px 0 16px}.abrow img{width:58px;height:58px;border-radius:50%;border:2px solid rgba(255,255,255,.2);background:#000;box-shadow:0 6px 16px rgba(0,0,0,.6),0 0 0 4px rgba(0,0,0,.35);transition:transform .18s var(--ease),border-color .18s,box-shadow .18s}.abrow img:hover{transform:translateY(-3px) scale(1.08);border-color:var(--accent);box-shadow:0 10px 24px rgba(0,0,0,.7),0 0 20px rgba(232,199,106,.35)}
 .stage p.role{color:#dcd9cf;max-width:48ch;line-height:1.55;margin:0 0 6px}
 .actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}.btn.lock.on{background:rgba(232,199,106,.22);border-color:var(--accent);color:var(--accent)}
