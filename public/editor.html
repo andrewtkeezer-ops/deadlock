@@ -2,6 +2,7 @@
 <style>
 main{max-width:1300px}
 .top{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.top img.hero{width:48px;height:62px;object-fit:cover;border-radius:8px}.top input#title{flex:1;min-width:200px;font-size:16px}
+.sync{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:10px;padding:10px 12px;border:1px dashed var(--line2);border-radius:10px;font-size:13px}.sync label{display:flex;gap:8px;align-items:center;cursor:pointer}.sync input{accent-color:var(--accent);width:16px;height:16px}.sync .ok{color:var(--win)}.sync .err{color:var(--loss)}
 .ed{display:grid;grid-template-columns:1fr 340px;gap:16px}@media(max-width:900px){.ed{grid-template-columns:1fr}.picker{position:static;max-height:none}}
 .phase{margin-bottom:12px;border-left:4px solid var(--line);cursor:pointer;transition:border-color .15s,box-shadow .15s}.phase.target{border-left-color:var(--accent);box-shadow:0 0 0 1px rgba(232,199,106,.35),0 0 30px rgba(232,199,106,.08)}
 .phase .addhere{font-size:11px;letter-spacing:.12em;text-transform:uppercase;border:1px solid var(--line2);border-radius:999px;padding:3px 10px;color:var(--muted);white-space:nowrap}.phase.target .addhere{background:var(--accent);color:#1a1200;border-color:transparent;font-weight:700}
@@ -21,7 +22,8 @@ main{max-width:1300px}
 <p><a href="/library.html">← Build library</a></p>
 <div class="card"><div class="top"><img class="hero" id="heroimg" alt=""><select id="hero"></select><input type="text" id="title" placeholder="Build name"><button class="primary" id="save">Save</button><button id="fork" hidden>Fork a copy</button><button id="del" hidden>Delete</button><span id="msg"></span></div>
 <p style="margin:10px 0 0"><input type="text" id="desc" placeholder="How to play it (optional)" style="width:100%"></p>
-<div class="tot" style="margin-top:10px"><b id="total">0</b><span class="muted">souls total</span><span id="owner" class="muted" style="margin-left:auto"></span></div></div>
+<div class="tot" style="margin-top:10px"><b id="total">0</b><span class="muted">souls total</span><span id="owner" class="muted" style="margin-left:auto"></span></div>
+<div id="syncRow" class="sync" hidden><label><input type="checkbox" id="syncWanted"> <b>Send to my in-game builds</b></label><span id="syncStatus" class="muted"></span></div></div>
 <details class="card" id="dpsCard" open><summary style="cursor:pointer;font:600 13px var(--fh);letter-spacing:.14em;text-transform:uppercase;color:var(--cream)">Damage calculator <span class="muted" style="font:400 12px var(--fb);letter-spacing:0;text-transform:none">· raw gun numbers for everything in this build</span></summary><div id="dps" style="margin-top:12px"></div></details>
 <div class="card help" id="help"><b>1</b> Click a phase to make it the target <b>2</b> Click items on the right to add them <b>3</b> Drag items between phases, add notes <span class="x" id="helpx" title="Hide">×</span></div>
 <div class="ed">
@@ -31,7 +33,7 @@ main{max-width:1300px}
 <p class="adding" id="adding"></p><div id="items"></div></div>
 </div></main>
 <script type="module">
-import { api, h, $, fmt, heroes, items, me, withTip, shell } from "/js/app.js";
+import { api, h, $, fmt, ago, heroes, items, me, withTip, shell } from "/js/app.js";
 import { dpsPanel } from "/js/dps.js";
 shell("/library.html");
 const qs = new URLSearchParams(location.search); const id = qs.get("id");
@@ -49,6 +51,9 @@ const retired = new Map(); api("/library/retired").then((r) => { r.forEach((x) =
 const dps = dpsPanel(build.hero_id); $("#dps").append(dps);
 $("#hero").value = build.hero_id; $("#title").value = build.title; $("#desc").value = build.description || "";
 const canEdit = () => mine || !id;
+function syncStatus() { const el = $("#syncStatus"); if (!build.sync_wanted) { el.className = "muted"; el.textContent = "Off. Turn it on and your uploader publishes this build to Deadlock\'s build menu the next time it runs with the game closed."; return; }
+  if (build.sync_error) { el.className = "err"; el.textContent = `Last attempt failed: ${build.sync_error}`; } else if (build.synced_at && (build.updated_at || 0) <= build.synced_at) { el.className = "ok"; el.textContent = `In your game as build #${build.ingame_build_id ?? "?"} (v${build.ingame_version ?? 1}), published ${ago(build.synced_at)}.`; } else { el.className = "muted"; el.textContent = "Queued — publishes within a minute of closing Deadlock while the uploader is running."; } }
+if (id && mine) { $("#syncRow").hidden = false; $("#syncWanted").checked = !!build.sync_wanted; syncStatus(); $("#syncWanted").onchange = async (e) => { try { const r = await api(`/library/${id}/sync`, { method: "POST", body: { wanted: e.target.checked } }); build.sync_wanted = r.wanted ? 1 : 0; build.sync_error = null; if (!r.wanted) build.synced_at = null; syncStatus(); } catch (err) { e.target.checked = !e.target.checked; $("#msg").className = "error"; $("#msg").textContent = err.message; } }; }
 if (id) { $("#owner").textContent = mine ? "Your build" : `By ${build.author_name ?? build.author} · view only, fork to edit`; $("#fork").hidden = false; $("#del").hidden = !mine; $("#save").hidden = !mine; }
 if (!who.account_id) $("#owner").textContent = "Sign in through Steam (top right) to save builds.";
 const heroImg = () => { $("#heroimg").src = hs.find((y) => y.id === +$("#hero").value)?.images?.card || ""; }; heroImg();

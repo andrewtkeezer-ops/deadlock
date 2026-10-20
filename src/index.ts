@@ -35,6 +35,22 @@ app.post("/api/ingest/notify", async (c) => {
   c.executionCtx.waitUntil(new Promise((r) => setTimeout(r, 20000)).then(() => syncPlayer(c.env, new DeadlockApi(c.env), accountId)).catch((e) => console.error("notify sync", e)));
   return c.json({ ok: true, queued: true });
 });
+/** Uploader (no login — it runs on the author's PC under their Steam session): builds flagged for in-game sync that are new or edited since the last publish. */
+app.get("/api/sync/builds", async (c) => {
+  const account = Number(c.req.query("account_id")); if (!account) return c.json([]);
+  const { results } = await c.env.DB.prepare("SELECT id, hero_id, title, description, details, ingame_build_id, ingame_version, updated_at, synced_at FROM builds WHERE account_id=? AND sync_wanted=1 AND (synced_at IS NULL OR COALESCE(updated_at,0) > synced_at) ORDER BY updated_at DESC LIMIT 20").bind(account).all<{ id: number; hero_id: number; title: string; description: string | null; details: string | null; ingame_build_id: number | null; ingame_version: number | null }>();
+  return c.json(results.map((b) => { const d = b.details ? (JSON.parse(b.details) as { mod_categories?: { name: string; description?: string; mods: { ability_id: number; annotation?: string | null; imbue_target_ability_id?: number }[] }[] }) : {};
+    return { id: b.id, hero_build_id: b.ingame_build_id, version: b.ingame_version, hero_id: b.hero_id, name: (b.title || "Soul Scribe build").slice(0, 60), description: (b.description || "").slice(0, 500),
+      categories: (d.mod_categories ?? []).map((cat) => ({ name: cat.name, description: cat.description ?? "", mods: cat.mods.map((m) => ({ ability_id: m.ability_id, annotation: m.annotation ?? "", imbue_target_ability_id: m.imbue_target_ability_id ?? 0 })) })) }; }));
+});
+app.post("/api/sync/builds/:id/result", async (c) => {
+  const id = Number(c.req.param("id")); type SyncResult = { account_id?: number; hero_build_id?: number; version?: number; error?: string }; const b = await c.req.json<SyncResult>().catch(() => ({} as SyncResult));
+  const row = await c.env.DB.prepare("SELECT account_id FROM builds WHERE id=?").bind(id).first<{ account_id: number | null }>();
+  if (!row || row.account_id !== Number(b.account_id)) return c.json({ ok: false }, 404);
+  if (b.error) await c.env.DB.prepare("UPDATE builds SET sync_error=? WHERE id=?").bind(String(b.error).slice(0, 200), id).run();
+  else await c.env.DB.prepare("UPDATE builds SET ingame_build_id=?, ingame_version=?, synced_at=unixepoch(), sync_error=NULL WHERE id=?").bind(b.hero_build_id ?? null, b.version ?? null, id).run();
+  return c.json({ ok: true });
+});
 app.route("/api/auth/google", google);
 /** Public: who does this invite belong to? (name shown on the invite page). */
 app.get("/api/invite/:token", async (c) => {

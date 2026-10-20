@@ -93,6 +93,17 @@ r.post("/import", async (c) => {
   return c.json({ ok: true, id: res.meta.last_row_id });
 });
 
+/** Author toggles "send to my in-game builds". The uploader on their PC does the publishing (see /api/sync/builds). */
+r.post("/:id/sync", async (c) => {
+  const me = accountOf(c); const id = Number(c.req.param("id"));
+  const owner = await c.env.DB.prepare("SELECT account_id FROM builds WHERE id=?").bind(id).first<{ account_id: number | null }>();
+  if (!owner) return c.json({ error: "not found" }, 404);
+  if (!me || owner.account_id !== me) return c.json({ error: "Only the author can sync this build to their game (fork it first)" }, 403);
+  const b = await c.req.json<{ wanted: boolean }>();
+  await c.env.DB.prepare("UPDATE builds SET sync_wanted=?, sync_error=NULL, synced_at=CASE WHEN ? THEN synced_at ELSE NULL END WHERE id=?").bind(b.wanted ? 1 : 0, b.wanted ? 1 : 0, id).run();
+  return c.json({ ok: true, wanted: !!b.wanted });
+});
+
 r.put("/:id", async (c) => {
   const me = accountOf(c);
   const id = Number(c.req.param("id"));
