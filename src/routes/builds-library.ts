@@ -14,7 +14,7 @@ export type ModCategory = { name: string; description?: string; mods: { ability_
 export type Details = { mod_categories: ModCategory[] };
 const DEFAULT_CATEGORIES = ["Early Game", "Mid Game", "Late Game", "Situational"];
 
-const steamId = (cookie?: string) => { const m = /squad_steam=(\d+)/.exec(cookie ?? ""); return m ? Number(m[1]) : null; };
+import { accountOf } from "../auth";
 const parse = (b: Record<string, unknown>) => ({ ...b, details: JSON.parse((b.details as string) || '{"mod_categories":[]}'), priorities: JSON.parse((b.priorities as string) || "{}"), items: JSON.parse((b.items as string) || "[]") });
 
 function sanitize(d: unknown): Details {
@@ -64,7 +64,7 @@ r.get("/:id", async (c) => {
 
 /** Create. Body: { hero_id, title, description?, details, forked_from? }. Needs Steam sign-in. */
 r.post("/", async (c) => {
-  const me = steamId(c.req.header("cookie"));
+  const me = accountOf(c);
   if (!me) return c.json({ error: "Sign in through Steam to save builds" }, 401);
   const b = await c.req.json<{ hero_id: number; title: string; description?: string; details: unknown; forked_from?: number }>();
   if (!b.hero_id || !b.title?.trim()) return c.json({ error: "hero and title required" }, 400);
@@ -78,7 +78,7 @@ r.post("/", async (c) => {
 
 /** Copy an in-game library build into my builds: { hero_id, ingame_build_id }. */
 r.post("/import", async (c) => {
-  const me = steamId(c.req.header("cookie"));
+  const me = accountOf(c);
   if (!me) return c.json({ error: "Sign in through Steam to save builds" }, 401);
   const b = await c.req.json<{ hero_id: number; ingame_build_id: number }>();
   const rows = await new DeadlockApi(c.env).get<{ hero_build: { hero_build_id: number; name: string; description?: string; author_account_id: number; details?: { mod_categories?: ModCategory[] } } }[]>(`/v1/builds`, { build_id: b.ingame_build_id, only_latest: "true", limit: 1 }, 3600);
@@ -92,7 +92,7 @@ r.post("/import", async (c) => {
 });
 
 r.put("/:id", async (c) => {
-  const me = steamId(c.req.header("cookie"));
+  const me = accountOf(c);
   const id = Number(c.req.param("id"));
   const owner = await c.env.DB.prepare("SELECT account_id FROM builds WHERE id=?").bind(id).first<{ account_id: number | null }>();
   if (!owner) return c.json({ error: "not found" }, 404);
@@ -104,7 +104,7 @@ r.put("/:id", async (c) => {
 });
 
 r.delete("/:id", async (c) => {
-  const me = steamId(c.req.header("cookie"));
+  const me = accountOf(c);
   const id = Number(c.req.param("id"));
   const owner = await c.env.DB.prepare("SELECT account_id FROM builds WHERE id=?").bind(id).first<{ account_id: number | null }>();
   if (!owner) return c.json({ error: "not found" }, 404);

@@ -11,7 +11,7 @@ import analytics from "./routes/analytics";
 import admin from "./routes/admin";
 import steam from "./routes/steam";
 import google from "./routes/google";
-import { requireMember, steamAccount, isSuperAdmin, identify, whoIs, authConfigured, hasAnySignIn, type Identity } from "./auth";
+import { requireMember, steamAccount, isSuperAdmin, identify, whoIs, authConfigured, hasAnySignIn, type Identity, accountOf } from "./auth";
 
 const app = new Hono<{ Bindings: Env; Variables: { user?: Identity } }>();
 app.use("/api/*", cors());
@@ -45,7 +45,7 @@ app.get("/api/invite/:token", async (c) => {
 });
 app.use("/api/*", requireMember);
 app.get("/api/me", async (c) => {
-  const steam = steamAccount(c.req.header("cookie")); const sup = isSuperAdmin(c.env, steam);
+  const steam = accountOf(c); const sup = isSuperAdmin(c.env, steam);
   const u = c.get("user");
   const signed_in = !!u || hasAnySignIn(c);
   if (u) return c.json({ ...u, account_id: steam, signed_in, super: sup || u.email === c.env.SUPER_ADMIN_EMAIL.toLowerCase(), role: sup ? "admin" : u.role });

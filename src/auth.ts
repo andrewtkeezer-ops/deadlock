@@ -11,6 +11,8 @@ import type { Env } from "./types";
 export type Identity = { email: string; role: "admin" | "member"; name?: string; picture?: string; account_id?: number | null; super?: boolean };
 export type Session = { email: string; name?: string; picture?: string; exp: number };
 
+/** The player this request belongs to: the Steam link saved on the Google member (survives sign-outs and new browsers), else the squad_steam cookie. */
+export const accountOf = (c: { get: (k: "user") => Identity | undefined; req: { header: (n: string) => string | undefined } }): number | null => c.get("user")?.account_id ?? steamAccount(c.req.header("cookie"));
 /** Steam account from the squad_steam cookie (set by /api/auth/steam/callback). Not a security boundary on its own. */
 export const steamAccount = (cookie?: string): number | null => { const m = /squad_steam=(\d+)/.exec(cookie ?? ""); return m ? Number(m[1]) : null; };
 export const isSuperAdmin = (env: Env, accountId: number | null) => !!accountId && String(accountId) === env.SUPER_ADMIN_ACCOUNT_ID;
@@ -90,12 +92,13 @@ export async function identify(c: Context<{ Bindings: Env; Variables: { user?: I
   if (email === env.SUPER_ADMIN_EMAIL.toLowerCase()) {
     await env.DB.prepare("INSERT OR IGNORE INTO members(email, role, invited_by) VALUES (?, 'admin', 'system')").bind(email).run();
     c.executionCtx.waitUntil(env.DB.prepare("UPDATE members SET last_seen=unixepoch(), accepted_at=COALESCE(accepted_at, unixepoch()) WHERE email=?").bind(email).run());
-    return { email, name, picture, role: "admin" };
+    const sa = await env.DB.prepare("SELECT account_id FROM members WHERE email=?").bind(email).first<{ account_id: number | null }>();
+    return { email, name, picture, role: "admin", account_id: sa?.account_id ?? null };
   }
-  const m = await env.DB.prepare("SELECT role FROM members WHERE email=?").bind(email).first<{ role: Identity["role"] }>();
+  const m = await env.DB.prepare("SELECT role, account_id FROM members WHERE email=?").bind(email).first<{ role: Identity["role"]; account_id: number | null }>();
   if (!m) return null;
   c.executionCtx.waitUntil(env.DB.prepare("UPDATE members SET last_seen=unixepoch(), accepted_at=COALESCE(accepted_at, unixepoch()) WHERE email=?").bind(email).run());
-  return { email, name, picture, role: m.role };
+  return { email, name, picture, role: m.role, account_id: m.account_id ?? null };
 }
 
 /** Every /api route: must be an invited member (or auth not configured yet). */
@@ -114,7 +117,7 @@ export async function requireMember(c: Context<{ Bindings: Env; Variables: { use
 export async function requireAdmin(c: Context<{ Bindings: Env; Variables: { user?: Identity } }>, next: Next) {
   const user = c.get("user");
   if (user?.role === "admin") return next();
-  if (isSuperAdmin(c.env, steamAccount(c.req.header("cookie")))) return next();
+  if (isSuperAdmin(c.env, accountOf(c))) return next();
   // Auth not configured yet (local dev / open mode): everything is admin. Turn on Google sign-in before sharing the URL widely.
   if (!authConfigured(c.env)) return next();
   return c.json({ error: "unauthorized" }, 401);
