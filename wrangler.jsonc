@@ -18,8 +18,8 @@
     { "binding": "CACHE", "id": "2acaa06863e04b658391f25b451bf178" }
   ],
 
-  // Poll the friend list for new matches. Cron triggers are free.
-  "triggers": { "crons": ["17 * * * *"] },
+  // Poll the friend list for new matches every 10 min (cron is free; ~15 players × 144 runs/day stays far inside API and D1 limits).
+  "triggers": { "crons": ["*/10 * * * *"] },
 
   "vars": {
     "DEADLOCK_API": "https://api.deadlock-api.com",
