@@ -13,6 +13,7 @@ main{max-width:1300px}.lay{display:grid;grid-template-columns:260px 1fr;gap:18px
 <div class="card"><div class="sel" id="sel"><strong>All heroes</strong></div><input type="text" id="q" placeholder="Filter heroes…" style="width:100%;margin-bottom:6px"><div id="hp" class="hp"></div><p style="margin:8px 0 0"><button id="clear">All heroes</button></p></div>
 <div class="card"><strong>Show</strong><div class="seg" style="margin-top:6px"><button data-mode="deaths" class="primary">Deaths</button><button data-mode="kills">Kills</button><button data-mode="net">Net</button></div>
 <div style="margin-top:12px"><strong>Window</strong><div class="seg" style="margin-top:6px"><button data-days="7">7d</button><button data-days="30" class="primary">30d</button><button data-days="0">All</button></div></div>
+<div style="margin-top:12px"><strong>Who</strong><div class="seg" style="margin-top:6px"><button data-who="all" class="primary">Everyone</button><button data-who="squad">Just the squad</button></div></div>
 <div style="margin-top:12px"><strong>Game phase</strong><div class="seg" style="margin-top:6px"><button data-max="0" class="primary">Whole</button><button data-max="600">0–10m</button><button data-max="1200">0–20m</button></div></div>
 <details style="margin-top:12px"><summary class="muted">Calibration</summary>
 <div class="slider"><label>Extent</label><input type="range" id="calExt" min="8000" max="14000" step="64" value="10752"><span id="calExtV">10752</span></div>
@@ -26,7 +27,7 @@ main{max-width:1300px}.lay{display:grid;grid-template-columns:260px 1fr;gap:18px
 import { api, h, $, heroes, shell, showError } from "/js/app.js";
 shell("/heatmap.html");
 const [hs, assets] = await Promise.all([heroes(), api("/assets")]);
-const state = { hero: +new URLSearchParams(location.search).get("hero") || 0, mode: "deaths", days: 30, max: 0 };
+const state = { hero: +new URLSearchParams(location.search).get("hero") || 0, mode: "deaths", days: 30, max: 0, who: "all" };
 const bg = new Image(); bg.crossOrigin = "anonymous"; bg.src = assets.map.images.minimap; const frame = new Image(); frame.crossOrigin = "anonymous"; frame.src = assets.map.images.frame;
 const cal = () => ({ ext: +$("#calExt").value, ox: +$("#calOx").value, oy: +$("#calOy").value, flipY: $("#calFlip").checked, flipX: $("#calFlipX").checked, swap: $("#calSwap").checked });
 for (const id of ["calExt", "calOx", "calOy"]) $("#" + id).oninput = (e) => { $("#" + id + "V").textContent = e.target.value; draw(); };
@@ -35,11 +36,13 @@ function renderPicker() { const q = $("#q").value.toLowerCase(); $("#hp").replac
 function renderSel() { const x = hs.find((y) => y.id === state.hero); $("#sel").replaceChildren(x ? [h("img", { src: x.images.card, alt: "" }), h("div", {}, h("strong", {}, x.name), h("div", { class: "muted", style: "font-size:12px" }, h("a", { href: `/hero.html?id=${x.id}` }, "hero page")))] : h("strong", {}, "All heroes")); }
 document.querySelectorAll("[data-mode]").forEach((b) => (b.onclick = () => { state.mode = b.dataset.mode; document.querySelectorAll("[data-mode]").forEach((x) => (x.className = x === b ? "primary" : "")); draw(); }));
 document.querySelectorAll("[data-days]").forEach((b) => (b.onclick = () => { state.days = +b.dataset.days; document.querySelectorAll("[data-days]").forEach((x) => (x.className = x === b ? "primary" : "")); draw(); }));
-document.querySelectorAll("[data-max]").forEach((b) => (b.onclick = () => { state.max = +b.dataset.max; document.querySelectorAll("[data-max]").forEach((x) => (x.className = x === b ? "primary" : "")); draw(); }));
+document.querySelectorAll("[data-who]").forEach((b) => (b.onclick = () => { state.who = b.dataset.who; document.querySelectorAll("[data-who]").forEach((x) => (x.className = x === b ? "primary" : "")); draw(); }));
+document.querySelectorAll("[data-max]").forEach((b) => (b.onclick = () => { state.max = +b.dataset.max; document.querySelectorAll("[data-who]").forEach((b) => (b.onclick = () => { state.who = b.dataset.who; document.querySelectorAll("[data-who]").forEach((x) => (x.className = x === b ? "primary" : "")); draw(); }));
+document.querySelectorAll("[data-max]").forEach((x) => (x.className = x === b ? "primary" : "")); draw(); }));
 $("#clear").onclick = () => { state.hero = 0; renderSel(); renderPicker(); draw(); }; $("#q").oninput = renderPicker;
 let seq = 0;
 async function draw() { const my = ++seq; const c = $("#map").getContext("2d"), S = 1024; c.clearRect(0, 0, S, S); if (bg.complete && bg.naturalWidth) c.drawImage(bg, 0, 0, S, S);
-  const q = new URLSearchParams(); if (state.hero) q.set("hero_id", state.hero); if (state.days) q.set("min_unix_timestamp", Math.floor(Date.now() / 1000) - state.days * 86400); if (state.max) q.set("max_match_duration_s", state.max);
+  const q = new URLSearchParams(); if (state.hero) q.set("hero_ids", state.hero); if (state.days) q.set("min_unix_timestamp", Math.floor(Date.now() / 1000) - state.days * 86400); if (state.max) q.set("max_game_time_s", state.max); if (state.who === "squad") q.set("squad", "1");
   $("#note").textContent = "Loading…";
   try { const d = await api(`/analytics/heatmap?${q}`); if (my !== seq) return; const k = cal(), span = 2 * k.ext, cell = Math.ceil(S * d.step / span) + 1;
     for (const p of d.cells) { const v = state.mode === "deaths" ? p.deaths / d.maxDeaths : state.mode === "kills" ? p.kills / d.maxKills : (p.kills - p.deaths) / Math.max(d.maxKills, d.maxDeaths); if (!v) continue;
@@ -47,7 +50,7 @@ async function draw() { const my = ++seq; const c = $("#map").getContext("2d"), 
       let [wx, wy] = k.swap ? [p.y, p.x] : [p.x, p.y]; wx += k.ox; wy += k.oy; let px = (wx + k.ext) / span * S, py = (wy + k.ext) / span * S; if (k.flipY) py = S - py; if (k.flipX) px = S - px; c.fillRect(px, py, cell, cell); }
     for (const [name, o] of Object.entries(assets.map.objectives || {})) { c.fillStyle = name.startsWith("team0") ? "#e4b94f" : "#4ab3ff"; c.strokeStyle = "#000"; c.lineWidth = 2; c.beginPath(); c.arc(o.left_relative * S, o.top_relative * S, name.includes("core") ? 12 : name.includes("titan") ? 9 : 6, 0, Math.PI * 2); c.fill(); c.stroke(); }
     if (frame.complete && frame.naturalWidth) c.drawImage(frame, 0, 0, S, S);
-    const tot = d.cells.reduce((s, p) => s + (state.mode === "kills" ? p.kills : p.deaths), 0); $("#note").textContent = `${tot.toLocaleString()} ${state.mode === "kills" ? "kills" : "deaths"} plotted${state.hero ? " for " + hs.find((y) => y.id === state.hero)?.name : ""}${state.days ? ` · last ${state.days} days` : ""}${state.max ? ` · first ${state.max / 60} min` : ""}`; }
+    const tot = d.cells.reduce((s, p) => s + (state.mode === "kills" ? p.kills : p.deaths), 0); $("#note").textContent = `${tot.toLocaleString()} ${state.mode === "kills" ? "kills" : "deaths"} plotted${state.hero ? " for " + hs.find((y) => y.id === state.hero)?.name : ""}${state.days ? ` · last ${state.days} days` : ""}${state.max ? ` · first ${state.max / 60} min` : ""}${state.who === "squad" ? " · squad only" : ""}`; if (!d.cells.length) $("#note").textContent += " — no data for this filter yet"; }
   catch (e) { $("#note").textContent = "Error: " + e.message; } }
 bg.onload = draw; frame.onload = draw; renderSel(); renderPicker(); draw();
 </script></body></html>

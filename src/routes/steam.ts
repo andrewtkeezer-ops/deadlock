@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { Env } from "../types";
 import { DeadlockApi, type SteamProfile } from "../deadlock";
+import { bigAvatar } from "../deadlock";
 import { syncPlayer } from "../sync";
 import { clearCookies, type Identity } from "../auth";
 
@@ -42,7 +43,7 @@ r.get("/callback", async (c) => {
   const api = new DeadlockApi(c.env);
   const [profile] = await api.steamProfiles([accountId]).catch(() => [] as SteamProfile[]);
   const name = profile?.personaname ?? `Steam ${accountId}`;
-  const avatar = profile?.avatarmedium ?? profile?.avatar ?? null;
+  const avatar = bigAvatar(profile?.avatarfull ?? profile?.avatarmedium ?? profile?.avatar);
 
   await c.env.DB.prepare("INSERT INTO players(account_id, name, avatar_url) VALUES (?,?,?) ON CONFLICT(account_id) DO UPDATE SET name=excluded.name, avatar_url=COALESCE(excluded.avatar_url, players.avatar_url)")
     .bind(accountId, name, avatar).run();

@@ -10,7 +10,12 @@ const r = new Hono<{ Bindings: Env }>();
  * Not "predictive" — it's where players of this hero actually die. The frontend renders it over the map.
  */
 r.get("/heatmap", async (c) => {
-  const q = Object.fromEntries(new URL(c.req.url).searchParams);
+  const raw = Object.fromEntries(new URL(c.req.url).searchParams);
+  // Upstream names: hero_ids (comma list), max_game_time_s, account_ids. Accept our older names too.
+  const q: Record<string, string | undefined> = { ...raw };
+  if (raw.hero_id) { q.hero_ids = raw.hero_id; delete q.hero_id; }
+  if (raw.max_match_duration_s) { q.max_game_time_s = raw.max_match_duration_s; delete q.max_match_duration_s; }
+  if (raw.squad === "1") { const { results } = await c.env.DB.prepare("SELECT account_id FROM players").all<{ account_id: number }>(); q.account_ids = results.map((r) => r.account_id).join(","); delete q.squad; }
   const cells = await new DeadlockApi(c.env).killDeathStats(q);
   let maxK = 0, maxD = 0, minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
   for (const cell of cells) {

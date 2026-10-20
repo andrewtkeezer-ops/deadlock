@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import type { Env } from "../types";
 import { syncAll, syncPlayer } from "../sync";
 import { DeadlockApi, type SteamProfile } from "../deadlock";
+import { bigAvatar } from "../deadlock";
 import { requireAdmin, type Identity } from "../auth";
 
 const admin = new Hono<{ Bindings: Env; Variables: { user?: Identity } }>();
@@ -18,7 +19,7 @@ admin.post("/players", async (c) => {
   let { name, avatar_url } = body;
   if (!name || !avatar_url) {
     const [p] = await api.steamProfiles([body.account_id]).catch(() => [] as SteamProfile[]);
-    name ||= p?.personaname || String(body.account_id); avatar_url ||= p?.avatarmedium ?? p?.avatar;
+    name ||= p?.personaname || String(body.account_id); avatar_url = bigAvatar(avatar_url ?? p?.avatarfull ?? p?.avatarmedium ?? p?.avatar) ?? undefined;
   }
   await c.env.DB.prepare("INSERT OR REPLACE INTO players(account_id, name, avatar_url) VALUES (?,?,?)")
     .bind(body.account_id, name, avatar_url ?? null).run();

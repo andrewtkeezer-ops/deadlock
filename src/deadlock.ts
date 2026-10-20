@@ -185,6 +185,9 @@ export class DeadlockApi {
   }
 }
 
+/** Steam avatar URLs come in 32/64/184px variants; always use the 184px "_full" one. */
+export const bigAvatar = (u?: string | null): string | null => (u ? u.replace(/_(medium|full)\.jpg$/, ".jpg").replace(/\.jpg$/, "_full.jpg") : null);
+
 export class ApiError extends Error {
   constructor(public status: number, msg: string) {
     super(msg);

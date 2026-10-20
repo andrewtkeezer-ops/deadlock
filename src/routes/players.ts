@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { Env, Player } from "../types";
 import { DeadlockApi } from "../deadlock";
+import { bigAvatar } from "../deadlock";
 
 const r = new Hono<{ Bindings: Env }>();
 
@@ -22,12 +23,12 @@ r.get("/leaderboard", async (c) => {
       GROUP BY p.account_id
       ORDER BY p.mmr_score DESC NULLS LAST, wins DESC`
   ).bind(since).all();
-  return c.json({ days, players: results });
+  return c.json({ days, players: results.map((p) => ({ ...p, avatar_url: bigAvatar(p.avatar_url as string | null) })) });
 });
 
 r.get("/", async (c) => {
   const { results } = await c.env.DB.prepare("SELECT account_id, name, avatar_url, last_sync_at, mmr_score, mmr_rank FROM players ORDER BY name").all<Player>();
-  return c.json(results);
+  return c.json(results.map((p) => ({ ...p, avatar_url: bigAvatar(p.avatar_url) })));
 });
 
 /** One friend's profile: recent matches + per-hero breakdown + MMR history. */
@@ -44,7 +45,7 @@ r.get("/:id", async (c) => {
     c.env.DB.prepare("SELECT ts, score, rank FROM mmr_history WHERE account_id=? ORDER BY ts").bind(id).all(),
     new DeadlockApi(c.env).ingestStatus(id).catch(() => null),
   ]);
-  return c.json({ player, matches: matches.results, heroes: heroes.results, mmr: mmr.results, ingest });
+  return c.json({ player: { ...player, avatar_url: bigAvatar(player.avatar_url) }, matches: matches.results, heroes: heroes.results, mmr: mmr.results, ingest });
 });
 
 /** Full 12-player match detail, fetched on demand and cached forever in D1. */
@@ -63,7 +64,7 @@ r.get("/steam-names", async (c) => {
   const ids = (c.req.query("ids") ?? "").split(",").map(Number).filter(Boolean).slice(0, 24);
   if (!ids.length) return c.json([]);
   const profiles = await new DeadlockApi(c.env).steamProfiles(ids).catch(() => []);
-  return c.json(profiles.map((p) => ({ account_id: p.account_id, name: p.personaname, avatar: p.avatar })));
+  return c.json(profiles.map((p) => ({ account_id: p.account_id, name: p.personaname, avatar: bigAvatar(p.avatarfull ?? p.avatar) })));
 });
 
 /** Global leaderboard passthrough (cached 1h). */
