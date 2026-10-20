@@ -86,7 +86,7 @@ details.sec .inner{padding:0 20px 20px}details.sec p{margin:0;color:#cfd3e6;max-
 </div>
 <section class="sec" id="builds"><h2>Starter builds <span class="sub">The most-favourited community build for each playstyle, from the in-game library. Add one to your builds and adjust it.</span></h2><div id="starters" class="starters">Loading…</div></section>
 <details class="sec"><summary>More community builds</summary><div class="inner"><div id="cbuilds">Loading…</div></div></details>
-<details class="sec"><summary>Lore</summary><div class="inner"><p id="lore" class="muted"></p></div></details>
+<details class="sec"><summary>Lore</summary><div class="inner"><p id="lore" class="muted" style="max-width:none;font-size:15px;line-height:1.7"></p></div></details>
 </main>
 <script type="module">
 import { api, h, $, pct, ago, heroes, itemImg, abilityTooltip, withTipBuilder, shell, showError } from "/js/app.js";
@@ -114,7 +114,7 @@ head.replaceChildren(art ? h("img", { class: "art", src: art, alt: "" }) : "",
     h("div", { class: "cta" }, h("a", { class: "dl", href: `/editor.html?hero=${x.id}` }, "New build for " + x.name, h("span", { class: "chev" }, "›")),
       h("a", { class: "btn", href: `/counters.html?hero=${x.id}` }, svg("swords"), "Full matchups"), h("a", { class: "btn", href: `/heatmap.html?hero=${x.id}` }, svg("map"), "Heatmap")),
     h("div", { id: "stats", class: "stats" })));
-$("#lore").textContent = x.description?.lore || "";
+$("#lore").replaceChildren(...(x.description?.lore || "").split(/<br\s*\/?>/i).flatMap((t, i) => (i ? [h("br"), h("br"), t] : [t])));
 
 (async () => { try { const rows = await api(`/heroes/stats?min_unix_timestamp=${Math.floor(Date.now() / 1000) - 14 * 86400}`); const s = rows.find((r) => r.hero_id === id);
   $("#stats").replaceChildren(h("div", { class: "stat" }, h("b", {}, s ? pct(s.win_rate) : "–"), h("span", {}, "win rate · 14d")), h("div", { class: "stat" }, h("b", {}, s ? pct(s.pick_rate) : "–"), h("span", {}, "pick rate")), h("div", { class: "stat" }, h("b", {}, s ? s.matches.toLocaleString() : "–"), h("span", {}, "matches"))); } catch {} })();

@@ -28,7 +28,7 @@ export function splitTitle(el) {
 
 /** Orange plate that slides in behind a section title on hover, like the reference's highlighted words. */
 function plateTitles() {
-  document.querySelectorAll("main h2").forEach((el) => { if (el.dataset.plate) return; el.dataset.plate = "1"; el.classList.add("plated"); });
+  document.querySelectorAll("main h2").forEach((el) => { if (el.dataset.plate || el.closest("summary")) return; el.dataset.plate = "1"; el.classList.add("plated"); });
 }
 
 /** Buttons lean toward the cursor and flash a glint on hover. */
