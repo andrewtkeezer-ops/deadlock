@@ -39,13 +39,31 @@ admin.delete("/players/:id", async (c) => {
 // ---- finding people on Steam ----
 const STEAM64_BASE = 76561197960265728n;
 
-/** ?q= Steam display name, SteamID64, or steamcommunity.com/profiles/<id64> URL → candidate profiles. */
+/** steamcommunity.com/id/<vanity> → SteamID64, via Steam's public XML profile (no API key needed). */
+async function resolveVanity(vanity: string): Promise<string | null> {
+  const res = await fetch(`https://steamcommunity.com/id/${encodeURIComponent(vanity)}/?xml=1`, { headers: { "user-agent": "soulscribe/1.0" } });
+  if (!res.ok) return null;
+  return /<steamID64>(7656119\d{10})<\/steamID64>/.exec(await res.text())?.[1] ?? null;
+}
+
+/** ?q= Steam display name, SteamID64, account_id, or a steamcommunity.com/profiles/<id64> or /id/<vanity> URL → candidate profiles. */
 admin.get("/steam-search", async (c) => {
-  const q = (c.req.query("q") ?? "").trim();
+  let q = (c.req.query("q") ?? "").trim();
   if (!q) return c.json([]);
   const api = new DeadlockApi(c.env);
+  const vanity = /steamcommunity\.com\/id\/([^/?#\s]+)/i.exec(q)?.[1];
+  if (vanity) {
+    const id64 = await resolveVanity(vanity).catch(() => null);
+    if (!id64) return c.json({ error: "not_found", message: `Steam couldn't resolve the profile URL "${vanity}". Check the link, or search by their display name.` }, 404);
+    q = id64;
+  }
   const id64 = /7656119\d{10}/.exec(q)?.[0];
-  if (id64) return c.json(await api.steamProfiles([Number(BigInt(id64) - STEAM64_BASE)]));
+  if (id64) {
+    const accountId = Number(BigInt(id64) - STEAM64_BASE);
+    const found = await api.steamProfiles([accountId]).catch(() => []);
+    // deadlock-api only knows players it has seen; still let the admin add the account by id.
+    return c.json(found.length ? found : [{ account_id: accountId, personaname: `Steam ${accountId}`, avatar: null, avatarmedium: null, note: "Not seen by deadlock-api yet — can still be added." }]);
+  }
   const direct = /^\d{5,10}$/.test(q) ? await api.steamProfiles([Number(q)]).catch(() => []) : [];
   const results = await api.steamSearch(q, 10);
   return c.json([...direct, ...results.filter((r) => !direct.some((d) => d.account_id === r.account_id))]);

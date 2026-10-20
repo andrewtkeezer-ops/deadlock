@@ -54,17 +54,17 @@ main{--hero:var(--accent);--hero-soft:color-mix(in srgb,var(--hero) 18%,transpar
 
 /* ---- builds ---- */
 .starters{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
-.st{--lc:var(--accent);position:relative;background:rgba(10,11,16,.75);border:1px solid color-mix(in srgb,var(--lc) 55%,transparent);border-radius:14px;padding:14px 14px 14px;display:flex;flex-direction:column;gap:9px;box-shadow:0 10px 30px rgba(0,0,0,.35),0 0 0 1px color-mix(in srgb,var(--lc) 10%,transparent) inset;transition:transform .2s var(--ease),box-shadow .2s}
-.st:hover{transform:translateY(-3px);box-shadow:0 20px 44px rgba(0,0,0,.5),0 0 24px color-mix(in srgb,var(--lc) 25%,transparent)}
-.st.weapon{--lc:var(--weapon)}.st.spirit{--lc:var(--spirit)}.st.vitality{--lc:var(--vitality)}.st.balanced{--lc:var(--accent)}
-.st .lean{align-self:flex-start;font-family:Reaver;text-transform:uppercase;letter-spacing:.1em;font-size:11px;color:var(--lc);border:1px solid var(--lc);border-radius:5px;padding:3px 8px;background:color-mix(in srgb,var(--lc) 12%,transparent)}
-.st b.title{font-family:Reaver;font-size:17px;letter-spacing:.02em;line-height:1.15}.st .fav{color:var(--muted);font-size:12px;margin-top:-6px}
-.st .mix{display:flex;height:6px;border-radius:3px;overflow:hidden;background:rgba(255,255,255,.06)}.st .mix i{display:block}
-.st .cats{display:grid;grid-template-columns:minmax(64px,96px) minmax(0,1fr);gap:8px 12px;align-items:start;font-size:12px;color:#cfd3e6}.st .cats .lb{line-height:1.25;padding-top:4px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow-wrap:anywhere}.st .cats .items{display:flex;flex-wrap:wrap;gap:2px;min-width:0}.st .cats .items img{width:26px;height:26px;border-radius:5px;margin:0}
-.st .act{margin-top:auto;display:flex;gap:8px;padding-top:6px}.st .act button.add{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:10px;background:var(--lc);color:#0d0a02;border:0;border-radius:10px;padding:11px 14px;font-weight:700;font-size:14px;box-shadow:0 8px 22px color-mix(in srgb,var(--lc) 35%,transparent)}.st .act button.add:hover{filter:brightness(1.08)}
-.st .act button.add .pl{width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.25);display:grid;place-items:center;font-size:16px;line-height:1}
-.st .act a.more{display:grid;place-items:center;width:44px;border-radius:10px;border:1px solid var(--line2);background:rgba(255,255,255,.05);color:var(--text);font-weight:700;letter-spacing:.1em}.st .act a.more:hover{background:rgba(255,255,255,.12)}
-.st .empty{color:var(--muted);font-size:13px}
+.bc{--lc:var(--accent);position:relative;background:rgba(10,11,16,.75);border:1px solid color-mix(in srgb,var(--lc) 55%,transparent);border-radius:14px;padding:14px 14px 14px;display:flex;flex-direction:column;gap:9px;box-shadow:0 10px 30px rgba(0,0,0,.35),0 0 0 1px color-mix(in srgb,var(--lc) 10%,transparent) inset;transition:transform .2s var(--ease),box-shadow .2s}
+.bc:hover{transform:translateY(-3px);box-shadow:0 20px 44px rgba(0,0,0,.5),0 0 24px color-mix(in srgb,var(--lc) 25%,transparent)}
+.bc.weapon{--lc:var(--weapon)}.bc.spirit{--lc:var(--spirit)}.bc.vitality{--lc:var(--vitality)}.bc.balanced{--lc:var(--accent)}
+.bc .lean{align-self:flex-start;font-family:Reaver;text-transform:uppercase;letter-spacing:.1em;font-size:11px;color:var(--lc);border:1px solid var(--lc);border-radius:5px;padding:3px 8px;background:color-mix(in srgb,var(--lc) 12%,transparent)}
+.bc b.title{font-family:Reaver;font-size:17px;letter-spacing:.02em;line-height:1.15}.bc .fav{color:var(--muted);font-size:12px;margin-top:-6px}
+.bc .mix{display:flex;height:6px;border-radius:3px;overflow:hidden;background:rgba(255,255,255,.06)}.bc .mix i{display:block}
+.bc .cats{display:grid;grid-template-columns:minmax(64px,96px) minmax(0,1fr);gap:8px 12px;align-items:start;font-size:12px;color:#cfd3e6}.bc .cats .lb{line-height:1.25;padding-top:4px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow-wrap:anywhere}.bc .cats .items{display:flex;flex-wrap:wrap;gap:2px;min-width:0}.bc .cats .items img{width:26px;height:26px;border-radius:5px;margin:0}
+.bc .act{margin-top:auto;display:flex;gap:8px;padding-top:6px}.bc .act button.add{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:10px;background:var(--lc);color:#0d0a02;border:0;border-radius:10px;padding:11px 14px;font-weight:700;font-size:14px;box-shadow:0 8px 22px color-mix(in srgb,var(--lc) 35%,transparent)}.bc .act button.add:hover{filter:brightness(1.08)}
+.bc .act button.add .pl{width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.25);display:grid;place-items:center;font-size:16px;line-height:1}
+.bc .act a.more{display:grid;place-items:center;width:44px;border-radius:10px;border:1px solid var(--line2);background:rgba(255,255,255,.05);color:var(--text);font-weight:700;letter-spacing:.1em}.bc .act a.more:hover{background:rgba(255,255,255,.12)}
+.bc .empty{color:var(--muted);font-size:13px}
 details.sec{padding:0}details.sec summary{list-style:none;cursor:pointer;padding:14px 20px;font-weight:700;font-size:14px;display:flex;align-items:center;gap:10px;color:var(--text)}details.sec summary::-webkit-details-marker{display:none}details.sec summary::before{content:"›";font-size:20px;line-height:1;color:var(--accent);transition:transform .2s;display:inline-block}details[open].sec summary::before{transform:rotate(90deg)}
 details.sec .inner{padding:0 20px 20px}details.sec p{margin:0;color:#cfd3e6;max-width:80ch}
 
@@ -150,7 +150,7 @@ const murow = (hid, wr) => { const hh = hs.find((y) => y.id === hid); return [hh
 const mixBar = (share) => h("div", { class: "mix" }, h("i", { style: `width:${share.weapon * 100}%;background:var(--weapon)` }), h("i", { style: `width:${share.spirit * 100}%;background:var(--spirit)` }), h("i", { style: `width:${share.vitality * 100}%;background:var(--vitality)` }));
 async function importBuild(b, btn) { btn.disabled = true; btn.textContent = "Copying…"; try { const r = await api("/library/import", { method: "POST", body: { hero_id: id, ingame_build_id: b.id } }); location.href = `/editor.html?id=${r.id}`; } catch (e) { btn.disabled = false; btn.textContent = e.message.includes("Sign in") ? "Sign in through Steam first" : "Add to my builds"; } }
 const LEAN = { weapon: "Weapon / Gun", spirit: "Spirit", vitality: "Survivability", balanced: "Balanced" };
-const buildCard = (lean, b) => h("div", { class: "st " + lean }, h("div", { class: "lean" }, b?.lean_label ?? LEAN[lean] ?? lean),
+const buildCard = (lean, b) => h("div", { class: "bc " + lean }, h("div", { class: "lean" }, b?.lean_label ?? LEAN[lean] ?? lean),
   b ? [h("b", { class: "title" }, b.name), h("div", { class: "fav" }, `+${b.favorites.toLocaleString()} favourites · ${b.item_count} items · updated ${ago(b.updated)}`), mixBar(b.share),
     h("div", { class: "cats" }, ...b.categories.slice(0, 4).flatMap((cat) => [h("span", { class: "lb", title: cat.name }, cat.name), h("div", { class: "items" }, ...cat.items.slice(0, 12).map((i) => itemImg(item(i), 26)))])),
     h("div", { class: "act" }, h("button", { class: "add", onclick: (e) => importBuild(b, e.currentTarget) }, h("span", { class: "pl" }, "+"), "Add to my builds"))]

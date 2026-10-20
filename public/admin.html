@@ -7,7 +7,7 @@
 <body><main><h1>Admin</h1><p id="who" class="muted"></p>
 <div class="card"><h2 style="margin-top:0">Add a player</h2>
 <p><a href="/api/auth/steam/login"><img src="https://community.cloudflare.steamstatic.com/public/images/signinthroughsteam/sits_01.png" alt="Sign in through Steam" style="height:35px;vertical-align:middle"></a> <span class="muted" style="margin-left:10px">adds yourself. For someone else, search below.</span></p>
-<p><input type="text" id="q" placeholder="Steam name or profile URL" style="width:320px"> <button class="primary" id="search">Search</button> <span id="pmsg"></span></p><div id="results" class="prof"></div></div>
+<p><input type="text" id="q" placeholder="Steam name, profile URL (/id/… or /profiles/…) or account id" style="width:320px"> <button class="primary" id="search">Search</button> <span id="pmsg"></span></p><div id="results" class="prof"></div></div>
 <div class="cols">
 <div class="card"><h2 style="margin-top:0">Tracked players</h2><p><button id="sync">Sync everyone now</button> <span id="smsg" class="muted"></span></p><div id="players"></div></div>
 <div class="card"><h2 style="margin-top:0">Steam friends who play Deadlock</h2><p>Friends of <select id="friendsOf"></select> <button id="loadFriends">Load</button> <span class="muted" style="font-size:12px">(their Steam friends list must be public)</span></p><div id="friends" class="prof"></div></div>
@@ -19,9 +19,9 @@
 <script type="module">
 import { api, h, $, ago, me, rankBadge, shell, showError } from "/js/app.js";
 shell("/admin.html");
-const m = await me(); $("#who").textContent = m.unconfigured ? "Google login (Cloudflare Access) is not configured yet: the site is open and everyone is an admin. Turn it on before sharing the link." : `Signed in as ${m.email} (${m.role})`;
-$("#accessNote").textContent = m.unconfigured ? "Once Access is on, only invited Google accounts can open the site. Invites added now will apply then." : "Invited Google accounts can sign in. The super admin is always allowed.";
-const card = (p, action) => h("div", { class: "pc" }, p.avatar || p.avatarmedium ? h("img", { src: p.avatarmedium || p.avatar, alt: "" }) : "", h("div", { class: "n" }, h("b", {}, p.personaname), h("small", {}, `${p.matches_played_last_30d ?? 0} games / 30d · `, h("a", { href: p.profileurl, target: "_blank", rel: "noopener" }, "profile"))), action);
+const m = await me(); $("#who").textContent = m.unconfigured ? "Google sign-in is not configured yet (GOOGLE_CLIENT_ID): the site is open and everyone is an admin. Turn it on before sharing the link." : `Signed in as ${m.email} (${m.role})`;
+$("#accessNote").textContent = m.unconfigured ? "Once Google sign-in is on, only invited Google accounts can open the site. Invites added now will apply then." : "Invited Google accounts can sign in. The super admin is always allowed.";
+const card = (p, action) => h("div", { class: "pc" }, p.avatar || p.avatarmedium ? h("img", { src: p.avatarmedium || p.avatar, alt: "" }) : "", h("div", { class: "n" }, h("b", {}, p.personaname), h("small", {}, p.note ? p.note + " · " : `${p.matches_played_last_30d ?? 0} games / 30d · `, h("a", { href: p.profileurl || `https://steamcommunity.com/profiles/${BigInt(p.account_id) + 76561197960265728n}`, target: "_blank", rel: "noopener" }, "profile"))), action);
 async function addPlayer(p, btn, msgEl) { btn.disabled = true; btn.textContent = "Importing…"; try { const r = await api("/admin/players", { method: "POST", body: { account_id: p.account_id, name: p.personaname, avatar_url: p.avatarmedium || p.avatar } }); btn.textContent = `Added (${r.matchesImported})`; players(); } catch (e) { btn.disabled = false; btn.textContent = "Add"; msgEl.className = "error"; msgEl.textContent = e.message; } }
 $("#search").onclick = async () => { const msg = $("#pmsg"), el = $("#results"); msg.textContent = "Searching…"; msg.className = "muted"; try { const rows = await api(`/admin/steam-search?q=${encodeURIComponent($("#q").value)}`); msg.textContent = rows.length ? "" : "No profiles found. deadlock-api only knows players it has seen; the Steam sign-in button always works.";
   el.replaceChildren(...rows.map((p) => { const b = h("button", { class: "primary" }, "Add"); b.onclick = () => addPlayer(p, b, msg); return card(p, b); })); } catch (e) { msg.className = "error"; msg.textContent = e.message; } };
