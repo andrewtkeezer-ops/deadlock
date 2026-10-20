@@ -51,6 +51,7 @@ const canEdit = () => mine || !id;
 if (id) { $("#owner").textContent = mine ? "Your build" : `By ${build.author_name ?? build.author} · view only, fork to edit`; $("#fork").hidden = false; $("#del").hidden = !mine; $("#save").hidden = !mine; }
 if (!who.account_id) $("#owner").textContent = "Sign in through Steam (top right) to save builds.";
 const heroImg = () => { $("#heroimg").src = hs.find((y) => y.id === +$("#hero").value)?.images?.card || ""; }; heroImg();
+$("#hero").addEventListener("change", () => dps.setHero(+$("#hero").value));
 let drag = null;
 const SPM = 1150; // typical souls per minute; used for the "about when" estimate
 function render() { let total = 0; let running = 0;

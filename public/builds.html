@@ -21,6 +21,7 @@ main{max-width:1200px}.lay{display:grid;grid-template-columns:360px 1fr;gap:18px
 </main>
 <script type="module">
 import { api, h, $, pct, fmt, heroes, items, itemImg, shell, showError } from "/js/app.js";
+import { dpsPanel } from "/js/dps.js";
 shell("/library.html");
 const [hs, its] = await Promise.all([heroes(), items()]); hs.forEach((x) => $("#hero").append(new Option(x.name, x.id)));
 const pre = +new URLSearchParams(location.search).get("hero"); if (pre) $("#hero").value = pre;
@@ -34,6 +35,7 @@ $("#go").onclick = async () => { const out = $("#out"); out.className = "card"; 
   try { last = await api("/builds/wizard", { method: "POST", body: { hero_id: +$("#hero").value, priorities: pri, budget: +$("#budget").value, winrate_weight: +$("#wrw").value / 100 } });
     const it = (i) => its.find((x) => x.id === i.item_id);
     out.replaceChildren(h("div", { class: "tot" }, h("b", {}, `${fmt(last.spent)} / ${fmt(last.budget)} souls`), h("span", { class: "muted" }, `${last.order.length} items`), h("button", { class: "primary", style: "margin-left:auto", onclick: () => { sessionStorage.setItem("wizardBuild", JSON.stringify({ hero_id: last.hero_id, title: `${hs.find((y) => y.id === last.hero_id)?.name} wizard build`, order: last.order })); location.href = "/editor.html?from=wizard"; } }, "Open in build editor")),
+      h("h2", {}, "What this build does to your gun"), (() => { const d = dpsPanel(last.hero_id); d.update(last.order.map(it)); return d; })(),
       h("h2", {}, "Purchase order"), h("div", { class: "order" }, ...last.order.map((i, n) => h("div", { class: "oi " + (i.slot || "") }, h("span", { class: "step" }, String(n + 1)), itemImg(it(i), 56), h("b", {}, i.name), h("small", {}, `T${i.tier} · ${fmt(i.cost)}`), h("small", {}, i.win_rate != null ? `${pct(i.win_rate)} wr` : "")))),
       h("h2", {}, "Everything else, by score"), h("div", { class: "ranked" }, h("div", { class: "r muted", style: "font-size:11px;text-transform:uppercase" }, h("span"), h("span", {}, "Item"), h("span", {}, "Stats"), h("span", {}, "Win rate"), h("span", {}, "Score")),
         ...last.ranked.filter((i) => !last.order.some((o) => o.item_id === i.item_id)).slice(0, 30).map((i) => h("div", { class: "r" }, itemImg(it(i), 30), h("span", {}, i.name, " ", h("span", { class: "chip " + i.slot, style: "font-size:10px;padding:0 5px" }, `T${i.tier}`)), h("span", { class: "num" }, i.stat_score.toFixed(2)), h("span", { class: "num" }, pct(i.win_rate)), h("span", { class: "num" }, i.score.toFixed(2)))))); }
