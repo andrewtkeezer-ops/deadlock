@@ -92,24 +92,17 @@ const ICONS = {
 };
 export function shell(active) {
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  try { if (localStorage.getItem("ss.rail") === "collapsed") document.body.classList.add("rail-collapsed"); } catch {}
   if (!document.querySelector(".atmo")) {
-    document.body.prepend(h("div", { class: "atmo" }, h("div", { class: "base" }), h("div", { class: "fog" }), h("div", { class: "grain" }), h("div", { class: "mark" }), h("div", { class: "vig" })));
+    document.body.prepend(h("div", { class: "atmo" }, h("div", { class: "base" }), h("div", { class: "beams" }, ...[["6%", "-26deg", "14deg", "21s", "0s", "g"], ["22%", "-6deg", "30deg", "27s", "-9s", "s"], ["58%", "-34deg", "4deg", "24s", "-15s", "s"], ["82%", "-12deg", "28deg", "19s", "-4s", "g"]].map(([x, a0, a1, d, o, k]) => h("i", { class: k, style: `--x:${x};--a0:${a0};--a1:${a1};--d:${d};--o:${o}` }))), h("div", { class: "fog" }), h("div", { class: "grain" }), h("div", { class: "mark" }), h("div", { class: "vig" })));
     const page = h("div", { class: "page" }); const mains = [...document.body.querySelectorAll(":scope > main")]; mains.forEach((m) => { if (active !== "/heroes.html") m.classList.add("stagger"); page.append(m); }); document.body.append(page);
   }
   const links = [["/", "Leaderboard", "trophy"], ["/heroes.html", "Heroes", "hero"], ["/counters.html", "Draft", "swords"], ["/heatmap.html", "Map", "map"], ["/library.html", "Builds", "book"], ["/items.html", "Items", "bag"], ["/setup.html", "Setup", "gear"]];
   const mk = ([href, label, ic]) => { const a = h("a", { href, class: href === active ? "active" : "" }); a.innerHTML = `<span class="ic">${ICONS[ic]}</span><span class="lb">${label}</span>`; return a; };
   const pill = h("span", { class: "pill" });
   const nav = h("nav", {}, pill, ...links.map(mk));
-  const collapsed0 = document.body.classList.contains("rail-collapsed");
-  const toggle = h("button", { class: "toggle", type: "button", title: collapsed0 ? "Expand menu" : "Collapse menu", "aria-label": "Toggle menu" }); toggle.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>`;
-  toggle.addEventListener("click", () => { const c = document.body.classList.toggle("rail-collapsed"); rail.classList.remove("peek"); armed = false; toggle.title = c ? "Expand menu" : "Collapse menu"; try { localStorage.setItem("ss.rail", c ? "collapsed" : "open"); } catch {} setTimeout(movePill, 350); });
   const who = h("div", { class: "who" });
-  const rail = h("aside", { class: "rail" }, h("a", { class: "brand", href: "/", title: "Soul Scribe" }, h("img", { class: "mark", src: "/img/icon.png", alt: "" }), h("img", { class: "word", src: "/img/logo.webp", alt: "Soul Scribe" })), nav, toggle, who);
+  const rail = h("aside", { class: "rail" }, h("a", { class: "brand", href: "/", title: "Soul Scribe" }, h("img", { class: "mark", src: "/img/icon.png", alt: "" }), h("img", { class: "word", src: "/img/logo.webp", alt: "Soul Scribe" })), nav, who);
   document.body.prepend(rail);
-  // collapsed rail peeks open on hover — but not right after you clicked Collapse (wait until the pointer has left once)
-  let armed = true, peekT; rail.addEventListener("mouseenter", () => { if (!armed) return; peekT = setTimeout(() => rail.classList.add("peek"), 140); });
-  rail.addEventListener("mouseleave", () => { clearTimeout(peekT); rail.classList.remove("peek"); armed = true; });
   // sliding active pill + hover preview + click ripple
   function movePill(target) { const a = target || nav.querySelector("a.active"); if (!a) { pill.style.opacity = 0; return; } pill.style.top = a.offsetTop + "px"; pill.style.opacity = 1; }
   requestAnimationFrame(() => movePill());
@@ -131,7 +124,7 @@ export function shell(active) {
   if (!reduced) alive();
 }
 
-/** Site-wide "alive" layer: pointer spotlight + tilt on glass, scroll reveals, loading shimmer, ember particles, cursor halo. */
+/** Site-wide "alive" layer: pointer spotlight + tilt on glass, scroll reveals, loading shimmer, cursor halo. (Searchlight beams are pure CSS in .atmo.) */
 function alive() {
   const fine = matchMedia("(hover:hover) and (pointer:fine)").matches;
   const SURF = ".card,.sec,.ab,.st,.tile,.hcard", TILT = ".ab,.st,.tile";
@@ -152,15 +145,6 @@ function alive() {
   const shimmer = (root) => root.querySelectorAll?.("*").forEach((el) => { if (el.childElementCount === 0 && el.textContent.trim() === "Loading…") el.classList.add("ld"); });
   const mo = new MutationObserver((ms) => ms.forEach((m) => { m.addedNodes.forEach((n) => { if (n.nodeType === 1) { watch(n); shimmer(n); if (n.classList?.contains("ld")) n.classList.remove("ld"); } }); if (m.type === "childList" && m.target.classList?.contains("ld") && m.target.textContent.trim() !== "Loading…") m.target.classList.remove("ld"); }));
   const page = document.querySelector(".page"); watch(page); shimmer(page); mo.observe(page, { childList: true, subtree: true });
-  // embers
-  const cv = h("canvas"); document.querySelector(".atmo").append(cv); const ctx = cv.getContext("2d"); let W, H, P = [];
-  const size = () => { W = cv.width = innerWidth; H = cv.height = innerHeight; }; size(); addEventListener("resize", size);
-  const spawn = () => ({ x: Math.random() * W, y: H + 10, r: .8 + Math.random() * 1.8, vx: (Math.random() - .5) * .25, vy: -(.15 + Math.random() * .35), a: 0, life: 0, max: 600 + Math.random() * 600, g: Math.random() < .35 });
-  for (let i = 0; i < 34; i++) { const p = spawn(); p.y = Math.random() * H; p.life = Math.random() * p.max; P.push(p); }
-  let last = 0; (function tick(t) { if (document.hidden) { requestAnimationFrame(tick); return; } const dt = Math.min(32, t - last) / 16; last = t; ctx.clearRect(0, 0, W, H);
-    for (let i = 0; i < P.length; i++) { const p = P[i]; p.life += dt; p.x += p.vx * dt + Math.sin((t / 1000 + i) * .7) * .15; p.y += p.vy * dt; const k = p.life / p.max; p.a = Math.sin(Math.PI * Math.min(1, k)) * .7; if (k >= 1 || p.y < -10) P[i] = spawn();
-      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 7); ctx.fillStyle = p.g ? `rgba(120,230,160,${p.a})` : `rgba(240,205,120,${p.a})`; ctx.shadowBlur = 8; ctx.shadowColor = ctx.fillStyle; ctx.fill(); }
-    requestAnimationFrame(tick); })(0);
 }
 /** Count-up animation for a number element. */
 export function countUp(el, to, { decimals = 0, suffix = "", ms = 700 } = {}) { const start = performance.now(); const from = 0; const step = (t) => { const k = Math.min(1, (t - start) / ms); const v = from + (to - from) * (1 - Math.pow(1 - k, 3)); el.textContent = v.toFixed(decimals).replace(/\B(?=(\d{3})+(?!\d))/g, ",") + suffix; if (k < 1) requestAnimationFrame(step); }; requestAnimationFrame(step); return el; }
