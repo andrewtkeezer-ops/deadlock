@@ -35,12 +35,31 @@
 .enter{position:fixed;inset:0;background:#06100b;animation:fade 1.2s ease-out both;pointer-events:none;z-index:3}@keyframes fade{from{opacity:1}to{opacity:0}}
 @media(max-aspect-ratio:1/1){.scene{background-position:52% center}.btn .t{font-size:18px;padding:0 40px 0 18px}.btn .g{width:56px;height:56px}.mark{width:34vw}.word{width:82vw}}
 @media(prefers-reduced-motion:reduce){*{animation-duration:.001ms!important}}
+
+/* --- City Never Sleeps direction: display headline, stamp, drizzle, parallax --- */
+.ui{--ink:#dd6638;--gold:#e8c76a}
+.stamp{display:inline-block;margin:0 0 14px;padding:7px 14px 6px;background:var(--ink);color:#fff;font:600 11px/1 Oracle,sans-serif;letter-spacing:.3em;text-transform:uppercase;transform:rotate(-2.5deg);box-shadow:0 4px 0 rgba(0,0,0,.55),0 12px 28px rgba(0,0,0,.5);border-radius:2px;animation:stampOn .7s .15s cubic-bezier(.2,1.6,.3,1) both}
+@keyframes stampOn{from{opacity:0;transform:rotate(-14deg) scale(1.6)}to{opacity:1;transform:rotate(-2.5deg) scale(1)}}
+.head{margin:6px 0 4px;font:700 clamp(30px,4.6vw,58px)/.95 Pulp,Oracle,Impact,sans-serif;letter-spacing:.02em;text-transform:uppercase;color:var(--cream);transform:rotate(-1.5deg);cursor:default;max-width:900px}
+.head .ch{display:inline-block;animation:chIn .75s cubic-bezier(.2,1.4,.3,1) both;animation-delay:calc(.45s + var(--i) * 24ms);background:linear-gradient(180deg,#f7e9d5 0%,#f1e6c4 55%,var(--gold) 100%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 3px 0 rgba(181,141,42,.9)) drop-shadow(0 6px 0 rgba(30,22,8,.9)) drop-shadow(0 16px 28px rgba(0,0,0,.7))}
+.head .sp{display:inline-block;width:.3em}.head .ch.wave{animation:chWave .55s cubic-bezier(.2,1.4,.3,1) var(--d,0ms) both}
+@keyframes chIn{0%{opacity:0;transform:translateY(-.6em) rotate(-10deg) scale(1.25)}55%{opacity:1;transform:translateY(.08em) rotate(2deg) scale(.96)}100%{opacity:1;transform:none}}
+@keyframes chWave{0%{transform:none}30%{transform:translateY(-.22em) rotate(-6deg) scale(1.08);filter:drop-shadow(-3px 0 0 #60cde3) drop-shadow(3px 0 0 #dd6638) drop-shadow(0 16px 28px rgba(0,0,0,.6))}100%{transform:none}}
+.rain{position:fixed;inset:0;pointer-events:none;mix-blend-mode:screen;opacity:.5;z-index:1}
+.scene,.fog{translate:var(--px,0) var(--py,0);transition:translate .25s linear}
+.flick{animation:flickN .9s steps(1,end)!important}@keyframes flickN{0%{opacity:1}8%{opacity:.35}12%{opacity:1}20%{opacity:.6}24%{opacity:1}64%{opacity:.5}68%{opacity:1}100%{opacity:1}}
+.btn{transform:translate(var(--mx,0),var(--my,0))}.btn:hover{transform:translate(var(--mx,0),calc(var(--my,0) - 2px))}
+.word{width:min(44vw,480px)}
+@media(max-width:700px){.head{transform:none;font-size:clamp(26px,8vw,40px)}.stamp{font-size:10px;letter-spacing:.22em}.word{width:72vw}}
+@media(prefers-reduced-motion:reduce){.rain{display:none}.head .ch{animation:none;opacity:1}}
 </style></head>
 <body>
 <div class="scene" role="img" aria-label="A green-lit city at night: a gargoyle, candles and an old book in the foreground, a glowing compass tower beyond."></div>
 <div class="fog"></div><div class="candle c1"></div><div class="candle c2"></div><div class="candle c3"></div><div class="beacon"></div><div class="vig"></div>
 <div class="ui">
+  <div class="stamp">Private squad · invite only</div>
   <img class="word" src="/img/logo.webp" alt="Soul Scribe">
+  <h1 class="head" id="head">Every match. Every build. Every climb.</h1>
   <div class="tag">Know<i>✦</i>Track<i>✦</i>Improve</div>
   <div class="rule"></div>
   <a class="btn" id="go" href="/api/auth/google/login"><span class="g"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.3l6.7-6.7C35.6 2.3 30.1 0 24 0 14.6 0 6.5 5.4 2.6 13.3l7.8 6C12.3 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4 7.1-10 7.1-17.5z"/><path fill="#FBBC05" d="M10.4 28.7c-.5-1.5-.8-3-.8-4.7s.3-3.2.8-4.7l-7.8-6C.9 16.5 0 20.1 0 24s.9 7.5 2.6 10.7l7.8-6z"/><path fill="#34A853" d="M24 48c6.1 0 11.2-2 15-5.5l-7.5-5.8c-2 1.4-4.6 2.3-7.5 2.3-6.3 0-11.7-4.1-13.6-9.8l-7.8 6C6.5 42.6 14.6 48 24 48z"/></svg></span><span class="t">Continue with Google</span><span class="a">→</span></a>
@@ -52,5 +71,25 @@
 (() => { const q = new URLSearchParams(location.search), n = document.getElementById("note");
   if (q.get("denied")) { n.innerHTML = `<b>${q.get("denied").replace(/[<>&]/g, "")}</b> isn't on the squad list yet. Ask Andrew for an invite, or <a href="/api/auth/google/logout">try another Google account</a>.`; n.hidden = false; }
   else if (q.get("error")) { n.textContent = "Google sign-in didn't complete. Please try again."; n.hidden = false; } })();
+</script>
+
+<script>
+(() => { const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches, coarse = matchMedia("(hover: none)").matches;
+  // headline: letter by letter, wave on hover
+  const split = (el) => { if (!el) return; const text = el.textContent; el.setAttribute("aria-label", text.trim()); el.textContent = ""; let i = 0; for (const ch of text) { const s = document.createElement("span"); if (ch === " ") { s.className = "sp"; s.textContent = " "; } else { s.className = "ch"; s.style.setProperty("--i", i++); s.textContent = ch; } s.setAttribute("aria-hidden", "true"); el.append(s); } el.querySelectorAll(".ch").forEach((c) => c.style.setProperty("--i", Math.min(+c.style.getPropertyValue("--i"), 40))); }; window.splitHead = split;
+  const el = document.getElementById("head"); if (el) { split(el);
+    if (!coarse && !reduced) el.addEventListener("pointerenter", (e) => { const chs = [...el.querySelectorAll(".ch")]; const r = el.getBoundingClientRect(); const from = Math.min(chs.length - 1, Math.max(0, Math.round((e.clientX - r.left) / r.width * chs.length))); chs.forEach((c, k) => { c.style.setProperty("--d", `${Math.abs(k - from) * 28}ms`); c.classList.remove("wave"); void c.offsetWidth; c.classList.add("wave"); }); }); }
+  if (reduced) return;
+  // drizzle
+  const cv = document.createElement("canvas"); cv.className = "rain"; cv.setAttribute("aria-hidden", "true"); document.body.append(cv); const c = cv.getContext("2d"); let W, H, drops = [];
+  const size = () => { W = cv.width = innerWidth; H = cv.height = innerHeight; drops = Array.from({ length: Math.round(W / 12) }, () => ({ x: Math.random() * W, y: Math.random() * H, l: 14 + Math.random() * 24, v: 2.6 + Math.random() * 2.4, a: .05 + Math.random() * .1 })); }; size(); addEventListener("resize", size);
+  let last = 0; (function tick(t) { requestAnimationFrame(tick); if (document.hidden || t - last < 33) return; last = t; c.clearRect(0, 0, W, H); c.lineWidth = 1; c.lineCap = "round"; for (const d of drops) { c.strokeStyle = `rgba(214,232,240,${d.a})`; c.beginPath(); c.moveTo(d.x, d.y); c.lineTo(d.x - d.l * .18, d.y + d.l); c.stroke(); d.y += d.v * 2.2; d.x -= d.v * .4; if (d.y > H) { d.y = -d.l; d.x = Math.random() * (W + 80); } } })(0);
+  // stamp flicker, like a tired neon sign
+  const flick = () => { const s = document.querySelector(".stamp"); if (s) { s.classList.add("flick"); setTimeout(() => s.classList.remove("flick"), 900); } setTimeout(flick, 5000 + Math.random() * 8000); }; setTimeout(flick, 3000);
+  if (coarse) return;
+  // parallax + magnetic button
+  let tx = 0, ty = 0, x = 0, y = 0; addEventListener("pointermove", (e) => { tx = e.clientX / innerWidth - .5; ty = e.clientY / innerHeight - .5; const b = e.target.closest?.(".btn"); document.querySelectorAll(".btn").forEach((el) => { if (el === b) { const r = el.getBoundingClientRect(); el.style.setProperty("--mx", `${(e.clientX - (r.left + r.width / 2)) / r.width * 8}px`); el.style.setProperty("--my", `${(e.clientY - (r.top + r.height / 2)) / r.height * 5}px`); } else { el.style.setProperty("--mx", "0px"); el.style.setProperty("--my", "0px"); } }); }, { passive: true });
+  (function loop() { x += (tx - x) * .04; y += (ty - y) * .04; document.documentElement.style.setProperty("--px", `${(-x * 22).toFixed(2)}px`); document.documentElement.style.setProperty("--py", `${(-y * 14).toFixed(2)}px`); requestAnimationFrame(loop); })();
+})();
 </script>
 </body></html>
