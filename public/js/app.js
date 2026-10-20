@@ -37,7 +37,7 @@ export async function rankBadge(rank, size = "small") {
   const label = r ? `${r.name} ${sub || ""}`.trim() : `Rank ${rank}`;
   return src ? h("img", { src, alt: label, title: label, class: "rank " + size }) : h("span", {}, label);
 }
-export function heroIcon(hx, size = 28) { return hx?.images?.icon ? h("img", { src: hx.images.icon, alt: hx.name, title: hx.name, width: size, height: size, class: "hicon" }) : h("span", {}, hx?.name ?? "?"); }
+export function heroIcon(hx, size = 28) { const ini = (hx?.name ?? "?").split(/\s+/).map((w) => w[0]).join("").slice(0, 2); return hx?.images?.icon ? h("img", { src: hx.images.icon, alt: hx.name, title: hx.name, width: size, height: size, class: "hicon", onerror: (e) => e.target.replaceWith(h("span", { class: "hicon ini", title: hx.name, style: `width:${size}px;height:${size}px;font-size:${Math.round(size * .38)}px` }, ini)) }) : h("span", { class: "hicon ini", title: hx?.name, style: `width:${size}px;height:${size}px;font-size:${Math.round(size * .38)}px` }, ini); }
 export function itemImg(it, size = 26) { return it?.image ? withTip(h("img", { src: it.image, alt: it.name, width: size, height: size, class: "iimg " + (it.slot || "") }), it) : null; }
 
 // ---- item tooltip (in-game style) ----

@@ -73,7 +73,7 @@ export class DeadlockApi {
    * `trim` lets us drop tooltip/description bulk before caching — the full item list is several MB.
    */
   async asset<T>(path: string, trim?: (raw: unknown) => T, ttl = 86400): Promise<T> {
-    const key = `asset:v5:${path}`;
+    const key = `asset:v6:${path}`;
     const hit = await cacheGet<T>(key);
     if (hit !== null) return hit;
     const raw = await this.fetchWithRetry<unknown>(new URL(path, this.env.DEADLOCK_API).toString());
@@ -142,7 +142,8 @@ export class DeadlockApi {
       (raw as RawHero[]).map((h) => ({ id: h.id, name: h.name, class_name: h.class_name, player_selectable: h.player_selectable, disabled: h.disabled,
         in_development: h.in_development, tags: h.tags ?? [], complexity: h.complexity, hero_type: h.hero_type, gun_tag: h.gun_tag, color: h.colors?.style_hex,
         description: { role: h.description?.role, playstyle: h.description?.playstyle, lore: h.description?.lore },
-        images: { icon: h.images?.icon_image_small, card: h.images?.icon_hero_card, minimap: h.images?.minimap_image_webp,
+        // Unreleased heroes (Nurse Harrow) ship without icon/card art; fall back to the top-bar portrait / vote sticker so nothing renders as a broken image.
+        images: { icon: h.images?.icon_image_small ?? h.images?.vote_sticker_webp ?? h.images?.top_bar_vertical_image_webp, card: h.images?.icon_hero_card ?? h.images?.top_bar_vertical_image_webp ?? h.images?.vote_sticker_webp, minimap: h.images?.minimap_image_webp ?? h.images?.icon_image_small,
           gloat: h.images?.hero_card_gloat, critical: h.images?.hero_card_critical, vertical: h.images?.top_bar_vertical_image_webp,
           background: h.images?.background_image_webp ?? h.images?.background_image, name: h.images?.name_image } })));
   }
