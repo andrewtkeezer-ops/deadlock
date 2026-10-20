@@ -11,6 +11,9 @@ export type Env = {
   // Legacy: Cloudflare Access (Zero Trust) in front of the hostname. Only used if GOOGLE_CLIENT_ID is unset.
   ACCESS_TEAM_DOMAIN?: string;
   ACCESS_AUD?: string;
+  // Invite emails via Resend (optional). INVITE_FROM like "Soul Scribe <invites@yourdomain.ca>".
+  RESEND_API_KEY?: string;
+  INVITE_FROM?: string;
   SUPER_ADMIN_EMAIL: string;
   SUPER_ADMIN_ACCOUNT_ID?: string;
 };

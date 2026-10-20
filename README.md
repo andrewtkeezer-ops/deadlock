@@ -59,6 +59,13 @@ then requires that the email is `SUPER_ADMIN_EMAIL` or on the `members` table (A
 With `GOOGLE_CLIENT_ID` empty (local dev) there is no auth: everything is open and everyone is admin.
 Legacy: if `GOOGLE_CLIENT_ID` is empty but `ACCESS_TEAM_DOMAIN` + `ACCESS_AUD` are set, the old Access JWT check is used instead.
 
+## Invite emails (optional)
+
+Invites always produce a shareable link (`/invite?t=…`) that opens a styled invite page. To also email them automatically:
+sign up at resend.com (free: 3,000/month), verify a domain you own, create an API key, then
+`npx wrangler secret put RESEND_API_KEY` and set `INVITE_FROM` (e.g. `Soul Scribe <invites@yourdomain.ca>`) as a var.
+The email template is in `src/email.ts`.
+
 ## Adding friends
 
 Easiest: each friend opens **Setup** and clicks **Sign in through Steam** (OpenID: no API key, no password seen by us).

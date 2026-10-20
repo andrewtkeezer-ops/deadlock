@@ -36,6 +36,13 @@ app.post("/api/ingest/notify", async (c) => {
   return c.json({ ok: true, queued: true });
 });
 app.route("/api/auth/google", google);
+/** Public: who does this invite belong to? (name shown on the invite page). */
+app.get("/api/invite/:token", async (c) => {
+  const m = await c.env.DB.prepare("SELECT email, invited_by, accepted_at FROM members WHERE invite_token=?").bind(c.req.param("token")).first<{ email: string; invited_by: string | null; accepted_at: number | null }>();
+  if (!m) return c.json({ error: "invalid" }, 404);
+  const inviter = m.invited_by && m.invited_by.includes("@") ? (await c.env.DB.prepare("SELECT name FROM players p JOIN members mm ON mm.account_id=p.account_id WHERE mm.email=?").bind(m.invited_by).first<{ name: string }>())?.name ?? m.invited_by.split("@")[0] : (m.invited_by || "A friend");
+  return c.json({ email: m.email, inviter, accepted: !!m.accepted_at });
+});
 app.use("/api/*", requireMember);
 app.get("/api/me", async (c) => {
   const steam = steamAccount(c.req.header("cookie")); const sup = isSuperAdmin(c.env, steam);
@@ -64,10 +71,11 @@ app.onError((err, c) => {
  * at "/" with the Google button. Static files (css/js/img) and the legal pages are public. wrangler.jsonc sends
  * "/", "/*.html" and /api/* to the Worker first; everything else is served straight from /public.
  */
-const PUBLIC_PAGES = new Set(["/welcome.html", "/terms.html", "/privacy.html", "/404.html"]);
+const PUBLIC_PAGES = new Set(["/welcome.html", "/terms.html", "/privacy.html", "/404.html", "/invite.html", "/invite"]);
 const welcome = (c: Context<{ Bindings: Env; Variables: { user?: Identity } }>, qs = "") => c.env.ASSETS.fetch(new Request(new URL("/welcome.html" + qs, c.req.url), { headers: c.req.raw.headers }));
 app.get("*", async (c) => {
   const path = new URL(c.req.url).pathname;
+  if (path === "/invite") return c.env.ASSETS.fetch(new Request(new URL("/invite.html" + new URL(c.req.url).search, c.req.url), { headers: c.req.raw.headers }));
   const isPage = path === "/" || path.endsWith(".html");
   if (!isPage || PUBLIC_PAGES.has(path) || !authConfigured(c.env)) return c.env.ASSETS.fetch(c.req.raw);
   const id = await identify(c);

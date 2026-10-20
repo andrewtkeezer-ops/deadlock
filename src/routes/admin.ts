@@ -4,6 +4,7 @@ import { syncAll, syncPlayer } from "../sync";
 import { DeadlockApi, type SteamProfile } from "../deadlock";
 import { bigAvatar } from "../deadlock";
 import { requireAdmin, type Identity } from "../auth";
+import { sendInvite, inviteText } from "../email";
 
 const admin = new Hono<{ Bindings: Env; Variables: { user?: Identity } }>();
 
@@ -90,12 +91,31 @@ admin.get("/members", async (c) => c.json((await c.env.DB.prepare("SELECT * FROM
 
 /** Invite by email: { email, role?: 'member'|'admin', account_id? }. They sign in with Google and they're in. */
 admin.post("/members", async (c) => {
-  const b = await c.req.json<{ email: string; role?: "member" | "admin"; account_id?: number }>();
+  const b = await c.req.json<{ email: string; role?: "member" | "admin"; account_id?: number; send?: boolean }>();
   const email = b.email?.trim().toLowerCase();
   if (!email || !email.includes("@")) return c.json({ error: "valid email required" }, 400);
-  await c.env.DB.prepare("INSERT OR REPLACE INTO members(email, role, account_id, invited_by) VALUES (?,?,?,?)")
-    .bind(email, b.role === "admin" ? "admin" : "member", b.account_id ?? null, c.get("user")?.email ?? "token").run();
-  return c.json({ ok: true, email });
+  const existing = await c.env.DB.prepare("SELECT invite_token FROM members WHERE email=?").bind(email).first<{ invite_token: string | null }>();
+  const token = existing?.invite_token ?? crypto.randomUUID().replace(/-/g, "");
+  const inviter = c.get("user")?.name || c.get("user")?.email || "A friend";
+  await c.env.DB.prepare("INSERT INTO members(email, role, account_id, invited_by, invite_token) VALUES (?,?,?,?,?) ON CONFLICT(email) DO UPDATE SET role=excluded.role, account_id=COALESCE(excluded.account_id, members.account_id), invite_token=COALESCE(members.invite_token, excluded.invite_token)")
+    .bind(email, b.role === "admin" ? "admin" : "member", b.account_id ?? null, c.get("user")?.email ?? "admin", token).run();
+  const origin = new URL(c.req.url).origin; const link = `${origin}/invite?t=${token}`;
+  let mail: { sent: boolean; reason?: string } = { sent: false };
+  if (b.send !== false) { mail = await sendInvite(c.env, { to: email, inviter, link, origin }); if (mail.sent) await c.env.DB.prepare("UPDATE members SET invite_sent_at=unixepoch() WHERE email=?").bind(email).run(); }
+  return c.json({ ok: true, email, link, message: inviteText({ to: email, inviter, link, origin }), emailed: mail.sent, email_note: mail.reason });
+});
+
+/** Re-send / re-fetch an invite link. */
+admin.post("/members/:email/invite", async (c) => {
+  const email = decodeURIComponent(c.req.param("email")).toLowerCase();
+  const m = await c.env.DB.prepare("SELECT invite_token FROM members WHERE email=?").bind(email).first<{ invite_token: string | null }>();
+  if (!m) return c.json({ error: "not found" }, 404);
+  const token = m.invite_token ?? crypto.randomUUID().replace(/-/g, "");
+  if (!m.invite_token) await c.env.DB.prepare("UPDATE members SET invite_token=? WHERE email=?").bind(token, email).run();
+  const origin = new URL(c.req.url).origin; const link = `${origin}/invite?t=${token}`; const inviter = c.get("user")?.name || c.get("user")?.email || "A friend";
+  const mail = await sendInvite(c.env, { to: email, inviter, link, origin });
+  if (mail.sent) await c.env.DB.prepare("UPDATE members SET invite_sent_at=unixepoch() WHERE email=?").bind(email).run();
+  return c.json({ ok: true, link, message: inviteText({ to: email, inviter, link, origin }), emailed: mail.sent, email_note: mail.reason });
 });
 
 admin.delete("/members/:email", async (c) => {
