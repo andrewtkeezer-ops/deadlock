@@ -1,5 +1,6 @@
 import { DeadlockApi } from "./deadlock";
 import type { Env, MatchHistoryRow, Player } from "./types";
+import { notifyMatches, notifyRankChanges } from "./notify";
 
 /**
  * Pull each tracked friend's match history + MMR into D1.
@@ -26,11 +27,15 @@ export async function syncAll(env: Env): Promise<{ players: number; newMatches: 
     try {
       const rows = await api.mmr(players.map((p) => p.account_id));
       const now = Math.floor(Date.now() / 1000);
+      const before = new Map(players.map((p) => [p.account_id, p]));
+      const changes = rows.filter((r) => r.rank && before.get(r.account_id)?.mmr_rank != null && before.get(r.account_id)!.mmr_rank !== r.rank)
+        .map((r) => ({ name: before.get(r.account_id)!.name, avatar_url: before.get(r.account_id)!.avatar_url, before: before.get(r.account_id)!.mmr_rank, after: r.rank, score: r.player_score }));
       const stmts = rows.flatMap((r) => [
         env.DB.prepare("UPDATE players SET mmr_score=?, mmr_rank=?, mmr_updated=? WHERE account_id=?").bind(r.player_score, r.rank, now, r.account_id),
         env.DB.prepare("INSERT OR IGNORE INTO mmr_history(account_id, ts, score, rank) VALUES (?,?,?,?)").bind(r.account_id, now, r.player_score, r.rank),
       ]);
       if (stmts.length) await env.DB.batch(stmts);
+      await notifyRankChanges(env, changes);
     } catch (e) {
       errors.push(`mmr: ${(e as Error).message}`);
     }
@@ -60,5 +65,6 @@ export async function syncPlayer(env: Env, api: DeadlockApi, accountId: number):
   // D1 batches are limited in size; chunk to be safe.
   for (let i = 0; i < batch.length; i += 50) await env.DB.batch(batch.slice(i, i + 50));
   await env.DB.prepare("UPDATE players SET last_sync_at=? WHERE account_id=?").bind(Math.floor(Date.now() / 1000), accountId).run();
+  if (fresh.length) { const p = await env.DB.prepare("SELECT account_id, name, avatar_url FROM players WHERE account_id=?").bind(accountId).first<{ account_id: number; name: string; avatar_url: string | null }>(); if (p) await notifyMatches(env, p, fresh, seen.size > 0).catch((e) => console.error("notify", e)); }
   return fresh.length;
 }

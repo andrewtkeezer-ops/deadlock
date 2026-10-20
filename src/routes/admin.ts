@@ -5,12 +5,27 @@ import { DeadlockApi, type SteamProfile } from "../deadlock";
 import { bigAvatar } from "../deadlock";
 import { requireAdmin, type Identity } from "../auth";
 import { sendInvite, inviteText } from "../email";
+import { getSetting, setSetting } from "../settings";
+import { discordPost, type DiscordSettings } from "../notify";
 
 const admin = new Hono<{ Bindings: Env; Variables: { user?: Identity } }>();
 
 admin.use("*", requireAdmin);
 
 admin.post("/sync", async (c) => c.json(await syncAll(c.env)));
+
+/** Discord notifications: { webhook, matches, ranks }. Webhook is masked on read. */
+admin.get("/discord", async (c) => { const s = await getSetting<DiscordSettings>(c.env, "discord"); return c.json(s ? { configured: true, webhook_hint: s.webhook.replace(/(https:\/\/discord(?:app)?\.com\/api\/webhooks\/\d+\/)(.{4}).*/, "$1$2…"), matches: s.matches !== false, ranks: s.ranks !== false } : { configured: false, matches: true, ranks: true }); });
+admin.put("/discord", async (c) => {
+  const b = await c.req.json<{ webhook?: string; matches?: boolean; ranks?: boolean }>();
+  const cur = await getSetting<DiscordSettings>(c.env, "discord");
+  const webhook = (b.webhook ?? cur?.webhook ?? "").trim();
+  if (!webhook) { await setSetting(c.env, "discord", null); return c.json({ ok: true, configured: false }); }
+  if (!/^https:\/\/(discord|discordapp)\.com\/api\/webhooks\/\d+\/[\w-]+$/.test(webhook)) return c.json({ error: "That doesn't look like a Discord webhook URL" }, 400);
+  await setSetting(c.env, "discord", { webhook, matches: b.matches ?? cur?.matches ?? true, ranks: b.ranks ?? cur?.ranks ?? true, origin: new URL(c.req.url).origin } satisfies DiscordSettings);
+  return c.json({ ok: true, configured: true });
+});
+admin.post("/discord/test", async (c) => c.json(await discordPost(c.env, { embeds: [{ color: 0xe8c76a, title: "Soul Scribe is connected", description: "New matches and rank changes from the squad will show up here.", url: new URL(c.req.url).origin }] })));
 
 /** Add a friend: { account_id, name }. Pulls their history immediately. */
 admin.post("/players", async (c) => {
