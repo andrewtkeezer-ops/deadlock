@@ -24,7 +24,12 @@ r.get("/leaderboard", async (c) => {
        FROM players p
        LEFT JOIN player_matches m ON m.account_id=p.account_id AND m.start_time>=?
       GROUP BY p.account_id
-      ORDER BY p.mmr_score DESC NULLS LAST, wins DESC`
+      -- Standings: MMR first (Valve's own rating); unranked players by smoothed win rate (5 phantom wins in 10 phantom games so
+      -- one lucky game doesn't top the board), then KDA, then games played.
+      ORDER BY p.mmr_score DESC NULLS LAST,
+               (COALESCE(SUM(m.won),0) + 5.0) / (COUNT(m.match_id) + 10.0) DESC,
+               (COALESCE(SUM(m.kills),0) + COALESCE(SUM(m.assists),0)) * 1.0 / MAX(COALESCE(SUM(m.deaths),0), 1) DESC,
+               COUNT(m.match_id) DESC`
   ).bind(since).all();
   return c.json({ days, players: results.map((p) => ({ ...p, avatar_url: bigAvatar(p.avatar_url as string | null) })) });
 });

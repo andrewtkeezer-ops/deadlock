@@ -39,7 +39,7 @@ export type MatchHistoryRow = {
   team_abandoned: boolean | null;
   abandoned_time_s: number | null;
   match_duration_s: number;
-  match_result: number; // 0/1 = winning team id; won = match_result === player_team
+  match_result: number; player_match_outcome?: number; // 0/1 = winning team id; won = match_result === player_team
 };
 
 export type MmrRow = {

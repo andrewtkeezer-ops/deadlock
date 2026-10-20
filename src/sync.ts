@@ -57,7 +57,7 @@ export async function syncPlayer(env: Env, api: DeadlockApi, accountId: number):
   const batch = fresh.map((m: MatchHistoryRow) =>
     stmt.bind(
       accountId, m.match_id, m.hero_id, m.start_time, m.match_duration_s,
-      m.match_result === m.player_team ? 1 : 0, m.player_team,
+      m.player_match_outcome === 1 ? 1 : m.player_match_outcome === 2 ? 0 : m.match_result === m.player_team ? 1 : 0, m.player_team,
       m.player_kills, m.player_deaths, m.player_assists, m.net_worth, m.last_hits, m.denies,
       m.hero_level, m.match_mode, m.game_mode, JSON.stringify(m)
     )
