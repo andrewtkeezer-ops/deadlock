@@ -4,6 +4,7 @@
 .lb tr:first-child .pos{color:var(--accent)}.lb .wr{min-width:120px}.lb .wr .bar{margin-top:4px}.lb .streak{font-size:12px;color:var(--muted)}
 .recent .hero{display:flex;align-items:center;gap:8px}.recent .items img{width:22px;height:22px}
 .hdr{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap}.hdr select{margin-left:auto}
+.two{display:grid;grid-template-columns:minmax(300px,2fr) 3fr;gap:0 18px}@media(max-width:1100px){.two{grid-template-columns:1fr}}.duo{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px dotted var(--line2)}.duo:last-child{border-bottom:0}.duo .avs{display:flex}.duo .avs img{width:30px;height:30px;border-radius:50%;border:2px solid var(--panel)}.duo .avs img+img{margin-left:-10px}.duo .nm{flex:1;font-size:13px;line-height:1.25}.duo .nm small{display:block;color:var(--muted);font-size:11px}.duo .wr{font:600 16px var(--fh);min-width:52px;text-align:right}.duo .bar{width:70px;height:5px}
 .empty{text-align:center;padding:40px 20px}.empty p{color:var(--muted)}
 .podium{display:grid;grid-template-columns:1fr 1.12fr 1fr;gap:22px;align-items:end;margin:26px auto 18px;padding:0 10px;max-width:880px}@media(max-width:860px){.podium{grid-template-columns:1fr;padding:0}}
 .pd{--tilt:0deg;position:relative;text-align:center;padding:14px 14px 18px;background:var(--paper2);color:#1d1510;border-radius:4px;box-shadow:0 18px 40px rgba(0,0,0,.6),inset 0 0 0 1px rgba(0,0,0,.08);transform:rotate(var(--tilt));transition:transform .35s var(--snap),box-shadow .3s}
@@ -21,7 +22,7 @@
 <div class="hdr"><h1>Leaderboard</h1><span class="muted" id="count" style="align-self:flex-end;margin-bottom:28px"></span><select id="days" style="align-self:flex-end;margin-bottom:26px"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option><option value="3650">All time</option></select></div>
 <div id="podium" class="podium"></div>
 <div id="out" class="card">Loading…</div>
-<h2>Recent games</h2><div id="recent" class="card recent">Loading…</div>
+<div class="two"><div><h2>Squad duos <span class="muted" style="font:400 13px var(--fb);letter-spacing:0;text-transform:none">· who wins together</span></h2><div id="duos" class="card">Loading…</div></div><div><h2>Recent games</h2><div id="recent" class="card recent">Loading…</div></div></div>
 </main>
 <script type="module">
 import { api, h, $, pct, ago, dur, fmt, heroes, hero, rankBadge, heroIcon, shell, showError, kda, ratio, kdOf, kdaOf, KD, KDA } from "/js/app.js";
@@ -53,6 +54,11 @@ async function load() {
   } catch (e) { showError(out, e); }
 }
 $("#days").addEventListener("change", load); load();
+(async () => { const el = $("#duos"); try { const [duos, list] = await Promise.all([api("/players/duos"), api("/players")]); const P = new Map(list.map((p) => [p.account_id, p]));
+  const rows = duos.filter((d) => d.games >= 2).slice(0, 10);
+  if (!rows.length) return el.replaceChildren(h("p", { class: "muted", style: "margin:0" }, "No shared games yet. Once two tracked friends play on the same team, their duo shows up here."));
+  el.replaceChildren(...rows.map((d) => { const a = P.get(d.a), b = P.get(d.b), wr = d.wins / d.games; return h("div", { class: "duo" }, h("div", { class: "avs" }, a?.avatar_url ? h("img", { src: a.avatar_url, alt: "" }) : "", b?.avatar_url ? h("img", { src: b.avatar_url, alt: "" }) : ""),
+    h("div", { class: "nm" }, `${a?.name ?? d.a} + ${b?.name ?? d.b}`, h("small", {}, `${d.games} games together · ${d.kills.toFixed(0)}/${d.deaths.toFixed(0)}/${d.assists.toFixed(0)} combined`)), h("div", {}, h("div", { class: "wr " + (wr >= .5 ? "win" : "loss") }, pct(wr)), h("div", { class: "bar" }, h("i", { style: `width:${wr * 100}%;background:${wr >= .5 ? "var(--win)" : "var(--loss)"}` })))); })); } catch (e) { showError(el, e); } })();
 (async () => {
   const el = $("#recent");
   try {

@@ -3,6 +3,7 @@
 .phead{display:flex;gap:20px;align-items:center;flex-wrap:wrap}.phead .av{width:84px;height:84px;border-radius:12px;border:2px solid var(--line)}.phead h1{margin:0}
 .phead .rank{display:flex;align-items:center;gap:10px}.phead .rank b{font-family:var(--fh);font-size:22px;display:block}.phead .rank span{color:var(--muted);font-size:12px;text-transform:uppercase}
 .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:16px 0}.tile{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px}.tile b{font-family:var(--fh);font-size:24px;display:block}.tile span{color:var(--muted);font-size:12px;text-transform:uppercase}
+.recs{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}.rec{display:flex;gap:10px;align-items:center;background:rgba(0,0,0,.22);border:1px solid var(--line);border-radius:10px;padding:10px 12px}.rec img{width:34px;height:34px;border-radius:7px}.rec b{font:600 20px/1 var(--fh);display:block;color:var(--cream)}.rec span{display:block;color:var(--muted);font:600 9px/1 var(--fh);letter-spacing:.16em;text-transform:uppercase;margin-top:4px}.rec small{display:block;color:var(--dim);font-size:11px;margin-top:3px}.rec a{color:inherit}
 .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:900px){.cols{grid-template-columns:1fr}}
 .hrows .r{display:grid;grid-template-columns:36px 1fr 56px 100px 96px 54px;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line)}.hrows .r .bar{height:6px}
 .matches td{vertical-align:middle}.matches .hero{display:flex;align-items:center;gap:8px}
@@ -12,6 +13,7 @@
 <div class="card phead" id="head">Loading…</div>
 <div id="banner"></div>
 <div class="tiles" id="tiles"></div>
+<div class="card"><h2 style="margin-top:0">Personal records <span class="muted" style="font:400 13px var(--fb);letter-spacing:0;text-transform:none">· from the last 50 games</span></h2><div class="recs" id="recs"></div></div>
 <div class="cols">
 <div class="card"><h2 style="margin-top:0">Heroes</h2><div id="heroes" class="hrows">Loading…</div></div>
 <div class="card"><h2 style="margin-top:0">MMR history</h2><canvas id="mmr" width="900" height="260" style="width:100%"></canvas><p id="mmrnote" class="muted"></p></div>
@@ -39,6 +41,19 @@ try {
     h("div", { class: "tile hi" }, games ? ratio(kdaOf(sum("kills"), sum("deaths"), sum("assists")), KDA) : h("b", {}, "–"), h("span", {}, "KDA"), h("span", { class: "sub" }, games ? `${sum("assists")} assists` : "")),
     h("div", { class: "tile" }, games ? kda(sum("kills") / games, sum("deaths") / games, sum("assists") / games, { dec: 1, size: "lg" }) : h("b", {}, "–"), h("span", { style: "margin-top:6px" }, "avg K / D / A")),
     h("div", { class: "tile" }, h("b", {}, fmt(games ? ms.reduce((s, m) => s + m.net_worth * 60 / Math.max(1, m.duration_s), 0) / games : null)), h("span", {}, "souls / min")), h("div", { class: "tile" }, h("b", { class: streak > 0 ? "win" : streak < 0 ? "loss" : "" }, streak ? `${Math.abs(streak)}${streak > 0 ? "W" : "L"}` : "–"), h("span", {}, "streak")));
+  // personal records
+  const best = (f, lo = false) => ms.reduce((b, m) => (b == null || (lo ? f(m) < f(b) : f(m) > f(b)) ? m : b), null);
+  const rec = (label, m, val, sub) => { const hx = m && hs.find((x) => x.id === m.hero_id); return h("div", { class: "rec" }, hx ? heroIcon(hx, 34) : "", h("div", {}, h("b", {}, val), h("span", {}, label), m ? h("small", {}, h("a", { href: `/match.html?id=${m.match_id}` }, `${hx?.name ?? ""} · ${ago(m.start_time)}`), sub ? ` · ${sub}` : "") : "")); };
+  let bestStreak = 0, cur = 0; for (const m of [...ms].reverse()) { cur = m.won ? cur + 1 : 0; bestStreak = Math.max(bestStreak, cur); }
+  const heroRows = d.heroes.filter((r) => r.games >= 3).map((r) => ({ ...r, wr: r.wins / r.games })).sort((a, b) => b.wr - a.wr || b.games - a.games); const bh = heroRows[0]; const bhx = bh && hs.find((x) => x.id === bh.hero_id);
+  const mk = best((m) => m.kills), mkda = best((m) => kdaOf(m.kills, m.deaths, m.assists)), mnw = best((m) => m.net_worth), mspm = best((m) => m.net_worth / Math.max(1, m.duration_s)), mlong = best((m) => m.duration_s), mfast = best((m) => (m.won ? m.duration_s : Infinity), true);
+  $("#recs").replaceChildren(...(games ? [
+    rec("most kills", mk, String(mk.kills), `${mk.kills}/${mk.deaths}/${mk.assists}`), rec("best KDA", mkda, kdaOf(mkda.kills, mkda.deaths, mkda.assists).toFixed(1), `${mkda.kills}/${mkda.deaths}/${mkda.assists}`),
+    rec("richest game", mnw, fmt(mnw.net_worth), "souls"), rec("fastest farm", mspm, fmt(mspm.net_worth * 60 / Math.max(1, mspm.duration_s)), "souls / min"),
+    h("div", { class: "rec" }, bhx ? heroIcon(bhx, 34) : "", h("div", {}, h("b", {}, bh ? pct(bh.wr) : "–"), h("span", {}, "best hero"), h("small", {}, bh ? `${bhx?.name ?? ""} · ${bh.games} games` : "needs 3+ games on a hero"))),
+    h("div", { class: "rec" }, h("div", {}, h("b", { class: bestStreak >= 3 ? "win" : "" }, bestStreak ? `${bestStreak}W` : "–"), h("span", {}, "best win streak"))),
+    rec("longest game", mlong, dur(mlong.duration_s), mlong.won ? "won" : "lost"), mfast && mfast.won ? rec("fastest win", mfast, dur(mfast.duration_s)) : "",
+  ] : [h("span", { class: "muted" }, "No games yet.")]));
   const maxG = Math.max(1, ...d.heroes.map((r) => r.games));
   $("#heroes").replaceChildren(...(d.heroes.length ? d.heroes.map((r) => { const hx = hs.find((x) => x.id === r.hero_id); const wr = r.wins / r.games; return h("div", { class: "r" }, heroIcon(hx, 34), h("a", { href: `/hero.html?id=${r.hero_id}` }, hx?.name ?? r.hero_id), h("span", { class: "num muted" }, `${r.games} g`), h("div", {}, h("span", { class: wr >= .5 ? "win" : "loss" }, pct(wr)), h("div", { class: "bar" }, h("i", { style: `width:${r.games / maxG * 100}%` }))), kda(r.k, r.d, r.a, { dec: 1, size: "sm" }), ratio(kdaOf(r.kills, r.deaths, r.assists), KDA)); }) : [h("span", { class: "muted" }, "No games yet.")]));
   const its = await items();
@@ -50,7 +65,10 @@ try {
   if (pts.length > 1) { const xs = pts.map((x) => x.ts), ys = pts.map((x) => x.score), x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys) - 5, y1 = Math.max(...ys) + 5;
     c.strokeStyle = "#262a38"; c.lineWidth = 1; for (let i = 0; i <= 4; i++) { const y = 20 + i * 55; c.beginPath(); c.moveTo(40, y); c.lineTo(890, y); c.stroke(); c.fillStyle = "#8f93a3"; c.font = "12px var(--fb)"; c.fillText(Math.round(y1 - (y1 - y0) * i / 4), 2, y + 4); }
     c.strokeStyle = "#e4b94f"; c.lineWidth = 2.5; c.beginPath(); pts.forEach((pt, i) => { const x = 40 + (pt.ts - x0) / (x1 - x0 || 1) * 850, y = 240 - (pt.score - y0) / (y1 - y0) * 220; i ? c.lineTo(x, y) : c.moveTo(x, y); }); c.stroke();
-    $("#mmrnote").textContent = `${pts.length} snapshots since ${new Date(x0 * 1000).toLocaleDateString()}`; }
+    // date ticks along the bottom
+    c.fillStyle = "#8f93a3"; c.font = "11px Jost,sans-serif"; c.textAlign = "center"; const span = x1 - x0 || 1, nT = Math.min(6, Math.max(2, Math.round(span / 86400))); for (let i = 0; i <= nT; i++) { const ts = x0 + span * i / nT; c.fillText(new Date(ts * 1000).toLocaleDateString(undefined, { month: "short", day: "numeric" }), 40 + 850 * i / nT, 256); }
+    const lastPt = pts[pts.length - 1], firstPt = pts[0]; const dlt = lastPt.score - firstPt.score;
+    $("#mmrnote").replaceChildren(`${pts.length} snapshots since ${new Date(x0 * 1000).toLocaleDateString()} · `, h("b", { class: dlt >= 0 ? "win" : "loss" }, `${dlt >= 0 ? "+" : ""}${Math.round(dlt)}`), " over the period"); }
   else $("#mmrnote").textContent = "MMR history builds up after a few hourly syncs.";
   try { const b = await api(`/library?account_id=${id}`); $("#builds").replaceChildren(b.length ? h("div", { class: "grid" }, ...b.map((r) => { const hx = hs.find((x) => x.id === r.hero_id); return h("div", { class: "card", style: "margin:0" }, h("div", { style: "display:flex;gap:8px;align-items:center" }, heroIcon(hx, 32), h("a", { href: `/editor.html?id=${r.id}` }, h("strong", {}, r.title))), h("div", { style: "margin-top:6px" }, ...r.preview.map((i) => itemImg(its.find((x) => x.id === i), 22)))); })) : h("span", {}, "No saved builds yet.")); } catch {}
 } catch (e) { showError($("#head"), e); }

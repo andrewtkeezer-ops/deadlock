@@ -29,6 +29,17 @@ r.get("/leaderboard", async (c) => {
   return c.json({ days, players: results.map((p) => ({ ...p, avatar_url: bigAvatar(p.avatar_url as string | null) })) });
 });
 
+/** Squad duos: two tracked friends on the same team in the same match. ?days= */
+r.get("/duos", async (c) => {
+  const days = Number(c.req.query("days") ?? 3650); const since = Math.floor(Date.now() / 1000) - days * 86400;
+  const { results } = await c.env.DB.prepare(
+    `SELECT a.account_id AS a, b.account_id AS b, COUNT(*) AS games, SUM(a.won) AS wins,
+            AVG(a.kills + b.kills) AS kills, AVG(a.deaths + b.deaths) AS deaths, AVG(a.assists + b.assists) AS assists, MAX(a.start_time) AS last_played
+       FROM player_matches a JOIN player_matches b ON a.match_id=b.match_id AND a.team=b.team AND a.account_id<b.account_id
+      WHERE a.start_time>=? GROUP BY a.account_id, b.account_id ORDER BY games DESC, wins DESC`).bind(since).all();
+  return c.json(results);
+});
+
 r.get("/", async (c) => {
   const { results } = await c.env.DB.prepare("SELECT account_id, name, avatar_url, last_sync_at, mmr_score, mmr_rank FROM players ORDER BY name").all<Player>();
   return c.json(results.map((p) => ({ ...p, avatar_url: bigAvatar(p.avatar_url) })));
