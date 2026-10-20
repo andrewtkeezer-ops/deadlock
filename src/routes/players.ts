@@ -85,7 +85,11 @@ r.get("/:id{[0-9]+}", async (c) => {
     c.env.DB.prepare("SELECT ts, score, rank FROM mmr_history WHERE account_id=? ORDER BY ts").bind(id).all(),
     new DeadlockApi(c.env).ingestStatus(id).catch(() => null),
   ]);
-  return c.json({ player: { ...player, avatar_url: bigAvatar(player.avatar_url) }, matches: matches.results, heroes: heroes.results, mmr: mmr.results, ingest });
+  // Coverage: of the newest 10 matches, how many have full stats upstream. This is the honest "is the uploader working" signal.
+  const newest = (matches.results as { match_id: number }[]).slice(0, 10).map((m) => m.match_id);
+  const withStats = await new DeadlockApi(c.env).matchesWithStats(newest).catch(() => null);
+  const coverage = withStats ? { checked: newest.length, with_stats: newest.filter((i) => withStats.has(i)).length, missing: newest.filter((i) => !withStats.has(i)) } : null;
+  return c.json({ player: { ...player, avatar_url: bigAvatar(player.avatar_url) }, matches: matches.results, heroes: heroes.results, mmr: mmr.results, ingest, coverage });
 });
 
 export default r;

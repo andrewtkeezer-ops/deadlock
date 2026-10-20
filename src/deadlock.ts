@@ -127,6 +127,12 @@ export class DeadlockApi {
   killDeathStats(q: Record<string, string | number | undefined> = {}) {
     return this.get<KillDeathStat[]>(`/v1/analytics/kill-death-stats`, q, 12 * 3600);
   }
+  /** Which of these matches deadlock-api has full stats for (i.e. someone's uploader caught them). Cheap bulk lookup, 10-minute cache. */
+  async matchesWithStats(ids: number[]): Promise<Set<number>> {
+    if (!ids.length) return new Set();
+    const rows = await this.get<{ match_id: number }[]>(`/v1/matches/metadata`, { match_ids: ids.join(","), include_info: "true", limit: ids.length }, 600);
+    return new Set(rows.map((r) => r.match_id));
+  }
   /** Whether the player's match uploader has been seen recently. */
   ingestStatus(accountId: number) {
     return this.get<{ account_id: number; active: boolean; last_upload_at: string | null; window_days: number }>(`/v1/players/${accountId}/ingest-status`, {}, 300);
