@@ -15,7 +15,7 @@ main{max-width:1300px}
 <div id="teams"></div>
 <details class="muted" style="margin-top:16px"><summary>Raw data</summary><pre id="raw"></pre></details></main>
 <script type="module">
-import { api, h, $, dur, fmt, heroes, items, itemImg, rankBadge, shell, showError } from "/js/app.js";
+import { api, h, $, dur, fmt, heroes, items, itemImg, rankBadge, shell, showError, kda, ratio, kdaOf, KDA } from "/js/app.js";
 shell("/");
 const id = new URLSearchParams(location.search).get("id");
 try {
@@ -32,14 +32,14 @@ try {
   const finalItems = (p) => { const held = new Map(); for (const it of p.items ?? []) { if (!item(it.item_id)) continue; if (it.sold_time_s) held.delete(it.item_id); else held.set(it.item_id, it); } return [...held.values()].slice(0, 12); };
   const row = (p) => { const s = last(p), n = names.get(p.account_id), hx = hero(p.hero_id); return h("tr", { class: friends.has(p.account_id) ? "me" : "" },
     h("td", {}, h("div", { class: "hero" }, hx?.images?.card ? h("img", { src: hx.images.card, alt: "" }) : "", h("div", { class: "n" }, friends.has(p.account_id) ? h("a", { href: `/player.html?id=${p.account_id}` }, n?.name ?? p.account_id) : h("span", {}, n?.name ?? String(p.account_id)), p.mvp_rank === 1 ? h("span", { class: "mvp" }, "MVP") : "", h("small", {}, hx?.name ?? p.hero_id, h("span", { class: "lane" }, `lane ${p.assigned_lane ?? "?"}`), ` · lvl ${p.level}`)))),
-    h("td", { class: "num" }, h("b", {}, `${p.kills}/${p.deaths}/${p.assists}`)),
+    h("td", {}, kda(p.kills, p.deaths, p.assists, { size: "sm" })), h("td", { class: "num" }, ratio(kdaOf(p.kills, p.deaths, p.assists), KDA)),
     h("td", {}, h("div", { class: "num" }, fmt(p.net_worth)), h("div", { class: "bar" }, h("i", { style: `width:${p.net_worth / maxNw * 100}%;background:var(--accent)` }))),
     h("td", {}, h("div", { class: "num" }, fmt(s.player_damage)), h("div", { class: "bar" }, h("i", { style: `width:${(s.player_damage || 0) / maxDmg * 100}%;background:var(--loss)` }))),
     h("td", { class: "num" }, fmt(s.player_damage_taken)), h("td", { class: "num" }, fmt((s.player_healing || 0) + (s.teammate_healing || 0))), h("td", { class: "num" }, `${p.last_hits}/${p.denies}`),
     h("td", { class: "items" }, ...finalItems(p).map((it) => itemImg(item(it.item_id), 26)))); };
   const table = (t, cls, label) => { const ps = mi.players.filter((p) => p.team === t).sort((a, b) => a.player_slot - b.player_slot);
     return h("div", { class: "team " + cls }, h("h2", {}, label, h("span", { class: "res muted" }, mi.winning_team === t ? "Victory" : "Defeat", ` · ${fmt(ps.reduce((s, p) => s + p.net_worth, 0))} souls`)),
-      h("div", { style: "overflow:auto" }, h("table", { class: "sb" }, h("thead", {}, h("tr", {}, ...["Player", "K/D/A", "Souls", "Hero damage", "Taken", "Healing", "LH/DN", "Final items"].map((x) => h("th", {}, x)))), h("tbody", {}, ...ps.map(row))))); };
+      h("div", { style: "overflow:auto" }, h("table", { class: "sb" }, h("thead", {}, h("tr", {}, ...["Player", "K / D / A", "KDA", "Souls", "Hero damage", "Taken", "Healing", "LH/DN", "Final items"].map((x) => h("th", {}, x)))), h("tbody", {}, ...ps.map(row))))); };
   $("#teams").replaceChildren(table(0, "amber", "Amber Hand"), table(1, "sapph", "Sapphire Flame"));
   $("#raw").textContent = JSON.stringify(m, null, 1).slice(0, 30000);
 } catch (e) { showError($("#head"), e); }

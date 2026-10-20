@@ -25,9 +25,10 @@ export const inviteText = (i: Invite) => `${i.inviter} invited you to Soul Scrib
 const esc = (s: string) => s.replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch] as string));
 
 export async function sendInvite(env: Env, i: Invite): Promise<{ sent: boolean; reason?: string }> {
-  if (!env.RESEND_API_KEY || !env.INVITE_FROM) return { sent: false, reason: "email not configured (RESEND_API_KEY / INVITE_FROM)" };
+  if (!env.RESEND_API_KEY) return { sent: false, reason: "email not configured (RESEND_API_KEY)" };
+  const from = env.INVITE_FROM || "Soul Scribe <onboarding@resend.dev>";
   const res = await fetch("https://api.resend.com/emails", { method: "POST", headers: { authorization: `Bearer ${env.RESEND_API_KEY}`, "content-type": "application/json" },
-    body: JSON.stringify({ from: env.INVITE_FROM, to: [i.to], subject: `${i.inviter} invited you to Soul Scribe`, html: inviteHtml(i), text: inviteText(i) }) });
+    body: JSON.stringify({ from, to: [i.to], subject: `${i.inviter} invited you to Soul Scribe`, html: inviteHtml(i), text: inviteText(i) }) });
   if (!res.ok) return { sent: false, reason: `Resend ${res.status}: ${(await res.text()).slice(0, 200)}` };
   return { sent: true };
 }

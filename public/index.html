@@ -24,7 +24,7 @@
 <h2>Recent games</h2><div id="recent" class="card recent">Loading…</div>
 </main>
 <script type="module">
-import { api, h, $, pct, ago, dur, fmt, heroes, hero, rankBadge, heroIcon, shell, showError } from "/js/app.js";
+import { api, h, $, pct, ago, dur, fmt, heroes, hero, rankBadge, heroIcon, shell, showError, kda, ratio, kdOf, kdaOf, KD, KDA } from "/js/app.js";
 shell("/");
 async function load() {
   const out = $("#out");
@@ -34,7 +34,7 @@ async function load() {
     if (!players.length) return out.replaceChildren(h("div", { class: "empty" }, h("h2", {}, "Nobody here yet"), h("p", {}, "Sign in through Steam to add yourself, then install the uploader so your games flow in."), h("a", { class: "dl", href: "/api/auth/steam/login" }, "Sign in through Steam")));
     const top = players.slice(0, 3); const order = top.length === 3 ? [top[1], top[0], top[2]] : top;
     $("#podium").replaceChildren(...await Promise.all(order.map(async (p) => { const i = players.indexOf(p); const wr = p.games ? p.wins / p.games : null; return h("a", { class: "pd" + (i === 0 ? " first" : ""), href: `/player.html?id=${p.account_id}` }, h("span", { class: "pos" }, h("span", { class: "sticker" + (i === 2 ? " r" : "") }, `#${i + 1}`)), h("div", { class: "photo" }, p.avatar_url ? h("img", { src: p.avatar_url, alt: "" }) : ""), h("div", { class: "n" }, p.name), h("div", { class: "r" }, await rankBadge(p.mmr_rank), p.mmr_score != null ? String(Math.round(p.mmr_score)) : ""),
-      h("div", { class: "kv" }, h("div", {}, h("b", { class: wr == null ? "" : wr >= .5 ? "win" : "loss" }, wr == null ? "–" : pct(wr)), h("span", {}, "win rate")), h("div", {}, h("b", {}, String(p.games)), h("span", {}, "games")), h("div", {}, h("b", {}, fmt(p.souls_per_min)), h("span", {}, "spm")))); })));
+      h("div", { class: "kv" }, h("div", {}, h("b", { class: wr == null ? "" : wr >= .5 ? "win" : "loss" }, wr == null ? "–" : pct(wr)), h("span", {}, "win rate")), h("div", {}, h("b", { class: kdaOf(p.kills, p.deaths, p.assists) >= KDA.good ? "win" : kdaOf(p.kills, p.deaths, p.assists) < KDA.even ? "loss" : "" }, p.games ? kdaOf(p.kills, p.deaths, p.assists).toFixed(2) : "–"), h("span", {}, "kda")), h("div", {}, h("b", {}, String(p.games)), h("span", {}, "games")), h("div", {}, h("b", {}, fmt(p.souls_per_min)), h("span", {}, "spm")))); })));
     const rows = await Promise.all(players.map(async (p, i) => {
       const wr = p.games ? p.wins / p.games : null;
       return h("tr", {}, h("td", { class: "pos" }, String(i + 1)),
@@ -42,11 +42,14 @@ async function load() {
         h("td", {}, await rankBadge(p.mmr_rank), " ", h("span", { class: "muted" }, p.mmr_score != null ? `${Math.round(p.mmr_score)}` : "")),
         h("td", { class: "num" }, String(p.games)),
         h("td", { class: "wr" }, wr == null ? "–" : [h("span", { class: wr >= .5 ? "win" : "loss" }, pct(wr)), h("div", { class: "bar" }, h("i", { style: `width:${wr * 100}%;background:${wr >= .5 ? "var(--win)" : "var(--loss)"}` }))]),
-        h("td", { class: "num" }, `${p.avg_kills.toFixed(1)} / ${p.avg_deaths.toFixed(1)} / ${p.avg_assists.toFixed(1)}`),
+        h("td", {}, p.games ? kda(p.avg_kills, p.avg_deaths, p.avg_assists, { dec: 1 }) : h("span", { class: "muted" }, "–")),
+        h("td", { class: "num" }, p.games ? ratio(kdOf(p.kills, p.deaths), KD) : "–"),
+        h("td", { class: "num" }, p.games ? ratio(kdaOf(p.kills, p.deaths, p.assists), KDA) : "–"),
         h("td", { class: "num" }, fmt(p.souls_per_min)),
-        h("td", { class: "muted" }, ago(p.last_played)), h("td", { class: "muted" }, p.last_sync_at ? ago(p.last_sync_at) : "never"));
+        h("td", { class: "muted", title: p.last_sync_at ? `Synced ${ago(p.last_sync_at)}` : "Never synced" }, ago(p.last_played)));
     }));
-    out.replaceChildren(h("table", { class: "lb" }, h("thead", {}, h("tr", {}, ...["#", "Player", "Rank", "Games", "Win rate", "K / D / A", "Souls/min", "Last played", "Synced"].map((t) => h("th", {}, t)))), h("tbody", {}, ...rows)));
+    out.replaceChildren(h("table", { class: "lb" }, h("thead", {}, h("tr", {}, ...["#", "Player", "Rank", "Games", "Win rate", "Avg K / D / A", "KD", "KDA", "Souls/min", "Last played"].map((t) => h("th", {}, t)))), h("tbody", {}, ...rows)),
+      h("div", { class: "lg-key" }, h("span", {}, h("i", { style: "background:var(--accent)" }), "kills"), h("span", {}, h("i", { style: "background:var(--loss)" }), "deaths"), h("span", {}, h("i", { style: "background:var(--sapph)" }), "assists"), h("span", { style: "margin-left:auto" }, "KD = kills ÷ deaths · KDA = (kills + assists) ÷ deaths")));
   } catch (e) { showError(out, e); }
 }
 $("#days").addEventListener("change", load); load();
@@ -56,10 +59,10 @@ $("#days").addEventListener("change", load); load();
     const [list, hs] = await Promise.all([api("/players"), heroes()]);
     if (!list.length) return (el.textContent = "No games yet.");
     const all = (await Promise.all(list.map((p) => api(`/players/${p.account_id}`).then((d) => d.matches.slice(0, 10).map((m) => ({ ...m, player: p })))))).flat().sort((a, b) => b.start_time - a.start_time).slice(0, 25);
-    el.replaceChildren(h("table", {}, h("thead", {}, h("tr", {}, ...["When", "Player", "Hero", "Result", "K/D/A", "Souls", "Length", ""].map((t) => h("th", {}, t)))),
+    el.replaceChildren(h("table", {}, h("thead", {}, h("tr", {}, ...["When", "Player", "Hero", "Result", "K / D / A", "KDA", "Souls", "Length", ""].map((t) => h("th", {}, t)))),
       h("tbody", {}, ...all.map((m) => { const hx = hs.find((x) => x.id === m.hero_id); return h("tr", {}, h("td", { class: "muted" }, ago(m.start_time)), h("td", {}, h("a", { href: `/player.html?id=${m.player.account_id}` }, m.player.name)),
         h("td", {}, h("div", { class: "hero" }, heroIcon(hx), h("a", { href: `/hero.html?id=${m.hero_id}` }, hx?.name ?? m.hero_id))),
-        h("td", { class: m.won ? "win" : "loss" }, m.won ? "Win" : "Loss"), h("td", { class: "num" }, `${m.kills}/${m.deaths}/${m.assists}`),
+        h("td", { class: m.won ? "win" : "loss" }, m.won ? "Win" : "Loss"), h("td", {}, kda(m.kills, m.deaths, m.assists, { size: "sm" })), h("td", { class: "num" }, ratio(kdaOf(m.kills, m.deaths, m.assists), KDA)),
         h("td", { class: "num" }, fmt(m.net_worth)), h("td", {}, dur(m.duration_s)), h("td", {}, h("a", { href: `/match.html?id=${m.match_id}` }, "scoreboard"))); }))));
   } catch (e) { showError(el, e); }
 })();

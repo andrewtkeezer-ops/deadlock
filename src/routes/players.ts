@@ -16,6 +16,9 @@ r.get("/leaderboard", async (c) => {
             COALESCE(AVG(m.kills),0)                AS avg_kills,
             COALESCE(AVG(m.deaths),0)               AS avg_deaths,
             COALESCE(AVG(m.assists),0)              AS avg_assists,
+            COALESCE(SUM(m.kills),0)                AS kills,
+            COALESCE(SUM(m.deaths),0)               AS deaths,
+            COALESCE(SUM(m.assists),0)              AS assists,
             COALESCE(AVG(m.net_worth*60.0/NULLIF(m.duration_s,0)),0) AS souls_per_min,
             MAX(m.start_time)                       AS last_played
        FROM players p
@@ -39,7 +42,7 @@ r.get("/:id", async (c) => {
   const [matches, heroes, mmr, ingest] = await Promise.all([
     c.env.DB.prepare("SELECT * FROM player_matches WHERE account_id=? ORDER BY start_time DESC LIMIT 50").bind(id).all(),
     c.env.DB.prepare(
-      `SELECT hero_id, COUNT(*) games, SUM(won) wins, AVG(kills) k, AVG(deaths) d, AVG(assists) a
+      `SELECT hero_id, COUNT(*) games, SUM(won) wins, AVG(kills) k, AVG(deaths) d, AVG(assists) a, SUM(kills) kills, SUM(deaths) deaths, SUM(assists) assists
          FROM player_matches WHERE account_id=? GROUP BY hero_id ORDER BY games DESC`
     ).bind(id).all(),
     c.env.DB.prepare("SELECT ts, score, rank FROM mmr_history WHERE account_id=? ORDER BY ts").bind(id).all(),

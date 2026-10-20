@@ -186,13 +186,24 @@ function alive() {
   const page = document.querySelector(".page"); watch(page); shimmer(page); mo.observe(page, { childList: true, subtree: true });
   document.body.append(h("div", { class: "progress" }));
   // numbers tick up the first time they appear (stat tiles, podium, hero header)
-  const NUMS = ".tile b,.stat b,.pd .kv b,.kv b";
+  const NUMS = ".tile b:not(.kda b),.stat b,.pd .kv b:not(.kda b),.kv b:not(.kda b),.tile .ratio";
   const seen = new WeakSet();
   const nio = new IntersectionObserver((es) => es.forEach((e) => { if (!e.isIntersecting) return; nio.unobserve(e.target); tick(e.target); }), { threshold: .4 });
   function tick(el) { if (seen.has(el)) return; seen.add(el); const m = /^([\d,]*\.?\d+)(%?)$/.exec(el.textContent.trim()); if (!m) return; const to = parseFloat(m[1].replace(/,/g, "")); const dec = (m[1].split(".")[1] || "").length; countUp(el, to, { decimals: dec, suffix: m[2], ms: 900 }); }
   const watchNums = (root) => root.querySelectorAll?.(NUMS).forEach((el) => nio.observe(el));
   watchNums(page); new MutationObserver((ms) => ms.forEach((m) => m.addedNodes.forEach((n) => { if (n.nodeType === 1) { if (n.matches?.(NUMS)) nio.observe(n); watchNums(n); } }))).observe(page, { childList: true, subtree: true });
 }
+/** K / D / A readout: coloured triple over a proportional bar. */
+export const kdOf = (k, d) => k / Math.max(1, d);
+export const kdaOf = (k, d, a) => (k + a) / Math.max(1, d);
+export function kda(k, d, a, { dec = 0, bar = true, size = "" } = {}) {
+  const t = Math.max(1, k + d + a), f = (n) => (dec ? n.toFixed(dec) : String(Math.round(n)));
+  return h("span", { class: "kda" + (size ? " " + size : "") }, h("span", { class: "t" }, h("b", { class: "k" }, f(k)), h("i", { class: "s" }, "/"), h("b", { class: "d" }, f(d)), h("i", { class: "s" }, "/"), h("b", { class: "a" }, f(a))),
+    bar ? h("span", { class: "b" }, h("i", { class: "k", style: `width:${k / t * 100}%` }), h("i", { class: "d", style: `width:${d / t * 100}%` }), h("i", { class: "a", style: `width:${a / t * 100}%` })) : "");
+}
+/** Coloured ratio (KD, KDA): green when good, cream when even, red when behind. */
+export function ratio(v, { good = 1.5, even = 1, dec = 2 } = {}) { const cls = v == null ? "" : v >= good ? "g" : v >= even ? "m" : "p"; return h("b", { class: "ratio " + cls }, v == null ? "–" : v.toFixed(dec)); }
+export const KD = { good: 1.5, even: 1 }, KDA = { good: 3, even: 2 };
 /** Count-up animation for a number element. */
 export function countUp(el, to, { decimals = 0, suffix = "", ms = 700 } = {}) { const start = performance.now(); const from = 0; const step = (t) => { const k = Math.min(1, (t - start) / ms); const v = from + (to - from) * (1 - Math.pow(1 - k, 3)); el.textContent = v.toFixed(decimals).replace(/\B(?=(\d{3})+(?!\d))/g, ",") + suffix; if (k < 1) requestAnimationFrame(step); }; requestAnimationFrame(step); return el; }
 export function showError(el, e) { el.replaceChildren(h("div", { class: "card error" }, `Error: ${e.message}`)); }

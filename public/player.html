@@ -4,9 +4,9 @@
 .phead .rank{display:flex;align-items:center;gap:10px}.phead .rank b{font-family:var(--fh);font-size:22px;display:block}.phead .rank span{color:var(--muted);font-size:12px;text-transform:uppercase}
 .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:16px 0}.tile{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px}.tile b{font-family:var(--fh);font-size:24px;display:block}.tile span{color:var(--muted);font-size:12px;text-transform:uppercase}
 .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:900px){.cols{grid-template-columns:1fr}}
-.hrows .r{display:grid;grid-template-columns:36px 1fr 70px 110px 90px;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line)}.hrows .r .bar{height:6px}
+.hrows .r{display:grid;grid-template-columns:36px 1fr 56px 100px 96px 54px;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line)}.hrows .r .bar{height:6px}
 .matches td{vertical-align:middle}.matches .hero{display:flex;align-items:center;gap:8px}
-.banner{border-color:var(--accent)}@media(max-width:720px){.hrows .r{grid-template-columns:32px 1fr 56px 90px}.hrows .r span:last-child{display:none}.phead .av{width:64px;height:64px}}
+.banner{border-color:var(--accent)}@media(max-width:720px){.hrows .r{grid-template-columns:32px 1fr 50px 80px}.hrows .r .kda,.hrows .r .ratio{display:none}.phead .av{width:64px;height:64px}}
 </style></head>
 <body><main>
 <div class="card phead" id="head">Loading…</div>
@@ -20,7 +20,7 @@
 <div class="card"><h2 style="margin-top:0">Builds</h2><div id="builds" class="muted">Loading…</div></div>
 </main>
 <script type="module">
-import { api, h, $, pct, ago, dur, fmt, heroes, rankBadge, heroIcon, items, itemImg, shell, showError } from "/js/app.js";
+import { api, h, $, pct, ago, dur, fmt, heroes, rankBadge, heroIcon, items, itemImg, shell, showError, kda, ratio, kdOf, kdaOf, KD, KDA } from "/js/app.js";
 shell("/");
 const qs = new URLSearchParams(location.search); const id = qs.get("id");
 try {
@@ -35,14 +35,16 @@ try {
   const sum = (k) => ms.reduce((s, m) => s + m[k], 0);
   let streak = 0; for (const m of ms) { if (streak === 0) streak = m.won ? 1 : -1; else if ((streak > 0) === !!m.won) streak += m.won ? 1 : -1; else break; }
   $("#tiles").replaceChildren(h("div", { class: "tile" }, h("b", {}, String(games)), h("span", {}, "recent games")), h("div", { class: "tile" }, h("b", { class: wins / games >= .5 ? "win" : "loss" }, pct(games ? wins / games : null)), h("span", {}, "win rate")),
-    h("div", { class: "tile" }, h("b", {}, games ? ((sum("kills") + sum("assists")) / Math.max(1, sum("deaths"))).toFixed(2) : "–"), h("span", {}, "KDA")), h("div", { class: "tile" }, h("b", {}, games ? `${(sum("kills") / games).toFixed(1)} / ${(sum("deaths") / games).toFixed(1)} / ${(sum("assists") / games).toFixed(1)}` : "–"), h("span", {}, "avg K / D / A")),
+    h("div", { class: "tile hi" }, games ? ratio(kdOf(sum("kills"), sum("deaths")), KD) : h("b", {}, "–"), h("span", {}, "KD"), h("span", { class: "sub" }, games ? `${sum("kills")} kills · ${sum("deaths")} deaths` : "")),
+    h("div", { class: "tile hi" }, games ? ratio(kdaOf(sum("kills"), sum("deaths"), sum("assists")), KDA) : h("b", {}, "–"), h("span", {}, "KDA"), h("span", { class: "sub" }, games ? `${sum("assists")} assists` : "")),
+    h("div", { class: "tile" }, games ? kda(sum("kills") / games, sum("deaths") / games, sum("assists") / games, { dec: 1, size: "lg" }) : h("b", {}, "–"), h("span", { style: "margin-top:6px" }, "avg K / D / A")),
     h("div", { class: "tile" }, h("b", {}, fmt(games ? ms.reduce((s, m) => s + m.net_worth * 60 / Math.max(1, m.duration_s), 0) / games : null)), h("span", {}, "souls / min")), h("div", { class: "tile" }, h("b", { class: streak > 0 ? "win" : streak < 0 ? "loss" : "" }, streak ? `${Math.abs(streak)}${streak > 0 ? "W" : "L"}` : "–"), h("span", {}, "streak")));
   const maxG = Math.max(1, ...d.heroes.map((r) => r.games));
-  $("#heroes").replaceChildren(...(d.heroes.length ? d.heroes.map((r) => { const hx = hs.find((x) => x.id === r.hero_id); const wr = r.wins / r.games; return h("div", { class: "r" }, heroIcon(hx, 34), h("a", { href: `/hero.html?id=${r.hero_id}` }, hx?.name ?? r.hero_id), h("span", { class: "num muted" }, `${r.games} g`), h("div", {}, h("span", { class: wr >= .5 ? "win" : "loss" }, pct(wr)), h("div", { class: "bar" }, h("i", { style: `width:${r.games / maxG * 100}%` }))), h("span", { class: "num muted", style: "font-size:12px" }, `${r.k.toFixed(1)}/${r.d.toFixed(1)}/${r.a.toFixed(1)}`)); }) : [h("span", { class: "muted" }, "No games yet.")]));
+  $("#heroes").replaceChildren(...(d.heroes.length ? d.heroes.map((r) => { const hx = hs.find((x) => x.id === r.hero_id); const wr = r.wins / r.games; return h("div", { class: "r" }, heroIcon(hx, 34), h("a", { href: `/hero.html?id=${r.hero_id}` }, hx?.name ?? r.hero_id), h("span", { class: "num muted" }, `${r.games} g`), h("div", {}, h("span", { class: wr >= .5 ? "win" : "loss" }, pct(wr)), h("div", { class: "bar" }, h("i", { style: `width:${r.games / maxG * 100}%` }))), kda(r.k, r.d, r.a, { dec: 1, size: "sm" }), ratio(kdaOf(r.kills, r.deaths, r.assists), KDA)); }) : [h("span", { class: "muted" }, "No games yet.")]));
   const its = await items();
-  $("#matches").replaceChildren(h("table", {}, h("thead", {}, h("tr", {}, ...["When", "Hero", "Result", "K/D/A", "Souls", "LH/DN", "Lvl", "Length", ""].map((t) => h("th", {}, t)))),
+  $("#matches").replaceChildren(h("table", {}, h("thead", {}, h("tr", {}, ...["When", "Hero", "Result", "K / D / A", "KDA", "Souls", "LH/DN", "Lvl", "Length", ""].map((t) => h("th", {}, t)))),
     h("tbody", {}, ...ms.map((m) => { const hx = hs.find((x) => x.id === m.hero_id); return h("tr", {}, h("td", { class: "muted" }, ago(m.start_time)), h("td", {}, h("div", { class: "hero" }, heroIcon(hx), h("a", { href: `/hero.html?id=${m.hero_id}` }, hx?.name ?? m.hero_id))), h("td", { class: m.won ? "win" : "loss" }, m.won ? "Win" : "Loss"),
-      h("td", { class: "num" }, `${m.kills}/${m.deaths}/${m.assists}`), h("td", { class: "num" }, fmt(m.net_worth)), h("td", { class: "num" }, `${m.last_hits}/${m.denies}`), h("td", { class: "num" }, m.hero_level ?? "–"), h("td", {}, dur(m.duration_s)), h("td", {}, h("a", { href: `/match.html?id=${m.match_id}` }, "scoreboard"))); }))));
+      h("td", {}, kda(m.kills, m.deaths, m.assists, { size: "sm" })), h("td", { class: "num" }, ratio(kdaOf(m.kills, m.deaths, m.assists), KDA)), h("td", { class: "num" }, fmt(m.net_worth)), h("td", { class: "num" }, `${m.last_hits}/${m.denies}`), h("td", { class: "num" }, m.hero_level ?? "–"), h("td", {}, dur(m.duration_s)), h("td", {}, h("a", { href: `/match.html?id=${m.match_id}` }, "scoreboard"))); }))));
   // MMR chart
   const c = $("#mmr").getContext("2d"), pts = d.mmr.filter((x) => x.score != null);
   if (pts.length > 1) { const xs = pts.map((x) => x.ts), ys = pts.map((x) => x.score), x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys) - 5, y1 = Math.max(...ys) + 5;
