@@ -1,5 +1,6 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Heroes · Soul Scribe</title><link rel="icon" type="image/png" href="/img/favicon.png"><link rel="stylesheet" href="/css/app.css">
 <style>
+.hint-touch{display:none}@media(hover:none){.hint-hover{display:none}.hint-touch{display:inline}}
 main{max-width:none;padding:0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
 .topbar{display:flex;align-items:center;gap:14px;padding:18px 28px 12px;position:relative;z-index:5}.topbar h1{margin:0;font-size:34px}.topbar .sp{flex:1}.topbar .hint{color:var(--muted);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
 .filters{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.filters .chipb{padding:4px 10px;font-size:12px}
@@ -35,11 +36,12 @@ main{max-width:none;padding:0;height:100vh;display:flex;flex-direction:column;ov
 @media(max-width:860px){main{height:auto;overflow:visible}.select{grid-template-columns:1fr}.grid-h{grid-template-columns:repeat(6,1fr)}@media(max-width:480px){.grid-h{grid-template-columns:repeat(5,1fr)}}.stage{min-height:70vh;margin-left:0;padding-left:0}.topbar{padding:14px 14px 8px;flex-wrap:wrap}.stage .layout{padding:18px 14px}.stage .name{height:52px}}
 </style></head>
 <body><main>
-<div class="topbar"><h1>Select hero</h1><span class="hint">Hover to preview · click to lock · double-click to open</span><span class="sp"></span>
+<div class="topbar"><h1>Select hero</h1><span class="hint"><span class="hint-hover">Hover to preview · click to lock · double-click to open</span><span class="hint-touch">Tap a hero to preview · tap again to open</span></span><span class="sp"></span>
 <div class="filters" id="filters"></div><select id="band"><option value="">All ranks</option><option value="1,60">Initiate–Arcanist</option><option value="61,90">Oracle–Phantom</option><option value="91,116">Ascendant–Eternus</option></select><button id="metaBtn">Meta table</button></div>
 <div class="select"><div class="gridwrap"><div class="grid-h" id="grid"></div></div><div id="stage" class="stage"><div class="layout"><div class="info muted">Loading heroes…</div></div></div></div>
 </main>
 <script type="module">
+const TOUCH = matchMedia("(hover:none)").matches;
 import { api, h, $, pct, heroes, abilityTooltip, withTipBuilder, modal, heroIcon, countUp, shell } from "/js/app.js";
 shell("/heroes.html");
 const hs = await heroes(); let stats = new Map(); let rows = []; let active = null; let locked = null; let roleFilter = ""; const abCache = new Map();
@@ -63,7 +65,7 @@ function stage(x) { active = x; document.querySelectorAll(".hc").forEach((el) =>
   if (st) { countUp(wrEl, st.win_rate * 100, { decimals: 1, suffix: "%", ms: 600 }); countUp(prEl, st.pick_rate * 100, { decimals: 1, suffix: "%", ms: 600 }); }
   const fill = (abs) => { if (active?.id !== x.id) return; abrow.replaceChildren(...abs.map((a) => withTipBuilder(h("img", { src: a.image, alt: a.name }), () => abilityTooltip(a)))); };
   if (abCache.has(x.id)) fill(abCache.get(x.id)); else api(`/heroes/${x.id}/abilities`).then((abs) => { abCache.set(x.id, abs); fill(abs); }).catch(() => {}); }
-$("#grid").replaceChildren(...hs.map((x) => h("div", { class: "hc", "data-id": x.id, onmouseenter: () => { if (!locked) stage(x); }, onclick: () => { locked = locked?.id === x.id ? null : x; stage(locked || x); }, ondblclick: () => (location.href = `/hero.html?id=${x.id}`) }, h("img", { src: x.images.card || x.images.icon, alt: x.name, loading: "lazy", decoding: "async" }), h("div", { class: "wr" }, x.name))));
+$("#grid").replaceChildren(...hs.map((x) => h("div", { class: "hc", "data-id": x.id, onmouseenter: () => { if (!locked) stage(x); }, onclick: () => { if (TOUCH && locked?.id === x.id) return (location.href = `/hero.html?id=${x.id}`); locked = locked?.id === x.id ? null : x; stage(locked || x); }, ondblclick: () => (location.href = `/hero.html?id=${x.id}`) }, h("img", { src: x.images.card || x.images.icon, alt: x.name, loading: "lazy", decoding: "async" }), h("div", { class: "wr" }, x.name))));
 async function loadStats() { const [lo, hi] = ($("#band").value || ",").split(","); const q = new URLSearchParams({ min_unix_timestamp: Math.floor(Date.now() / 1000) - 14 * 86400 }); if (lo) { q.set("min_average_badge", lo); q.set("max_average_badge", hi); }
   try { rows = await api(`/heroes/stats?${q}`); stats = new Map(rows.map((r) => [r.hero_id, r])); if (active) stage(active); } catch (e) { console.warn(e); } }
 function metaTable() { let key = "win_rate", dir = -1; const body = h("div"); const render = () => { const sorted = [...rows].sort((a, b) => (a[key] > b[key] ? 1 : -1) * dir);

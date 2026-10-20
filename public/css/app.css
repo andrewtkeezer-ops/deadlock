@@ -165,7 +165,13 @@ img.rank{vertical-align:middle;height:32px;width:auto;filter:drop-shadow(0 2px 6
   .rail .brand,.rail .who .nm,.rail nav .pill,.rail a.out .lb{display:none}.rail nav a .lb{opacity:1!important;transform:none!important}.rail a.out{margin:0;height:64px;padding:0 10px}.rail nav{flex-direction:row;padding:0 6px;gap:0;overflow-x:auto;scrollbar-width:none}.rail nav::-webkit-scrollbar{display:none}.rail nav a{flex-direction:column;gap:2px;height:64px;padding:0 9px;font-size:8px;letter-spacing:.04em;animation:none}.rail nav a .ix{display:none}.rail nav a.active{color:var(--cream)}.rail nav a.active .ic{color:var(--ink)}.rail nav a .lb{opacity:1;transform:none}.rail nav a.active{background:linear-gradient(0deg,rgba(232,199,106,.16),transparent)}
   .rail .who{border:0;padding:4px 0 4px 6px;gap:0}.rail .who a{padding:4px}.rail .who img.av{width:30px;height:30px}.rail .who img.steam{height:18px}
   .page{margin-left:0;padding-bottom:70px}main{padding:18px 14px 80px}h1{font-size:38px}.card{padding:14px}.ph{margin-bottom:14px}.sticker{font-size:10px;padding:5px 9px 4px}
-  table{display:block;overflow-x:auto;white-space:nowrap}th,td{padding:7px 9px;font-size:13px}.grid{grid-template-columns:1fr}.itip{width:240px}.atmo .mark{width:80vw;right:-30vw}
+  table{display:block;overflow-x:auto;white-space:nowrap;scrollbar-width:thin}th,td{padding:7px 9px;font-size:13px}.grid{grid-template-columns:1fr}.itip{width:240px}.atmo .mark{width:80vw;right:-30vw}
+  /* phones: nothing may widen the page. Grid/flex items default to min-width:auto, which lets a wide table push the whole layout out. */
+  html,body{overflow-x:hidden}main{max-width:100vw;overflow-x:clip}.card,.sec,.tile,.two>*,.cols>*,.ed>*,.lay>*,.board>*,.grid>*,.select>*,.phase,.mods{min-width:0;max-width:100%}
+  h1{font-size:34px;line-height:1.05}h2{font-size:18px}.lead{font-size:14px}input[type=text],input[type=search],input[type=number],select{font-size:16px;max-width:100%}button,.btn{padding:9px 12px}
+  .tiles{grid-template-columns:repeat(2,1fr);gap:8px}.tile b{font-size:22px}.dps .out{grid-template-columns:repeat(2,1fr)}.dps .sls{grid-template-columns:1fr}
+  .phase .meta{flex-wrap:wrap;gap:6px 14px}.phase h3 input{min-width:0;flex:1}.tidy button{flex:1 1 45%}.kda{min-width:72px}
+  .mhead .score{font-size:30px}.two{display:block}.two>*+*{margin-top:12px}
 }
 
 /* ============ motion system ============ */
