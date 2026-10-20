@@ -139,6 +139,8 @@ export function shell(active) {
   const rail = h("aside", { class: "rail" }, h("a", { class: "brand", href: "/", title: "Soul Scribe" }, h("img", { class: "mark", src: "/img/icon.png", alt: "" }), h("img", { class: "word", src: "/img/logo.webp", alt: "Soul Scribe" })), nav, who);
   document.body.prepend(rail);
   pageHeader();
+  // "Take a tour" — in the page header when there is one, otherwise a small floating pill bottom-right. Never automatic.
+  import("/js/tour.js").then((t) => { const b = t.tourButton(); if (!b) return; const top = document.querySelector(".ph .ph-top"); if (top) top.append(b); else { b.classList.add("fab"); document.body.append(b); } }).catch(() => {});
   import("/js/fx.js").then((fx) => fx.polish()).catch((e) => console.warn("polish layer skipped", e));
   // sliding active pill + hover preview + click ripple
   function movePill(target) { const a = target || nav.querySelector("a.active"); if (!a) { pill.style.opacity = 0; return; } pill.style.top = a.offsetTop + "px"; pill.style.opacity = 1; }
@@ -167,8 +169,9 @@ function pageHeader() {
   const main = document.querySelector("main"); if (!main || main.dataset.ph === "off") return;
   const eyebrow = main.dataset.eyebrow || EYEBROWS[location.pathname]; if (!eyebrow) return;
   const h1 = main.querySelector("h1"); if (!h1 || h1.closest(".ph")) return;
-  const wrap = h("div", { class: "ph" }, h("span", { class: "sticker" }, eyebrow));
+  const wrap = h("div", { class: "ph" }, h("div", { class: "ph-top" }, h("span", { class: "sticker" }, eyebrow)));
   h1.replaceWith(wrap); wrap.append(h1);
+
 }
 
 /** Site-wide "alive" layer: pointer spotlight + tilt on glass, scroll reveals, loading shimmer, cursor halo. (Searchlight beams are pure CSS in .atmo.) */
