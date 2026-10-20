@@ -7,6 +7,8 @@ export const api = async (path, opts = {}) => {
   return data;
 };
 export const $ = (s, el = document) => el.querySelector(s);
+// Let replaceChildren/append/prepend take arrays (and skip null/false), same as h() — a bare array otherwise renders as "[object HTMLDivElement]".
+for (const m of ["replaceChildren", "append", "prepend"]) { const o = Element.prototype[m]; Element.prototype[m] = function (...a) { return o.apply(this, a.flat(Infinity).filter((x) => x !== null && x !== undefined && x !== false)); }; }
 export const h = (tag, attrs = {}, ...kids) => {
   const el = document.createElement(tag);
   for (const [k, v] of Object.entries(attrs)) k === "class" ? (el.className = v) : k.startsWith("on") ? el.addEventListener(k.slice(2), v) : v !== undefined && v !== null && el.setAttribute(k, v);
