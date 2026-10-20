@@ -78,6 +78,33 @@ export function withTip(el, it) {
   return el;
 }
 
+// ---- pickers ----
+/** Hero picker button + popover grid. opts: { heroes, value (id|0), any ("Any hero" label or false), onChange(id) } */
+export function heroPicker(opts) {
+  const { heroes: hs, any = "Any hero", onChange } = opts; let value = opts.value || 0; let pop = null;
+  const btn = h("button", { class: "pk-btn", type: "button" }); const wrap = h("div", { class: "pk" }, btn);
+  const paint = () => { const x = hs.find((y) => y.id === value); btn.replaceChildren(x?.images?.icon ? h("img", { src: x.images.icon, alt: "" }) : h("span", { style: "width:24px;height:24px;border-radius:5px;background:rgba(255,255,255,.08);display:inline-block" }), h("span", {}, x ? x.name : any || "Pick a hero"), h("span", { class: "car" }, "▼")); };
+  const close = () => { pop?.remove(); pop = null; document.removeEventListener("mousedown", onDoc); };
+  const onDoc = (e) => { if (!wrap.contains(e.target)) close(); };
+  const open = () => { if (pop) return close(); const q = h("input", { type: "text", placeholder: "Type a hero name…" }); const grid = h("div", { class: "pk-grid" });
+    const draw = () => { const f = q.value.toLowerCase(); grid.replaceChildren(any ? h("button", { class: "chipb pk-any" + (value ? "" : " on"), type: "button", onclick: () => pick(0) }, any) : "", ...hs.filter((x) => !f || x.name.toLowerCase().includes(f)).map((x) => h("div", { class: "pk-h" + (x.id === value ? " on" : ""), title: x.name, onclick: () => pick(x.id) }, h("img", { src: x.images?.card || x.images?.icon, alt: x.name, loading: "lazy" }), h("span", {}, x.name)))); };
+    q.oninput = draw; q.onkeydown = (e) => { if (e.key === "Escape") close(); if (e.key === "Enter") { const first = hs.find((x) => x.name.toLowerCase().includes(q.value.toLowerCase())); if (first) pick(first.id); } };
+    pop = h("div", { class: "pk-pop" }, q, grid); wrap.append(pop); draw(); q.focus(); document.addEventListener("mousedown", onDoc); };
+  const pick = (id) => { value = id; paint(); close(); onChange?.(id); };
+  btn.onclick = open; paint(); wrap.value = () => value; wrap.set = (id) => { value = id; paint(); }; return wrap;
+}
+/** Search input with suggestions. opts: { placeholder, suggest(q) → [{label, icon?, kind, onPick}], onInput(q) } */
+export function suggestInput(opts) {
+  const input = h("input", { type: "text", placeholder: opts.placeholder || "Search…", autocomplete: "off" }); const wrap = h("div", { class: "sg" }, h("span", { class: "ico" }, "⌕"), input); let list = null, idx = -1, rows = [];
+  const close = () => { list?.remove(); list = null; idx = -1; };
+  const draw = () => { const q = input.value.trim(); rows = q ? (opts.suggest(q) || []).slice(0, 12) : []; close(); if (!rows.length) return;
+    list = h("div", { class: "sg-list" }, ...rows.map((r, i) => h("div", { class: "sg-row" + (i === idx ? " on" : ""), onmousedown: (e) => { e.preventDefault(); r.onPick(); close(); } }, r.icon ? h("img", { src: r.icon, alt: "" }) : h("span", { style: "width:26px" }), h("span", {}, r.label), h("span", { class: "k " + (r.kind === "stat" ? "stat" : "") }, r.kind)))); wrap.append(list); };
+  input.oninput = () => { opts.onInput?.(input.value); draw(); };
+  input.onkeydown = (e) => { if (!list) return; if (e.key === "ArrowDown") { idx = Math.min(rows.length - 1, idx + 1); draw(); e.preventDefault(); } else if (e.key === "ArrowUp") { idx = Math.max(0, idx - 1); draw(); e.preventDefault(); } else if (e.key === "Enter" && idx >= 0) { rows[idx].onPick(); close(); e.preventDefault(); } else if (e.key === "Escape") close(); };
+  input.onblur = () => setTimeout(close, 120); input.onfocus = draw;
+  wrap.input = input; wrap.value = () => input.value; wrap.set = (v) => { input.value = v; opts.onInput?.(v); }; return wrap;
+}
+
 // ---- page chrome: atmosphere + left rail ----
 const ICONS = {
   trophy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M7 6H4a3 3 0 0 0 3 5M17 6h3a3 3 0 0 1-3 5"/></svg>',

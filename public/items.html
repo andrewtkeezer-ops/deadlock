@@ -16,23 +16,31 @@ main{max-width:1300px}.shop{display:grid;grid-template-columns:repeat(3,1fr);gap
 </style></head>
 <body><main>
 <h1>Items</h1>
-<p class="muted">The in-game shop. Hover for tooltips; click an item to pin its details. <input type="text" id="q" placeholder="Search items or stats…" style="margin-left:10px;width:260px"> <select id="hero"><option value="">Any hero</option></select><span id="count" class="count"></span></p>
+<p class="muted">The in-game shop. Hover for tooltips; click an item to pin its details.</p>
+<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:6px 0 2px"><span id="qwrap" style="min-width:300px"></span><span id="herowrap"></span><span id="count" class="count"></span></div>
 <p class="muted" style="margin:0">Filter by what an item gives you (combine chips; the bar under each item shows how much):</p>
 <div class="chips" id="chips"></div>
 <div class="shop" id="shop"></div>
 <div id="pin"></div>
 </main>
 <script type="module">
-import { api, h, $, items, heroes, itemTooltip, withTip, shell } from "/js/app.js";
+import { api, h, $, items, heroes, itemTooltip, withTip, heroPicker, suggestInput, shell } from "/js/app.js";
 shell("/items.html");
-const [its, hs, groups] = await Promise.all([items(), heroes(), api("/library/stat-groups")]); hs.forEach((x) => $("#hero").append(new Option(x.name, x.id)));
+const [its, hs, groups] = await Promise.all([items(), heroes(), api("/library/stat-groups")]);
+let qText = "", heroId = 0;
+const search = suggestInput({ placeholder: "Search items or stats…", onInput: (v) => { qText = v; render(); }, suggest: (q) => { const f = q.toLowerCase();
+  const statRows = groups.filter((g) => g.label.toLowerCase().includes(f)).map((g) => ({ label: g.label, kind: "stat", onPick: () => { sel.add(g.id); search.set(""); qText = ""; renderChips(); render(); } }));
+  const itemRows = its.filter((i) => i.name.toLowerCase().includes(f)).sort((a, b) => a.name.toLowerCase().indexOf(f) - b.name.toLowerCase().indexOf(f) || a.tier - b.tier).map((i) => ({ label: i.name, icon: i.image, kind: `${i.slot} · T${i.tier}`, onPick: () => { search.set(i.name); qText = i.name; render(); pin(i); } }));
+  return [...statRows, ...itemRows]; } });
+const hp = heroPicker({ heroes: hs, value: 0, any: "Any hero", onChange: (id) => { heroId = id; render(); } });
+$("#qwrap").append(search); $("#herowrap").append(hp); search.input.style.width = "300px";
 const sel = new Set(); let act = "";
 const chip = (label, on, onclick) => h("button", { class: "chipb" + (on ? " on" : ""), onclick }, label);
 function renderChips() { $("#chips").replaceChildren(...groups.map((g) => chip(g.label, sel.has(g.id), () => { sel.has(g.id) ? sel.delete(g.id) : sel.add(g.id); renderChips(); render(); })), h("span", { class: "chipb sep" }, "|"),
   chip("Active", act === "active", () => { act = act === "active" ? "" : "active"; renderChips(); render(); }), chip("Passive", act === "passive", () => { act = act === "passive" ? "" : "passive"; renderChips(); render(); }),
   sel.size || act ? chip("Clear", false, () => { sel.clear(); act = ""; renderChips(); render(); }) : ""); }
 const strength = (i) => sel.size ? [...sel].reduce((s, k) => s + (i.leans?.[k] || 0), 0) / sel.size : 0;
-function render() { const q = $("#q").value.toLowerCase(); const heroId = +$("#hero").value;
+function render() { const q = qText.toLowerCase();
   const match = (i) => (!q || i.name.toLowerCase().includes(q) || (i.stats || []).some((s) => s.label.toLowerCase().includes(q))) && (!heroId || !i.heroes?.length || i.heroes.includes(heroId))
     && (!sel.size || [...sel].every((k) => (i.leans?.[k] || 0) > 0)) && (!act || (act === "active" ? i.active : !i.active));
   const n = its.filter(match).length; $("#count").textContent = sel.size || act || q || heroId ? `${n} of ${its.length} items` : "";
@@ -40,5 +48,5 @@ function render() { const q = $("#q").value.toLowerCase(); const heroId = +$("#h
     ...[1, 2, 3, 4].map((t) => { const rows = its.filter((i) => i.slot === slot && i.tier === t).sort((a, b) => a.name.localeCompare(b.name)); return h("div", { class: "tier" }, h("div", { class: "th" }, h("span", {}, `Tier ${t}`), h("span", {}, `${rows[0]?.cost?.toLocaleString() ?? ""} souls`)),
       h("div", { class: "items" }, ...rows.sort((a, b) => strength(b) - strength(a) || a.name.localeCompare(b.name)).map((i) => { const m = match(i), st = strength(i); return withTip(h("div", { class: "it" + (i.active ? " active" : "") + (m ? (sel.size ? " match" : "") : " dim"), onclick: () => pin(i) }, h("img", { src: i.image, alt: i.name, loading: "lazy" }), m && sel.size ? h("div", { class: "lv" }, h("i", { style: `width:${Math.round(st * 100)}%` })) : ""), i); }))); })))); }
 function pin(i) { const card = itemTooltip(i); card.style.width = "auto"; card.style.pointerEvents = "auto"; card.classList.add("card"); $("#pin").replaceChildren(h("h2", {}, i.name), card, h("p", {}, h("a", { href: `/editor.html?item=${i.id}` }, "Start a build with this item"))); $("#pin").scrollIntoView({ behavior: "smooth", block: "nearest" }); }
-$("#q").oninput = render; $("#hero").onchange = render; renderChips(); render();
+renderChips(); render();
 </script></body></html>
