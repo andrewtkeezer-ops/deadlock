@@ -9,7 +9,9 @@ r.use("/:id/*", async (c, next) => { if (c.req.param("id") && !/^\d+$/.test(c.re
 /** Hero list (static assets) — names, images. */
 r.get("/", async (c) => {
   const heroes = await new DeadlockApi(c.env).heroes();
-  return c.json(heroes.filter((h) => h.player_selectable !== false && !h.disabled && !h.in_development).sort((a, b) => a.name.localeCompare(b.name)));
+  // Match the in-game select screen: everything not disabled. New heroes ship flagged in_development but
+  // player_selectable (Violet, Baba), and a locked "coming soon" hero (Nurse Harrow) is enabled but not yet selectable.
+  return c.json(heroes.filter((h) => !h.disabled).sort((a, b) => a.name.localeCompare(b.name)));
 });
 
 /** Win/pick rates. Query passthrough: ?min_average_badge=&max_average_badge=&min_unix_timestamp= */
