@@ -93,7 +93,7 @@ const ICONS = {
 export function shell(active) {
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (!document.querySelector(".atmo")) {
-    document.body.prepend(h("div", { class: "atmo" }, h("div", { class: "base" }), h("div", { class: "beams" }, ...[["6%", "-26deg", "14deg", "21s", "0s", "g"], ["22%", "-6deg", "30deg", "27s", "-9s", "s"], ["58%", "-34deg", "4deg", "24s", "-15s", "s"], ["82%", "-12deg", "28deg", "19s", "-4s", "g"]].map(([x, a0, a1, d, o, k]) => h("i", { class: k, style: `--x:${x};--a0:${a0};--a1:${a1};--d:${d};--o:${o}` }))), h("div", { class: "fog" }), h("div", { class: "grain" }), h("div", { class: "mark" }), h("div", { class: "vig" })));
+    document.body.prepend(h("div", { class: "atmo" }, h("div", { class: "base" }), h("div", { class: "beams" }, h("i", { class: "main" }), h("i", { class: "trail" })), h("div", { class: "fog" }), h("div", { class: "grain" }), h("div", { class: "mark" }), h("div", { class: "vig" })));
     const page = h("div", { class: "page" }); const mains = [...document.body.querySelectorAll(":scope > main")]; mains.forEach((m) => { if (active !== "/heroes.html") m.classList.add("stagger"); page.append(m); }); document.body.append(page);
   }
   const links = [["/", "Leaderboard", "trophy"], ["/heroes.html", "Heroes", "hero"], ["/counters.html", "Draft", "swords"], ["/heatmap.html", "Map", "map"], ["/library.html", "Builds", "book"], ["/items.html", "Items", "bag"], ["/setup.html", "Setup", "gear"]];
