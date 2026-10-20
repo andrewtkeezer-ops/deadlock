@@ -119,7 +119,7 @@ input:focus,select:focus{outline:0;border-color:var(--ink);box-shadow:0 0 0 3px 
 select{color-scheme:dark}select option,select optgroup{background:#14171f;color:var(--text)}
 /* ---- pickers (hero picker + suggest search) ---- */
 .pk{position:relative;display:inline-block}.pk-btn{display:inline-flex;align-items:center;gap:8px;min-width:190px}.pk-btn img{width:24px;height:24px;border-radius:5px}.pk-btn .car{margin-left:auto;color:var(--muted);font-size:11px}
-.pk-pop{position:absolute;z-index:120;top:calc(100% + 6px);left:0;width:min(560px,92vw);background:rgba(18,20,28,.97);border:1px solid var(--line2);border-radius:12px;box-shadow:0 24px 60px rgba(0,0,0,.7);padding:10px;backdrop-filter:blur(14px);animation:popIn .16s var(--ease)}
+.pk-pop{position:fixed;z-index:1000;width:min(560px,92vw);background:rgba(18,20,28,.97);border:1px solid var(--line2);border-radius:12px;box-shadow:0 24px 60px rgba(0,0,0,.7);padding:10px;backdrop-filter:blur(14px);animation:popIn .16s var(--ease)}
 .pk-pop input{width:100%;margin-bottom:8px}.pk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:6px;max-height:300px;overflow:auto}
 .pk-h{aspect-ratio:3/4;border-radius:6px;overflow:hidden;border:2px solid transparent;cursor:pointer;position:relative;background:#0a0b0f}.pk-h img{width:100%;height:100%;object-fit:cover;display:block}.pk-h:hover,.pk-h.on{border-color:var(--accent)}.pk-h span{position:absolute;left:0;right:0;bottom:0;font-size:8px;text-align:center;text-transform:uppercase;letter-spacing:.04em;background:linear-gradient(transparent,rgba(0,0,0,.9));padding:10px 2px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pk-any{grid-column:1/-1;text-align:left;margin-bottom:4px}

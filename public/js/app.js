@@ -86,12 +86,14 @@ export function heroPicker(opts) {
   const { heroes: hs, any = "Any hero", onChange } = opts; let value = opts.value || 0; let pop = null;
   const btn = h("button", { class: "pk-btn", type: "button" }); const wrap = h("div", { class: "pk" }, btn);
   const paint = () => { const x = hs.find((y) => y.id === value); btn.replaceChildren(x?.images?.icon ? h("img", { src: x.images.icon, alt: "" }) : h("span", { style: "width:24px;height:24px;border-radius:5px;background:rgba(255,255,255,.08);display:inline-block" }), h("span", {}, x ? x.name : any || "Pick a hero"), h("span", { class: "car" }, "▼")); };
-  const close = () => { pop?.remove(); pop = null; document.removeEventListener("mousedown", onDoc); };
-  const onDoc = (e) => { if (!wrap.contains(e.target)) close(); };
+  const close = () => { pop?.remove(); pop = null; document.removeEventListener("mousedown", onDoc); window.removeEventListener("scroll", place, true); window.removeEventListener("resize", place); };
+  const onDoc = (e) => { if (!wrap.contains(e.target) && !pop?.contains(e.target)) close(); };
+  // The popup lives on <body> with fixed positioning so no card, filter or animation above it in the tree can trap it underneath.
+  const place = () => { if (!pop) return; const r = btn.getBoundingClientRect(); const w = Math.min(560, innerWidth * 0.92); const left = Math.max(8, Math.min(r.left, innerWidth - w - 8)); const below = innerHeight - r.bottom - 12; pop.style.left = left + "px"; pop.style.width = w + "px"; if (below < 260 && r.top > below) { pop.style.top = ""; pop.style.bottom = (innerHeight - r.top + 6) + "px"; pop.style.maxHeight = (r.top - 16) + "px"; } else { pop.style.bottom = ""; pop.style.top = (r.bottom + 6) + "px"; pop.style.maxHeight = below + "px"; } };
   const open = () => { if (pop) return close(); const q = h("input", { type: "text", placeholder: "Type a hero name…" }); const grid = h("div", { class: "pk-grid" });
     const draw = () => { const f = q.value.toLowerCase(); grid.replaceChildren(any ? h("button", { class: "chipb pk-any" + (value ? "" : " on"), type: "button", onclick: () => pick(0) }, any) : "", ...hs.filter((x) => !f || x.name.toLowerCase().includes(f)).map((x) => h("div", { class: "pk-h" + (x.id === value ? " on" : ""), title: x.name, onclick: () => pick(x.id) }, h("img", { src: x.images?.card || x.images?.icon, alt: x.name, loading: "lazy" }), h("span", {}, x.name)))); };
     q.oninput = draw; q.onkeydown = (e) => { if (e.key === "Escape") close(); if (e.key === "Enter") { const first = hs.find((x) => x.name.toLowerCase().includes(q.value.toLowerCase())); if (first) pick(first.id); } };
-    pop = h("div", { class: "pk-pop" }, q, grid); wrap.append(pop); draw(); q.focus(); document.addEventListener("mousedown", onDoc); };
+    pop = h("div", { class: "pk-pop", style: "position:fixed;overflow:auto" }, q, grid); document.body.append(pop); place(); draw(); q.focus(); document.addEventListener("mousedown", onDoc); window.addEventListener("scroll", place, true); window.addEventListener("resize", place); };
   const pick = (id) => { value = id; paint(); close(); onChange?.(id); };
   btn.onclick = open; paint(); wrap.value = () => value; wrap.set = (id) => { value = id; paint(); }; return wrap;
 }
