@@ -100,9 +100,10 @@ export function heroPicker(opts) {
 /** Search input with suggestions. opts: { placeholder, suggest(q) → [{label, icon?, kind, onPick}], onInput(q) } */
 export function suggestInput(opts) {
   const input = h("input", { type: "text", placeholder: opts.placeholder || "Search…", autocomplete: "off" }); const wrap = h("div", { class: "sg" }, h("span", { class: "ico" }, "⌕"), input); let list = null, idx = -1, rows = [];
-  const close = () => { list?.remove(); list = null; idx = -1; };
+  const close = () => { list?.remove(); list = null; idx = -1; window.removeEventListener("scroll", place, true); };
+  const place = () => { if (!list) return; const r = input.getBoundingClientRect(); const w = Math.max(r.width, 260); list.style.left = Math.max(8, Math.min(r.left, innerWidth - w - 8)) + "px"; list.style.top = (r.bottom + 6) + "px"; list.style.minWidth = r.width + "px"; list.style.maxHeight = Math.max(160, innerHeight - r.bottom - 20) + "px"; };
   const draw = () => { const q = input.value.trim(); rows = q ? (opts.suggest(q) || []).slice(0, 12) : []; close(); if (!rows.length) return;
-    list = h("div", { class: "sg-list" }, ...rows.map((r, i) => h("div", { class: "sg-row" + (i === idx ? " on" : ""), onmousedown: (e) => { e.preventDefault(); r.onPick(); close(); } }, r.icon ? h("img", { src: r.icon, alt: "" }) : h("span", { style: "width:26px" }), h("span", {}, r.label), h("span", { class: "k " + (r.kind === "stat" ? "stat" : "") }, r.kind)))); wrap.append(list); };
+    list = h("div", { class: "sg-list" }, ...rows.map((r, i) => h("div", { class: "sg-row" + (i === idx ? " on" : ""), onmousedown: (e) => { e.preventDefault(); r.onPick(); close(); } }, r.icon ? h("img", { src: r.icon, alt: "" }) : h("span", { style: "width:26px" }), h("span", {}, r.label), h("span", { class: "k " + (r.kind === "stat" ? "stat" : "") }, r.kind)))); document.body.append(list); place(); window.addEventListener("scroll", place, true); };
   input.oninput = () => { opts.onInput?.(input.value); draw(); };
   input.onkeydown = (e) => { if (!list) return; if (e.key === "ArrowDown") { idx = Math.min(rows.length - 1, idx + 1); draw(); e.preventDefault(); } else if (e.key === "ArrowUp") { idx = Math.max(0, idx - 1); draw(); e.preventDefault(); } else if (e.key === "Enter" && idx >= 0) { rows[idx].onPick(); close(); e.preventDefault(); } else if (e.key === "Escape") close(); };
   input.onblur = () => setTimeout(close, 120); input.onfocus = draw;
@@ -123,6 +124,8 @@ const ICONS = {
 };
 export function shell(active) {
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // Moving between pages of the site: skip the rail/atmosphere entrance so the frame feels persistent (view transitions morph the content).
+  let warm = false; try { warm = sessionStorage.getItem("ss.warm") === "1"; sessionStorage.setItem("ss.warm", "1"); } catch {} if (warm) document.documentElement.classList.add("warm");
   if (!document.querySelector(".atmo")) {
     document.body.prepend(h("div", { class: "atmo" }, h("div", { class: "base" }), h("div", { class: "beams" }, h("i", { class: "main" }), h("i", { class: "trail" })), h("div", { class: "fog" }), h("div", { class: "grain" }), h("div", { class: "mark" }), h("div", { class: "vig" })));
     const page = h("div", { class: "page" }); const mains = [...document.body.querySelectorAll(":scope > main")]; mains.forEach((m) => { if (active !== "/heroes.html") m.classList.add("stagger"); page.append(m); }); document.body.append(page);

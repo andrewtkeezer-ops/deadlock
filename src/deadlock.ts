@@ -164,6 +164,11 @@ export class DeadlockApi {
       bullet_damage_per_upgrade: raw.standard_level_up_upgrades?.MODIFIER_VALUE_BASE_BULLET_DAMAGE_FROM_LEVEL ?? 0, upgrade_levels: upgradeLevels, max_level: Math.max(1, ...Object.keys(lv).map(Number)),
       max_health: ss.max_health?.value ?? 0, health_per_upgrade: raw.standard_level_up_upgrades?.MODIFIER_VALUE_BASE_HEALTH_FROM_LEVEL ?? 0, melee_light: ss.light_melee_damage?.value ?? 0, melee_heavy: ss.heavy_melee_damage?.value ?? 0 };
   }
+  /** Items that used to be in the shop (removed, reworked or disabled): id → name/image, so old builds can say what they referenced. */
+  retiredItems() {
+    return this.asset<{ id: number; name: string; image?: string }[]>(`/v1/assets/items?type=upgrade`, (raw) =>
+      (raw as RawItem[]).filter((i) => !(i.shopable && !i.disabled)).map((i) => ({ id: i.id, name: i.name, image: i.shop_image_webp ?? i.image_webp ?? i.image })), 86400);
+  }
   /** A hero's four signature abilities with icon, description, upgrade tiers and key numbers. */
   async heroAbilities(heroId: number) {
     const raw = await this.asset<RawHero & { items?: Record<string, string> }>(`/v1/assets/heroes/${heroId}`, undefined, 86400);
