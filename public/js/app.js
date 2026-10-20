@@ -139,7 +139,7 @@ export function shell(active) {
   // sliding active pill + hover preview + click ripple
   function movePill(target) { const a = target || nav.querySelector("a.active"); if (!a) { pill.style.opacity = 0; return; } pill.style.top = a.offsetTop + "px"; pill.style.opacity = 1; }
   requestAnimationFrame(() => movePill());
-  nav.addEventListener("mouseover", (e) => { const a = e.target.closest("a"); if (a) movePill(a); }); nav.addEventListener("mouseleave", () => movePill());
+  // (pill used to follow the hovered link; the 0.45s slide left the hovered label unreadable on the cream pill, so it now stays on the active page)
   nav.addEventListener("click", (e) => { const a = e.target.closest("a"); if (!a || reduced) return; const r = a.getBoundingClientRect(), s = Math.max(r.width, r.height); a.append(h("span", { class: "rp", style: `width:${s}px;height:${s}px;left:${e.clientX - r.left - s / 2}px;top:${e.clientY - r.top - s / 2}px` })); });
   me().then(async (m) => {
     if (m.role === "admin") { nav.append(mk(["/admin.html", "Admin", "shield"])); movePill(); }
