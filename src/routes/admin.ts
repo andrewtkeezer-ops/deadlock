@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import type { Env } from "../types";
 import { syncAll, syncPlayer } from "../sync";
-import { DeadlockApi, type SteamProfile } from "../deadlock";
+import { DeadlockApi, METRICS, type SteamProfile } from "../deadlock";
 import { bigAvatar } from "../deadlock";
 import { requireAdmin, type Identity } from "../auth";
 import { sendInvite, inviteText } from "../email";
@@ -13,6 +13,18 @@ const admin = new Hono<{ Bindings: Env; Variables: { user?: Identity } }>();
 admin.use("*", requireAdmin);
 
 admin.post("/sync", async (c) => c.json(await syncAll(c.env)));
+
+/** Usage snapshot vs. the free-tier limits that matter. */
+admin.get("/usage", async (c) => {
+  const count = async (t: string, where = "") => (await c.env.DB.prepare(`SELECT COUNT(*) n FROM ${t} ${where}`).first<{ n: number }>())?.n ?? 0;
+  const [players, matches, mmr, meta, builds, members, metaBytes, rawBytes] = await Promise.all([count("players"), count("player_matches"), count("mmr_history"), count("match_meta"), count("builds"), count("members"),
+    c.env.DB.prepare("SELECT COALESCE(SUM(LENGTH(json)),0) b FROM match_meta").first<{ b: number }>().then((r) => r?.b ?? 0), c.env.DB.prepare("SELECT COALESCE(SUM(LENGTH(raw)),0) b FROM player_matches").first<{ b: number }>().then((r) => r?.b ?? 0)]);
+  const bytes = metaBytes + rawBytes;
+  return c.json({ d1: { rows: { players, player_matches: matches, mmr_history: mmr, match_meta: meta, builds, members }, approx_bytes: bytes, limit_bytes: 5 * 1024 ** 3, note: "D1 free: 5 GB storage, 5M reads/day, 100k writes/day. Hourly sync writes ≈ players × 2 + new matches." },
+    cache: { ...METRICS, uptime_s: Math.round((Date.now() - METRICS.started) / 1000), note: "Counters since this Worker instance started; Cloudflare recycles instances often." },
+    kv: { note: "KV free: 1,000 writes/day. Only used for Access certs and the uploader throttle (≤1 write/min/player)." },
+    workers: { note: "Workers free: 100k requests/day, 10 ms CPU per request. Heavy upstream payloads (heatmap) are fetched by the browser, not the Worker." } });
+});
 
 /** Discord notifications: { webhook, matches, ranks }. Webhook is masked on read. */
 admin.get("/discord", async (c) => { const s = await getSetting<DiscordSettings>(c.env, "discord"); return c.json(s ? { configured: true, webhook_hint: s.webhook.replace(/(https:\/\/discord(?:app)?\.com\/api\/webhooks\/\d+\/)(.{4}).*/, "$1$2…"), matches: s.matches !== false, ranks: s.ranks !== false } : { configured: false, matches: true, ranks: true }); });

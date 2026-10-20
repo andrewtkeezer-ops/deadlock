@@ -15,8 +15,10 @@ import type { Env } from "./types";
  * friend group in one region). Keys are synthetic URLs on an internal host.
  */
 const CACHE_HOST = "https://cache.soulscribe.internal/";
+/** In-isolate counters for the Admin usage panel (reset whenever Cloudflare recycles the Worker — a rough gauge, not billing). */
+export const METRICS = { started: Date.now(), cache_hits: 0, cache_misses: 0, upstream_calls: 0, upstream_busy: 0, upstream_errors: 0, stale_served: 0 };
 async function cacheGet<T>(key: string): Promise<T | null> {
-  try { const res = await caches.default.match(new Request(CACHE_HOST + encodeURIComponent(key))); return res ? ((await res.json()) as T) : null; } catch { return null; }
+  try { const res = await caches.default.match(new Request(CACHE_HOST + encodeURIComponent(key))); if (res) METRICS.cache_hits++; else METRICS.cache_misses++; return res ? ((await res.json()) as T) : null; } catch { return null; }
 }
 async function cachePut(key: string, body: string, ttl: number): Promise<void> {
   try { await caches.default.put(new Request(CACHE_HOST + encodeURIComponent(key)), new Response(body, { headers: { "content-type": "application/json", "cache-control": `public, max-age=${Math.max(60, ttl)}` } })); } catch { /* cache is best-effort */ }
@@ -59,7 +61,7 @@ export class DeadlockApi {
       return data;
     } catch (e) {
       if (ttl > 0 && e instanceof ApiError && (e.status === 503 || e.status === 429)) {
-        const stale = await cacheGet<T>(staleKey);
+        const stale = await cacheGet<T>(staleKey); if (stale !== null) METRICS.stale_served++;
         if (stale !== null) { console.warn("serving stale for", key); return stale; }
       }
       throw e;
@@ -81,14 +83,16 @@ export class DeadlockApi {
   }
 
   private async fetchWithRetry<T>(url: string, attempt = 0): Promise<T> {
+    METRICS.upstream_calls++;
     const res = await fetch(url, { headers: this.headers() });
     if (res.status === 503 || res.status === 429) {
+      METRICS.upstream_busy++;
       const wait = Number(res.headers.get("retry-after") ?? "2");
       if (attempt >= 1 || wait > 4) throw new ApiError(res.status, `upstream busy (retry-after ${wait}s): ${url}`);
       await new Promise((r) => setTimeout(r, wait * 1000));
       return this.fetchWithRetry<T>(url, attempt + 1);
     }
-    if (!res.ok) throw new ApiError(res.status, `${res.status} ${res.statusText} for ${url}: ${(await res.text()).slice(0, 300)}`);
+    if (!res.ok) { METRICS.upstream_errors++; } if (!res.ok) throw new ApiError(res.status, `${res.status} ${res.statusText} for ${url}: ${(await res.text()).slice(0, 300)}`);
     return (await res.json()) as T;
   }
 
