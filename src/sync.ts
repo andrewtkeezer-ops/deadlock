@@ -37,7 +37,7 @@ export async function syncAll(env: Env): Promise<{ players: number; newMatches: 
       if (stmts.length) await env.DB.batch(stmts);
       await notifyRankChanges(env, changes);
     } catch (e) {
-      errors.push(`mmr: ${(e as Error).message}`);
+      errors.push(`MMR not refreshed: ${(e as Error).message}`);
     }
   }
   return { players: players.length, newMatches, errors };

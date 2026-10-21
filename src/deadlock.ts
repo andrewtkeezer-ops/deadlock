@@ -87,8 +87,10 @@ export class DeadlockApi {
     const res = await fetch(url, { headers: this.headers() });
     if (res.status === 503 || res.status === 429) {
       METRICS.upstream_busy++;
-      const wait = Number(res.headers.get("retry-after") ?? "2");
-      if (attempt >= 1 || wait > 4) throw new ApiError(res.status, `upstream busy (retry-after ${wait}s): ${url}`);
+      // deadlock-api sheds load with 503/429 and often says retry-after 0; back off 1s, 2s, 4s instead of hammering it.
+      const hinted = Number(res.headers.get("retry-after") ?? "0");
+      const wait = Math.max(hinted, 2 ** attempt);
+      if (attempt >= 3 || wait > 8) throw new ApiError(res.status, `deadlock-api is busy right now (will retry on the next sync)`);
       await new Promise((r) => setTimeout(r, wait * 1000));
       return this.fetchWithRetry<T>(url, attempt + 1);
     }
