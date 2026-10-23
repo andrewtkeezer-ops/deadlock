@@ -20,7 +20,8 @@ admin.get("/usage", async (c) => {
   const [players, matches, mmr, meta, builds, members, metaBytes, rawBytes] = await Promise.all([count("players"), count("player_matches"), count("mmr_history"), count("match_meta"), count("builds"), count("members"),
     c.env.DB.prepare("SELECT COALESCE(SUM(LENGTH(json)),0) b FROM match_meta").first<{ b: number }>().then((r) => r?.b ?? 0), c.env.DB.prepare("SELECT COALESCE(SUM(LENGTH(raw)),0) b FROM player_matches").first<{ b: number }>().then((r) => r?.b ?? 0)]);
   const bytes = metaBytes + rawBytes;
-  return c.json({ d1: { rows: { players, player_matches: matches, mmr_history: mmr, match_meta: meta, builds, members }, approx_bytes: bytes, limit_bytes: 5 * 1024 ** 3, note: "D1 free: 5 GB storage, 5M reads/day, 100k writes/day. Hourly sync writes ≈ players × 2 + new matches." },
+  const lastSync = await getSetting<{ at: number; players: number; newMatches: number; errors: string[] }>(c.env, "last_sync");
+  return c.json({ last_sync: lastSync, d1: { rows: { players, player_matches: matches, mmr_history: mmr, match_meta: meta, builds, members }, approx_bytes: bytes, limit_bytes: 5 * 1024 ** 3, note: "D1 free: 5 GB storage, 5M reads/day, 100k writes/day. Hourly sync writes ≈ players × 2 + new matches." },
     cache: { ...METRICS, uptime_s: Math.round((Date.now() - METRICS.started) / 1000), note: "Counters since this Worker instance started; Cloudflare recycles instances often." },
     kv: { note: "KV free: 1,000 writes/day. Only used for Access certs and the uploader throttle (≤1 write/min/player)." },
     workers: { note: "Workers free: 100k requests/day, 10 ms CPU per request. Heavy upstream payloads (heatmap) are fetched by the browser, not the Worker." } });

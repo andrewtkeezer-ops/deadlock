@@ -1,6 +1,7 @@
 import { DeadlockApi } from "./deadlock";
 import type { Env, MatchHistoryRow, Player } from "./types";
 import { notifyMatches, notifyRankChanges } from "./notify";
+import { setSetting } from "./settings";
 
 /**
  * Pull each tracked friend's match history + MMR into D1.
@@ -40,6 +41,8 @@ export async function syncAll(env: Env): Promise<{ players: number; newMatches: 
       errors.push(`MMR not refreshed: ${(e as Error).message}`);
     }
   }
+  // Remember how the last run went so Admin can show it (one small write per sync).
+  await setSetting(env, "last_sync", { at: Math.floor(Date.now() / 1000), players: players.length, newMatches, errors }).catch(() => {});
   return { players: players.length, newMatches, errors };
 }
 
