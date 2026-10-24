@@ -33,12 +33,13 @@
 <div class="hdr"><h1>Leaderboard</h1><span class="muted" id="count" style="align-self:flex-end;margin-bottom:28px"></span><select id="days" style="align-self:flex-end;margin-bottom:26px"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option><option value="3650">All time</option></select></div>
 <div class="wire" id="wire" hidden><div class="track" id="wireTrack"></div></div>
 <div id="podium" class="podium"></div>
-<p class="muted" id="rankNote" style="text-align:center;font-size:12px;margin:-6px 0 14px">Standings: Valve MMR first; players without an MMR yet are ordered by win rate (smoothed so one game can't carry you), then KDA, then games played. Win rate, KDA and souls/min use the selected window.</p>
+<p class="muted" id="rankNote" style="text-align:center;font-size:12px;margin:-6px 0 14px">Standings: <span class="term" id="rankNoteMmr" tabindex="0">MMR</span> (Deadlock's skill rating) first; players without an MMR yet are ordered by win rate (smoothed so one game can't carry you), then KDA, then games played. Win rate, KDA and souls/min use the selected window.</p>
 <div id="out" class="card">Loading…</div>
 <div class="two"><div><h2>Squad duos <span class="muted" style="font:400 13px var(--fb);letter-spacing:0;text-transform:none">· who wins together</span></h2><div id="duos" class="card">Loading…</div></div><div><h2>Recent games</h2><div id="recent" class="card recent">Loading…</div></div></div>
 </main>
 <script type="module">
-import { api, h, $, pct, ago, dur, fmt, heroes, hero, rankBadge, heroIcon, shell, showError, kda, ratio, kdOf, kdaOf, KD, KDA } from "/js/app.js";
+import { api, h, $, pct, ago, dur, fmt, heroes, hero, rankBadge, heroIcon, shell, showError, kda, ratio, kdOf, kdaOf, KD, KDA, term } from "/js/app.js";
+$("#rankNoteMmr")?.replaceWith(term("MMR"));
 shell("/");
 async function load() {
   const out = $("#out");
@@ -47,13 +48,13 @@ async function load() {
     $("#count").textContent = players.length ? `${players.length} tracked` : "";
     if (!players.length) return out.replaceChildren(h("div", { class: "empty" }, h("h2", {}, "Nobody here yet"), h("p", {}, "Sign in through Steam to add yourself, then install the uploader so your games flow in."), h("a", { class: "dl", href: "/api/auth/steam/login" }, "Sign in through Steam")));
     const top = players.slice(0, 3); const order = top.length === 3 ? [top[1], top[0], top[2]] : top;
-    $("#podium").replaceChildren(...await Promise.all(order.map(async (p) => { const i = players.indexOf(p); const wr = p.games ? p.wins / p.games : null; const kdaV = kdaOf(p.kills, p.deaths, p.assists); const ed = ["Extra", "No. 2", "No. 3"][i]; const deck = i === 0 ? (wr != null && wr >= .5 ? "Leads the squad in the standings; rivals left reeling." : "Tops the standings despite a rough run of form.") : i === 1 ? "A close second; sources say the gap is closing." : "Rounds out the podium; vows to climb.";
+    $("#podium").replaceChildren(...await Promise.all(order.map(async (p) => { const i = players.indexOf(p); const wr = p.games ? p.wins / p.games : null; const kdaV = kdaOf(p.kills, p.deaths, p.assists); const ed = ["No. 1", "No. 2", "No. 3"][i]; const deck = i === 0 ? (wr != null && wr >= .5 ? "Leads the squad in the standings; rivals left reeling." : "Tops the standings despite a rough run of form.") : i === 1 ? "A close second; sources say the gap is closing." : "Rounds out the podium; vows to climb.";
       const vol = `No. ${players.length} · ${new Date().toLocaleDateString(undefined, { month: "short", day: "numeric" })}`;
       return h("a", { class: "pd" + (i === 0 ? " first" : ""), href: `/player.html?id=${p.account_id}` }, h("span", { class: "pos" }, h("span", { class: "stamp" }, ed)), h("div", { class: "fold" }),
         h("div", { class: "mast" }, h("b", {}, "The Soul Scribe Tribune"), h("span", {}, vol), h("span", {}, "2¢")),
         h("div", { class: "head" }, p.name), h("p", { class: "deck" }, deck),
         h("div", { class: "photo" }, p.avatar_url ? h("img", { src: p.avatar_url, alt: "" }) : ""), h("p", { class: "cap" }, `${p.name}, pictured recently.`),
-        h("div", { class: "r" }, await rankBadge(p.mmr_rank), p.mmr_score != null ? `MMR ${Math.round(p.mmr_score)}` : "Unranked"),
+        h("div", { class: "r" }, await rankBadge(p.mmr_rank), p.mmr_score != null ? h("span", {}, term("MMR"), ` ${Math.round(p.mmr_score)}`) : "Unranked"),
         h("div", { class: "kv" }, h("div", {}, h("span", {}, "Win rate"), h("b", { class: wr == null ? "" : wr >= .5 ? "win" : "loss" }, wr == null ? "–" : pct(wr))), h("div", {}, h("span", {}, "KDA"), h("b", { class: kdaV >= KDA.good ? "win" : kdaV < KDA.even ? "loss" : "" }, p.games ? kdaV.toFixed(2) : "–")), h("div", {}, h("span", {}, "Games"), h("b", {}, String(p.games))), h("div", {}, h("span", {}, "Souls/min"), h("b", {}, fmt(p.souls_per_min))))); })));
     const rows = await Promise.all(players.map(async (p, i) => {
       const wr = p.games ? p.wins / p.games : null;
@@ -68,7 +69,7 @@ async function load() {
         h("td", { class: "num" }, fmt(p.souls_per_min)),
         h("td", { class: "muted", title: p.last_sync_at ? `Synced ${ago(p.last_sync_at)}` : "Never synced" }, ago(p.last_played)));
     }));
-    out.replaceChildren(h("table", { class: "lb" }, h("thead", {}, h("tr", {}, ...["#", "Player", "Rank", "Games", "Win rate", "Avg K / D / A", "KD", "KDA", "Souls/min", "Last played"].map((t) => h("th", {}, t)))), h("tbody", {}, ...rows)),
+    out.replaceChildren(h("table", { class: "lb" }, h("thead", {}, h("tr", {}, ...["#", "Player", "Rank / MMR", "Games", "Win rate", "Avg K / D / A", "KD", "KDA", "Souls/min", "Last played"].map((t) => h("th", {}, t === "Rank / MMR" ? ["Rank / ", term("MMR")] : t)))), h("tbody", {}, ...rows)),
       h("div", { class: "lg-key" }, h("span", {}, h("i", { style: "background:var(--accent)" }), "kills"), h("span", {}, h("i", { style: "background:var(--loss)" }), "deaths"), h("span", {}, h("i", { style: "background:var(--sapph)" }), "assists"), h("span", { style: "margin-left:auto" }, "KD = kills ÷ deaths · KDA = (kills + assists) ÷ deaths")));
   } catch (e) { showError(out, e); }
 }

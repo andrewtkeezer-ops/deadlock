@@ -16,13 +16,14 @@
 <div class="card"><h2 style="margin-top:0">Personal records <span class="muted" style="font:400 13px var(--fb);letter-spacing:0;text-transform:none">· from the last 50 games</span></h2><div class="recs" id="recs"></div></div>
 <div class="cols">
 <div class="card"><h2 style="margin-top:0">Heroes</h2><div id="heroes" class="hrows">Loading…</div></div>
-<div class="card"><h2 style="margin-top:0">MMR history</h2><canvas id="mmr" width="900" height="260" style="width:100%"></canvas><p id="mmrnote" class="muted"></p></div>
+<div class="card"><h2 style="margin-top:0"><span id="mmrHead">MMR</span> history</h2><canvas id="mmr" width="900" height="260" style="width:100%"></canvas><p id="mmrnote" class="muted"></p></div>
 </div>
 <div class="card"><h2 style="margin-top:0">Recent matches</h2><div id="matches" class="matches">Loading…</div></div>
 <div class="card"><h2 style="margin-top:0">Builds</h2><div id="builds" class="muted">Loading…</div></div>
 </main>
 <script type="module">
-import { api, h, $, pct, ago, dur, fmt, heroes, rankBadge, heroIcon, items, itemImg, shell, showError, kda, ratio, kdOf, kdaOf, KD, KDA, me as whoAmI } from "/js/app.js";
+import { api, h, $, pct, ago, dur, fmt, heroes, rankBadge, heroIcon, items, itemImg, shell, showError, kda, ratio, kdOf, kdaOf, KD, KDA, me as whoAmI, term } from "/js/app.js";
+$("#mmrHead")?.replaceWith(term("MMR"));
 shell("/");
 const qs = new URLSearchParams(location.search); const id = qs.get("id");
 try {
@@ -30,7 +31,7 @@ try {
   const p = d.player; document.title = `${p.name} · Soul Scribe`;
   const tier = p.mmr_rank ? Math.floor(p.mmr_rank / 10) : 0; const rinfo = assets.ranks.find((r) => r.tier === tier);
   $("#head").replaceChildren(p.avatar_url ? h("div", { class: "avw" }, h("img", { class: "av", src: p.avatar_url, alt: "" })) : "", h("div", { style: "flex:1" }, h("h1", {}, p.name), h("div", { class: "muted" }, `Synced ${ago(p.last_sync_at)}`, d.ingest?.active ? ` · uploader active, last upload ${ago(d.ingest.last_upload_at)}` : "")),
-    h("div", { class: "rank" }, await rankBadge(p.mmr_rank, "large"), h("div", {}, h("b", {}, rinfo ? `${rinfo.name} ${p.mmr_rank % 10 || ""}` : "Unranked"), h("span", {}, p.mmr_score != null ? `MMR ${Math.round(p.mmr_score)}` : "needs more games"))));
+    h("div", { class: "rank" }, await rankBadge(p.mmr_rank, "large"), h("div", {}, h("b", {}, rinfo ? `${rinfo.name} ${p.mmr_rank % 10 || ""}` : "Unranked"), h("span", {}, ...(p.mmr_score != null ? [term("MMR"), ` ${Math.round(p.mmr_score)}`] : ["needs more games"])))));
   if (qs.has("welcome")) $("#banner").append(h("div", { class: "card banner" }, h("strong", {}, "You're in. "), `Imported ${qs.get("welcome")} matches so far. `, h("a", { href: "/setup.html" }, "Install the match uploader"), " to get the rest."));
   if (d.coverage && d.coverage.checked && d.coverage.with_stats < d.coverage.checked && me?.account_id === p.account_id) $("#banner").append(h("div", { class: "card banner" }, h("strong", {}, `${d.coverage.checked - d.coverage.with_stats} of your last ${d.coverage.checked} games have no detailed stats yet. `), "Keep the uploader running after you quit the game, or open those games in Match History → Watch Replay. ", h("a", { href: "/setup.html" }, "Setup")));
   else if (d.ingest && !d.ingest.active) $("#banner").append(h("div", { class: "card banner" }, h("strong", {}, "Match uploader not detected"), d.ingest.last_upload_at ? ` (last upload ${ago(d.ingest.last_upload_at)})` : " (never run)", ". Only games someone else uploaded show here. ", h("a", { href: "/setup.html" }, "Install it"), " to get all your matches."));

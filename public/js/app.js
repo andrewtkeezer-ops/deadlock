@@ -64,6 +64,22 @@ export function withTipBuilder(el, build) {
   function place(e) { if (!tipEl) return; const w = tipEl.offsetWidth, hgt = tipEl.offsetHeight; let x = e.clientX + 16, y = e.clientY + 16; if (x + w > innerWidth - 8) x = e.clientX - w - 16; if (y + hgt > innerHeight - 8) y = innerHeight - hgt - 8; tipEl.style.left = x + "px"; tipEl.style.top = y + "px"; }
   return el;
 }
+/** Plain-English explainer for jargon. Hover on desktop, tap on phones. */
+export const GLOSSARY = {
+  MMR: ["MMR · matchmaking rating", "Deadlock's skill score for each player. It decides who you get matched with and against, and your rank badge comes from it. Wins push it up, losses pull it down. Higher is better."],
+};
+export function term(label, key = label) {
+  const [title, body] = GLOSSARY[key] || [label, ""];
+  const el = h("span", { class: "term", tabindex: "0", "aria-label": `${label}: ${body}` }, label);
+  withTipBuilder(el, () => h("div", { class: "itip ttip" }, h("b", {}, title), h("div", { class: "desc" }, body)));
+  // touch: tap toggles the tip instead of following a parent link
+  el.addEventListener("click", (e) => { if (!matchMedia("(hover: none)").matches) return; e.preventDefault(); e.stopPropagation();
+    if (tipEl) { tipEl.remove(); tipEl = null; return; }
+    tipEl = h("div", { class: "itip ttip" }, h("b", {}, title), h("div", { class: "desc" }, body)); tipEl.style.position = "fixed"; document.body.append(tipEl);
+    const r = el.getBoundingClientRect(); tipEl.style.left = Math.max(8, Math.min(r.left, innerWidth - tipEl.offsetWidth - 8)) + "px"; tipEl.style.top = (r.bottom + 8 + tipEl.offsetHeight > innerHeight ? r.top - tipEl.offsetHeight - 8 : r.bottom + 8) + "px";
+    setTimeout(() => document.addEventListener("click", () => { tipEl?.remove(); tipEl = null; }, { once: true }), 0); });
+  return el;
+}
 /** Glass modal. Returns the body element; closes on backdrop click or Esc. */
 export function modal(title, body) {
   const close = () => { wrap.remove(); document.removeEventListener("keydown", onKey); };
