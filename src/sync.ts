@@ -65,6 +65,10 @@ export async function syncPlayer(env: Env, api: DeadlockApi, accountId: number):
       m.hero_level, m.match_mode, m.game_mode, JSON.stringify(m)
     )
   );
+  // Valve's after-match rank can land upstream after we first stored a ranked match; patch it into raw so rank history fills in.
+  const weekAgo = Date.now() / 1000 - 7 * 86400;
+  const patch = env.DB.prepare("UPDATE player_matches SET raw=json_set(raw, '$.ranked_display_badge', ?, '$.ranked_delta', ?) WHERE account_id=? AND match_id=? AND json_extract(raw, '$.ranked_display_badge') IS NULL");
+  for (const m of history) if (seen.has(m.match_id) && m.match_mode === 4 && m.ranked_display_badge && m.start_time > weekAgo) batch.push(patch.bind(m.ranked_display_badge, m.ranked_delta ?? null, accountId, m.match_id));
   // D1 batches are limited in size; chunk to be safe.
   for (let i = 0; i < batch.length; i += 50) await env.DB.batch(batch.slice(i, i + 50));
   await env.DB.prepare("UPDATE players SET last_sync_at=? WHERE account_id=?").bind(Math.floor(Date.now() / 1000), accountId).run();

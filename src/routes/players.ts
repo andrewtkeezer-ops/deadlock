@@ -87,14 +87,18 @@ r.get("/:id{[0-9]+}", async (c) => {
       `SELECT hero_id, COUNT(*) games, SUM(won) wins, AVG(kills) k, AVG(deaths) d, AVG(assists) a, SUM(kills) kills, SUM(deaths) deaths, SUM(assists) assists
          FROM player_matches WHERE account_id=? GROUP BY hero_id ORDER BY games DESC`
     ).bind(id).all(),
-    c.env.DB.prepare("SELECT ts, score, rank FROM mmr_history WHERE account_id=? ORDER BY ts").bind(id).all(),
+    // Rank history straight from Valve's after-match badge on each Ranked game (match_mode 4).
+    c.env.DB.prepare("SELECT start_time ts, json_extract(raw, '$.ranked_display_badge') rank FROM player_matches WHERE account_id=? AND match_mode=4 AND json_extract(raw, '$.ranked_display_badge') > 0 ORDER BY start_time").bind(id).all<{ ts: number; rank: number }>(),
     new DeadlockApi(c.env).ingestStatus(id).catch(() => null),
   ]);
   // Coverage: of the newest 10 matches, how many have full stats upstream. This is the honest "is the uploader working" signal.
   const newest = (matches.results as { match_id: number }[]).slice(0, 10).map((m) => m.match_id);
   const withStats = await new DeadlockApi(c.env).matchesWithStats(newest).catch(() => null);
   const coverage = withStats ? { checked: newest.length, with_stats: newest.filter((i) => withStats.has(i)).length, missing: newest.filter((i) => !withStats.has(i)) } : null;
-  return c.json({ player: { ...player, avatar_url: bigAvatar(player.avatar_url) }, matches: matches.results, heroes: heroes.results, mmr: mmr.results, ingest, coverage });
+  // Score = rank as one number, 1 (Initiate 1) … 66 (Eternus 6); Eternus badges past 116 are capped like upstream does.
+  const mmrPts = mmr.results.map((r) => { const b = Math.min(Number(r.rank), 116); return { ts: r.ts, rank: b, score: (Math.floor(b / 10) - 1) * 6 + (b % 10) }; });
+  const rankedGames = await c.env.DB.prepare("SELECT COUNT(*) n FROM player_matches WHERE account_id=? AND match_mode=4").bind(id).first<number>("n");
+  return c.json({ player: { ...player, avatar_url: bigAvatar(player.avatar_url) }, matches: matches.results, heroes: heroes.results, mmr: mmrPts, ranked_games: rankedGames ?? 0, ingest, coverage });
 });
 
 export default r;

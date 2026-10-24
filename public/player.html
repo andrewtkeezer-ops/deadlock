@@ -29,7 +29,7 @@ const qs = new URLSearchParams(location.search); const id = qs.get("id");
 try {
   const [d, hs, assets, me] = await Promise.all([api(`/players/${id}`), heroes(), api("/assets"), whoAmI().catch(() => null)]);
   const p = d.player; document.title = `${p.name} · Soul Scribe`;
-  const tier = p.mmr_rank ? Math.floor(p.mmr_rank / 10) : 0; const rinfo = assets.ranks.find((r) => r.tier === tier);
+  const tier = p.mmr_rank ? Math.floor(p.mmr_rank / 10) : 0; const rinfo = p.mmr_rank ? assets.ranks.find((r) => r.tier === tier) : null;
   $("#head").replaceChildren(p.avatar_url ? h("div", { class: "avw" }, h("img", { class: "av", src: p.avatar_url, alt: "" })) : "", h("div", { style: "flex:1" }, h("h1", {}, p.name), h("div", { class: "muted" }, `Synced ${ago(p.last_sync_at)}`, d.ingest?.active ? ` · uploader active, last upload ${ago(d.ingest.last_upload_at)}` : "")),
     h("div", { class: "rank" }, await rankBadge(p.mmr_rank, "large"), h("div", {}, h("b", {}, rinfo ? `${rinfo.name} ${p.mmr_rank % 10 || ""}` : "Unranked"), h("span", {}, ...(p.mmr_score != null ? [term("MMR"), ` ${Math.round(p.mmr_score)}`] : ["needs more games"])))));
   if (qs.has("welcome")) $("#banner").append(h("div", { class: "card banner" }, h("strong", {}, "You're in. "), `Imported ${qs.get("welcome")} matches so far. `, h("a", { href: "/setup.html" }, "Install the match uploader"), " to get the rest."));
@@ -71,7 +71,7 @@ try {
     c.fillStyle = "#8f93a3"; c.font = "11px Jost,sans-serif"; c.textAlign = "center"; const span = x1 - x0 || 1, nT = Math.min(6, Math.max(2, Math.round(span / 86400))); for (let i = 0; i <= nT; i++) { const ts = x0 + span * i / nT; c.fillText(new Date(ts * 1000).toLocaleDateString(undefined, { month: "short", day: "numeric" }), 40 + 850 * i / nT, 256); }
     const lastPt = pts[pts.length - 1], firstPt = pts[0]; const dlt = lastPt.score - firstPt.score;
     $("#mmrnote").replaceChildren(`${pts.length} snapshots since ${new Date(x0 * 1000).toLocaleDateString()} · `, h("b", { class: dlt >= 0 ? "win" : "loss" }, `${dlt >= 0 ? "+" : ""}${Math.round(dlt)}`), " over the period"); }
-  else $("#mmrnote").textContent = "MMR history builds up after a few hourly syncs.";
+  else $("#mmrnote").textContent = !d.ranked_games ? "No Ranked games yet. This chart only tracks Ranked matches, so it fills in once you play some." : pts.length === 1 ? "One ranked result so far. The line appears after your next Ranked game." : `${d.ranked_games} Ranked game${d.ranked_games === 1 ? "" : "s"} found, waiting on Valve's rank result. Check back after the next sync.`;
   try { const b = await api(`/library?account_id=${id}`); $("#builds").replaceChildren(b.length ? h("div", { class: "grid" }, ...b.map((r) => { const hx = hs.find((x) => x.id === r.hero_id); return h("div", { class: "card", style: "margin:0" }, h("div", { style: "display:flex;gap:8px;align-items:center" }, heroIcon(hx, 32), h("a", { href: `/editor.html?id=${r.id}` }, h("strong", {}, r.title))), h("div", { style: "margin-top:6px" }, ...r.preview.map((i) => itemImg(its.find((x) => x.id === i), 22)))); })) : h("span", {}, "No saved builds yet.")); } catch {}
 } catch (e) { showError($("#head"), e); }
 </script></body></html>

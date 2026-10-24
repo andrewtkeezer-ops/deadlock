@@ -39,6 +39,7 @@ export type MatchHistoryRow = {
   team_abandoned: boolean | null;
   abandoned_time_s: number | null;
   match_duration_s: number;
+  ranked_display_badge?: number | null; ranked_delta?: number | null; // only on Ranked (match_mode 4); can land after the match first appears
   match_result: number; player_match_outcome?: number; // 0/1 = winning team id; won = match_result === player_team
 };
 
