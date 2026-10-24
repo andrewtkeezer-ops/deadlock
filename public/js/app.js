@@ -66,7 +66,7 @@ export function withTipBuilder(el, build) {
 }
 /** Plain-English explainer for jargon. Hover on desktop, tap on phones. */
 export const GLOSSARY = {
-  MMR: ["MMR · matchmaking rating", "Deadlock's skill score for each player. It decides who you get matched with and against, and your rank badge comes from it. Wins push it up, losses pull it down. Higher is better."],
+  MMR: ["MMR · rank as a number", "Your Deadlock rank turned into one number, from 1 (Initiate 1) to 66 (Eternus 6). There are 11 ranks with 6 steps each, so +1 means one step up. It comes from your latest ranked match. Valve's real matchmaking rating is hidden and isn't shown here."],
 };
 export function term(label, key = label) {
   const [title, body] = GLOSSARY[key] || [label, ""];
