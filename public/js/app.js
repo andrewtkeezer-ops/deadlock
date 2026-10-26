@@ -174,9 +174,32 @@ export function shell(active) {
       if (m.email || m.signed_in) who.append(h("a", { href: "/setup.html", title: "Connect your Steam account" }, h("span", { class: "av gg" }, "G"), h("span", { class: "nm" }, m.email ?? "Signed in with Google", h("small", {}, m.role === "admin" ? "Admin · connect Steam" : "Connect Steam"))));
       else who.append(h("a", { href: "/api/auth/steam/login", title: "Sign in through Steam" }, h("img", { class: "steam", src: "https://community.cloudflare.steamstatic.com/public/images/signinthroughsteam/sits_small.png", alt: "Sign in through Steam" })));
     }
+    if (m.account_id) uploaderNotice();
     if (m.account_id || m.email || m.signed_in) { const out = h("a", { class: "out", href: "/api/auth/google/logout", title: "Sign out" }); out.innerHTML = `<span class="ic">${ICONS.out}</span><span class="lb">Sign out</span>`; who.after(out); }
   }).catch(() => {});
   if (!reduced) alive();
+}
+
+/** Latest official uploader release, via the Worker (cached). */
+export const uploaderLatest = () => api("/uploader/latest");
+const ACK = "ss.uploader.ack";
+/** "New uploader version" notice. We can't see which version someone has installed, so it shows once per release until
+ *  they download it or say they're up to date (remembered per browser). */
+async function uploaderNotice() {
+  let rel; try { rel = await uploaderLatest(); } catch { return; } if (!rel?.version) return;
+  let ack = null; try { ack = localStorage.getItem(ACK); } catch {}
+  if (ack === rel.version || document.querySelector(".upnote") || pageKey() === "/setup.html") return;
+  const done = () => { try { localStorage.setItem(ACK, rel.version); } catch {} box.classList.add("gone"); setTimeout(() => box.remove(), 400); };
+  const when = new Date(rel.published_at).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const box = h("div", { class: "upnote", role: "status" },
+    h("span", { class: "lane" }, h("b", {}, "U"), "Uploader"),
+    h("strong", {}, `Version ${rel.version} is out`),
+    h("p", {}, `Released ${when}. Older versions miss games, so grab it if your status window shows an older number.`),
+    h("div", { class: "row" },
+      h("a", { class: "btn primary", href: rel.download_url, onclick: () => setTimeout(done, 300) }, "Download update"),
+      h("button", { class: "btn ghost", type: "button", onclick: done }, "I'm up to date")),
+    h("button", { class: "x", type: "button", title: "Hide", "aria-label": "Hide", onclick: done }, "×"));
+  document.body.append(box);
 }
 
 /** Eyebrow sticker above the page title, in the Deadlock site's postcard voice. Pages with their own hero header (hero.html) opt out with data-ph="off". */

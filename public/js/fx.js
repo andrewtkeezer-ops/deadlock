@@ -73,6 +73,6 @@ function parallax() {
 export function polish() {
   const main = document.querySelector("main"); if (!main) return;
   main.querySelectorAll("h1").forEach(splitTitle);
-  plateTitles(); magnetic(); cascade(main); weather(); parallax();
+  plateTitles(); cascade(main); // v4: rain, parallax and magnetic buttons retired (quieter, more premium)
   new MutationObserver((ms) => ms.forEach((m) => m.addedNodes.forEach((n) => { if (n.nodeType !== 1) return; cascade(n); if (n.matches?.("h1")) splitTitle(n); n.querySelectorAll?.("h1").forEach(splitTitle); if (n.matches?.("h2") || n.querySelector?.("h2")) plateTitles(); }))).observe(main, { childList: true, subtree: true });
 }

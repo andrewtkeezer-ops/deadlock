@@ -303,3 +303,153 @@ html.touring .rain,html.touring .halo{display:none}
 @media (max-width:860px){.tour-btn{padding:5px 10px 4px;font-size:10px}.tour-card{width:calc(100vw - 24px)!important;left:12px!important}}
 @media (prefers-reduced-motion:reduce){.tour-spot,.tour-card{transition:none}.tour-btn{animation:none}}
 .tour-btn.fab{position:fixed;right:18px;bottom:18px;z-index:90;background:rgba(14,16,22,.9);backdrop-filter:blur(10px);box-shadow:0 10px 30px rgba(0,0,0,.6)}@media (max-width:860px){.tour-btn.fab{bottom:76px;right:12px}}
+
+/* =====================================================================================
+   Soul Scribe v4 — "Visitor's Guide" (2026-10). Built on the City Never Sleeps update page:
+   night-teal city, cream type, orange ink, lane colours (Broadway cyan, Greenwich green, Yellow
+   line), transit-map stations, lane signs, taped photo prints and a skyline at the bottom of
+   the screen. This layer sits last and overrides v3; fewer effects, more craft.
+   ===================================================================================== */
+:root{
+  --bg:#0a0d0e;--bg2:#0f1416;--panel:#121718;--panel2:#171d1f;--panel-solid:#121718;
+  --line:rgba(247,233,213,.075);--line2:rgba(247,233,213,.16);
+  --text:#f7e9d5;--muted:rgba(247,233,213,.6);--dim:rgba(247,233,213,.36);
+  --ink:#dd6638;--ink2:#c4532a;--ink-deep:#7a2e14;--accent:#ffd36b;--accent2:#d9a441;
+  --lane-b:#60cde3;--lane-g:#97da79;--lane-y:#ffe14d;--lane-p:#dfb4b5;
+  --tint-b:#0f1d21;--tint-g:#121c10;--tint-y:#1e1b10;
+  --win:#97da79;--loss:#ef6b5e;--sapph:#60cde3;
+  --r:16px;--r-sm:10px;--shadow:0 1px 0 rgba(247,233,213,.05) inset,0 20px 40px -18px rgba(0,0,0,.8);
+}
+body{background:var(--bg);font-size:15px;letter-spacing:.005em}
+a{color:var(--accent)}a:hover{color:var(--text);text-shadow:none}
+::selection{background:rgba(221,102,56,.55)}
+
+/* ---- atmosphere: night sky, halftone, skyline. No searchlights, rain or cursor halo. ---- */
+.atmo .base{background:radial-gradient(90% 60% at 70% -10%,#15262b 0%,transparent 60%),radial-gradient(70% 50% at 0% 0%,#121a14 0%,transparent 55%),linear-gradient(180deg,#0b1012 0%,#0a0d0e 55%,#090b0c 100%)}
+.atmo .beams,.atmo .fog,.atmo .mark,.halo,.rain,.embers{display:none!important}
+.atmo .grain{opacity:.07}
+.atmo .vig{background:radial-gradient(110% 90% at 50% 30%,transparent 55%,rgba(0,0,0,.6) 100%)}
+.atmo::before{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(247,233,213,.06) 1px,transparent 1.4px);background-size:6px 6px;-webkit-mask:linear-gradient(180deg,#000,transparent 38%);mask:linear-gradient(180deg,#000,transparent 38%)}
+.atmo::after{content:"";position:absolute;left:0;right:0;bottom:0;height:34vh;max-height:300px;background:url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="1600" height="200" viewBox="0 0 1600 200" preserveAspectRatio="none"%3E%3Cpath fill="%23080a0b" d="M0 200V111H59V200ZM20 111L29 55L38 111ZM55 200V82H83V200ZM62 82V62H76V82ZM79 200V114H109V200ZM80 114L94 94L108 114ZM109 200V151H143V200ZM115 151L126 99L137 151ZM138 200V89H217V200ZM221 200V119H272V200ZM272 200V84H356V200ZM353 200V122H435V200ZM373 122V109H414V122ZM435 200V66H501V200ZM459 66L468 30L477 66ZM499 200V134H577V200ZM572 200V117H641V200ZM597 117L606 87L615 117ZM645 200V127H730V200ZM731 200V143H803V200ZM806 200V143H836V200ZM813 143V122H828V143ZM840 200V87H929V200ZM862 87V69H906V87ZM931 200V117H999V200ZM1001 200V86H1030V200ZM1034 200V120H1072V200ZM1044 120L1053 79L1062 120ZM1076 200V67H1132V200ZM1129 200V51H1193V200ZM1194 200V68H1229V200ZM1202 68V45H1219V68ZM1230 200V111H1304V200ZM1298 200V96H1331V200ZM1306 96V72H1322V96ZM1327 200V67H1376V200ZM1342 67L1351 35L1360 67ZM1376 200V139H1438V200ZM1435 200V104H1485V200ZM1479 200V108H1534V200ZM1492 108V100H1519V108ZM1534 200V101H1611V200Z"/%3E%3Cpath fill="rgba(255,225,77,.55)" d="M26 163h3v5h-3ZM46 191h3v5h-3ZM61 162h3v5h-3ZM71 162h3v5h-3ZM144 113h3v5h-3ZM308 122h3v5h-3ZM318 150h3v5h-3ZM298 164h3v5h-3ZM318 192h3v5h-3ZM379 160h3v5h-3ZM399 160h3v5h-3ZM441 104h3v5h-3ZM441 118h3v5h-3ZM481 118h3v5h-3ZM461 160h3v5h-3ZM515 144h3v5h-3ZM565 158h3v5h-3ZM588 183h3v5h-3ZM598 183h3v5h-3ZM681 151h3v5h-3ZM671 179h3v5h-3ZM651 193h3v5h-3ZM787 153h3v5h-3ZM747 181h3v5h-3ZM856 97h3v5h-3ZM866 125h3v5h-3ZM856 153h3v5h-3ZM866 167h3v5h-3ZM1040 158h3v5h-3ZM1092 77h3v5h-3ZM1102 91h3v5h-3ZM1155 61h3v5h-3ZM1175 89h3v5h-3ZM1175 159h3v5h-3ZM1155 173h3v5h-3ZM1175 187h3v5h-3ZM1210 92h3v5h-3ZM1220 106h3v5h-3ZM1276 135h3v5h-3ZM1304 106h3v5h-3ZM1382 191h3v5h-3ZM1471 170h3v5h-3Z"/%3E%3C/svg%3E') bottom/1600px 62% repeat-x,url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="1600" height="260" viewBox="0 0 1600 260" preserveAspectRatio="none"%3E%3Cpath fill="%23121c1f" d="M0 260V93H43V260ZM9 93L21 43L33 93ZM39 260V153H72V260ZM41 153L55 115L69 153ZM66 260V37H108V260ZM76 37V24H97V37ZM103 260V116H147V260ZM114 116V100H136V116ZM145 260V128H185V260ZM184 260V84H217V260ZM213 260V49H256V260ZM258 260V94H339V260ZM288 94L298 38L308 94ZM337 260V40H419V260ZM366 40L378 -18L390 40ZM417 260V55H472V260ZM434 55L444 19L454 55ZM466 260V159H499V260ZM501 260V50H563V260ZM516 50V36H547V50ZM558 260V119H612V260ZM608 260V59H658V260ZM620 59V45H645V59ZM657 260V155H691V260ZM665 155V140H682V155ZM686 260V125H735V260ZM698 125V106H722V125ZM730 260V97H815V260ZM809 260V97H857V260ZM821 97V76H845V97ZM860 260V151H931V260ZM877 151V129H912V151ZM929 260V106H965V260ZM964 260V168H1028V260ZM1027 260V78H1105V260ZM1106 260V117H1196V260ZM1128 117V108H1173V117ZM1190 260V127H1221V260ZM1224 260V31H1254V260ZM1231 31V22H1246V31ZM1249 260V35H1330V260ZM1334 260V48H1374V260ZM1341 48L1354 2L1367 48ZM1375 260V114H1405V260ZM1382 114V93H1397V114ZM1402 260V122H1461V260ZM1421 122L1431 86L1441 122ZM1458 260V117H1519V260ZM1517 260V87H1554V260ZM1524 87L1535 31L1546 87ZM1549 260V67H1613V260Z"/%3E%3C/svg%3E') bottom/1600px 100% repeat-x;opacity:.95;filter:drop-shadow(0 -1px 0 rgba(96,205,227,.18))}
+html:not(.warm) .atmo::after{animation:cityUp 1.2s var(--ease) both}@keyframes cityUp{from{transform:translateY(30px);opacity:0}}
+
+/* ---- rail: a transit line. Each page is a station on the route. ---- */
+.rail{background:linear-gradient(180deg,rgba(13,17,18,.97),rgba(9,11,12,.98));border-right:1px solid var(--line)}
+.rail::before{background:radial-gradient(70% 22% at 50% 0%,rgba(96,205,227,.10),transparent 70%);animation:none}
+.rail .brand{padding:22px 20px 18px;min-height:0}.rail .brand img.word{filter:none;max-width:186px}.rail .brand:hover img.word{filter:drop-shadow(0 0 14px rgba(151,218,121,.35))}
+.rail nav{gap:2px;padding:10px 14px 10px 14px}
+.rail nav a{height:44px;padding:0 12px 0 10px;gap:12px;border-radius:999px;font:600 12px/1 var(--fh);letter-spacing:.14em;color:var(--muted)}
+@media (min-width:861px){.rail nav a .ic{display:none}}
+.rail nav a .ix{position:relative;z-index:2;display:inline-grid;place-items:center;width:24px;height:24px;flex:none;border-radius:50%;background:var(--bg);border:2px solid var(--st,var(--lane-b));color:var(--st,var(--lane-b));font:700 10px/1 var(--fh);letter-spacing:0;transition:background .2s,color .2s,transform .3s var(--snap)}
+.rail nav a:nth-of-type(3n+1){--st:var(--lane-b)}.rail nav a:nth-of-type(3n+2){--st:var(--lane-g)}.rail nav a:nth-of-type(3n){--st:var(--lane-y)}
+@media (min-width:861px){.rail nav a:not(:last-of-type)::after{content:"";position:absolute;left:21px;top:36px;height:20px;border-left:2px dashed rgba(247,233,213,.2);z-index:0}}
+.rail nav a:hover{background:rgba(247,233,213,.05);color:var(--text)}.rail nav a:hover .ix{background:var(--st);color:#0a0d0e;transform:scale(1.08)}.rail nav a:hover .lb{letter-spacing:.14em}
+.rail nav a.active{color:var(--text)}.rail nav a.active .ix{background:var(--st);color:#0a0d0e;box-shadow:0 0 0 4px rgba(10,13,14,1),0 0 0 6px var(--st)}
+.rail nav .pill{left:14px;right:14px;height:44px;border-radius:999px;background:#050606;border:2px solid var(--line2);box-shadow:0 6px 18px rgba(0,0,0,.5)}
+.rail nav .pill::before{display:none}
+.rail nav a.active .ic,.rail nav a:hover .ic{animation:none}
+.rail .who{border-top:1px solid var(--line);padding:12px 12px 6px}.rail .who img.av{border-color:var(--line2)}
+.rail a.out{border-radius:999px;font:600 11px/1 var(--fh);letter-spacing:.14em}
+
+/* ---- page + headers ---- */
+main{padding:44px 48px 140px;max-width:1280px}
+.ph{gap:14px;margin:0 0 28px}
+.sticker{background:var(--ink);color:#170a04;font:700 11px/1 var(--fh);letter-spacing:.2em;padding:7px 12px 6px;border-radius:3px;box-shadow:2px 3px 0 #050606;transform:rotate(-2.5deg)}
+.sticker.gold{background:var(--lane-y);color:#1b1704}.sticker.green{background:var(--lane-g);color:#0e1a08}.sticker.paper{background:var(--text);color:#1b130b}
+h1,.ph h1{font:400 clamp(44px,5.6vw,76px)/.92 var(--fd);letter-spacing:.005em;color:var(--text);text-shadow:3px 3px 0 var(--ink),6px 6px 0 #050606;transform:rotate(-1.2deg);transform-origin:left bottom}
+h1 .ch{background:none!important;-webkit-text-fill-color:currentColor!important;color:inherit;animation-duration:.6s}
+h1 .ch.wave{animation:none}
+h1 small,h1 .muted{text-shadow:none}
+/* section titles: lane signs. A coloured station dot + Oracle caps, no hover plates. */
+h2,h2.plated{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font:700 15px/1.2 var(--fh);letter-spacing:.16em;text-transform:uppercase;color:var(--text);margin:36px 0 14px;padding:0;cursor:auto}
+h2.plated::before,h2::before{content:"";position:static;flex:none;width:12px;height:12px;border-radius:50%;background:var(--lane,var(--lane-b));box-shadow:0 0 0 3px var(--bg),0 0 0 5px var(--lane,var(--lane-b));transform:none;margin:0 4px 0 3px;transition:none}
+h2.plated:hover{color:var(--text)}h2.plated:hover::before{width:12px}
+h2 small,h2 .muted,h2>span:not(.term){font:400 13px/1.2 var(--fb)!important;letter-spacing:0!important;text-transform:none!important;color:var(--muted)!important}
+h2::after,h2.plated::after{content:"";flex:1;min-width:24px;height:0;border-top:2px dashed rgba(247,233,213,.12);margin-left:6px;display:block}
+.card>h2:first-child::after{width:auto;background:none;height:0;margin-top:0}
+.card h2::after,.sec h2::after,.modal h2::after,.tour-card h2::after{display:none}
+main>h2:nth-of-type(3n+2),.two>div:nth-child(2) h2{--lane:var(--lane-g)}main>h2:nth-of-type(3n){--lane:var(--lane-y)}
+summary h2::before,summary h2::after,.modal h2::before{display:none}
+h3{font:700 14px/1.25 var(--fh);letter-spacing:.06em}
+/* the big lane sign, for page sections that deserve it: <div class="lanesign" style="--lane:…"><b>B</b>Broadway</div> */
+.lanesign{display:inline-flex;align-items:center;gap:12px;padding:6px 20px 6px 6px;border-radius:999px;background:#050606;border:3px solid var(--lane,var(--lane-b));box-shadow:0 0 0 3px #050606,4px 6px 0 rgba(0,0,0,.5);font:400 28px/1 var(--fd);letter-spacing:.02em;color:var(--text);text-transform:uppercase}
+.lanesign b{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:var(--text);color:#050606;font:400 24px/1 var(--fd)}
+
+/* ---- surfaces ---- */
+.card{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);backdrop-filter:none;-webkit-backdrop-filter:none;padding:22px}
+.card::before{display:none}
+.card:hover{box-shadow:var(--shadow);transform:none}
+.card::after,.sec::after,.ab::after,.st::after,.tile::after{background:radial-gradient(300px circle at var(--mx) var(--my),rgba(247,233,213,.04),transparent 60%)}
+.tilt,.tilt.on{transform:none!important}
+.tiles{gap:12px}
+.tile{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:var(--r);padding:16px 18px 18px;box-shadow:var(--shadow);backdrop-filter:none;position:relative;overflow:hidden}
+.tile::before{content:"";position:absolute;left:18px;right:18px;top:0;height:3px;border-radius:0 0 3px 3px;background:var(--lane,var(--lane-b));opacity:.85}
+.tiles>.tile:nth-child(3n+2){--lane:var(--lane-g)}.tiles>.tile:nth-child(3n){--lane:var(--lane-y)}
+.tile b{font:600 30px/1.05 var(--fh);font-variant-numeric:tabular-nums;letter-spacing:0}
+.tile span{font:700 10px/1.2 var(--fh);letter-spacing:.2em;color:var(--muted);margin-top:8px}
+.tile .kda b,.tile .kda .t b{display:inline;font-size:inherit;line-height:inherit}.tile .kda .t{white-space:nowrap;font-size:clamp(16px,1.5vw,22px)}
+.tile.hi{background:linear-gradient(180deg,#221a12,var(--panel));border-color:rgba(221,102,56,.35)}.tile.hi::before{background:var(--ink)}
+.tile:hover b,.stat:hover b{text-shadow:none}
+
+/* ---- tables: quiet hairlines, tabular numbers, lane-tinted hover ---- */
+th{font:700 10.5px/1 var(--fh);letter-spacing:.2em;color:var(--dim);border-bottom:1px solid var(--line2);padding:0 12px 12px}
+td{border-bottom:1px solid var(--line);padding:12px}
+tbody tr:hover td{background:rgba(96,205,227,.045)}tbody tr:hover td:first-child{box-shadow:inset 3px 0 0 var(--lane-b)}
+.num,td.num{font-variant-numeric:tabular-nums}
+.win{color:var(--win)}.loss{color:var(--loss)}
+
+/* ---- controls ---- */
+button,select,input[type=text],input[type=number],input[type=search]{background:#0d1112;border:1px solid var(--line2);border-radius:999px;padding:9px 16px}
+select{padding-right:34px;appearance:none;-webkit-appearance:none;background:#0d1112 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23f7e9d5' stroke-opacity='.6' stroke-width='1.6'/%3E%3C/svg%3E") right 14px center no-repeat}
+input:focus,select:focus,button:focus-visible,a:focus-visible{outline:0;border-color:var(--lane-b);box-shadow:0 0 0 3px rgba(96,205,227,.25)}
+button{font:700 12px/1.2 var(--fh);letter-spacing:.12em}button:hover{background:#151b1c;border-color:rgba(247,233,213,.3)}
+button.primary,a.dl,.btn.primary{background:var(--ink);color:#170a04;border:0;border-radius:999px;box-shadow:3px 4px 0 #050606;font:700 12px/1.2 var(--fh);letter-spacing:.14em;padding:13px 22px}
+button.primary:hover,a.dl:hover,.btn.primary:hover{background:#e8774a;color:#170a04;filter:none;transform:translate(-1px,-1px);box-shadow:4px 5px 0 #050606}
+button.primary:active,a.dl:active,.btn.primary:active{transform:translate(2px,2px);box-shadow:1px 2px 0 #050606}
+button.primary::after,a.dl::after,.btn.primary::after{display:none}
+.mag{transform:none!important}
+.btn{border-radius:999px;background:transparent;border:1.5px solid var(--line2);backdrop-filter:none;font:700 11px/1.2 var(--fh);letter-spacing:.14em;padding:10px 16px}.btn:hover{background:rgba(247,233,213,.06);border-color:rgba(247,233,213,.4)}
+.btn.ghost{color:var(--text)}
+.chipb{border-radius:999px;background:transparent;border:1.5px solid var(--line2);font:600 11px/1 var(--fh);letter-spacing:.1em;text-transform:uppercase;padding:7px 12px}.chipb.on{background:var(--text);color:#0a0d0e}
+.bar{height:6px;background:rgba(247,233,213,.07);border-radius:999px}.bar>i{border-radius:999px;background:var(--lane-y)}
+code,pre{background:#070909;border-color:var(--line)}
+.tour-btn{border:1.5px dashed rgba(96,205,227,.55);background:transparent;color:var(--lane-b)}
+.marker{background:var(--lane-b);color:#071417;box-shadow:0 0 0 3px var(--bg),0 0 0 5px var(--lane-b)}
+
+/* ---- popovers ---- */
+.itip,.pk-pop,.sg-list,.tour-card{background:rgba(14,18,19,.98);border:1px solid var(--line2);box-shadow:0 30px 60px -20px rgba(0,0,0,.9)}
+.modal{background:rgba(14,18,19,.96);border-radius:20px}
+.ttip{border-top-color:var(--lane-b)}
+.term{border-bottom:1.5px dashed rgba(96,205,227,.7)}
+
+/* ---- the uploader notice: a torn guidebook note pinned bottom-right ---- */
+.upnote{position:fixed;right:22px;bottom:22px;z-index:900;width:min(340px,calc(100vw - 32px));padding:22px 20px 18px;background:#efe1c8;color:#1d150d;border-radius:4px;transform:rotate(-1.2deg);box-shadow:0 30px 60px -20px rgba(0,0,0,.9),0 2px 0 rgba(0,0,0,.3);animation:noteIn .6s var(--snap) both;
+  background-image:linear-gradient(transparent 0 0),repeating-linear-gradient(0deg,rgba(80,50,20,.035) 0 1px,transparent 1px 4px)}
+.upnote::before{content:"";position:absolute;top:-10px;left:50%;width:92px;height:24px;margin-left:-46px;background:rgba(255,236,190,.55);transform:rotate(3deg);box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.upnote::after{content:"";position:absolute;left:0;right:0;bottom:-7px;height:8px;background:radial-gradient(circle at 6px 0,#efe1c8 5.5px,transparent 6px) 0 0/12px 8px repeat-x}
+.upnote .lane{position:absolute;top:-14px;left:16px;display:inline-flex;align-items:center;gap:7px;padding:4px 12px 4px 4px;border-radius:999px;background:#050606;border:2px solid var(--lane-b);color:var(--text);font:700 10px/1 var(--fh);letter-spacing:.18em;text-transform:uppercase;transform:rotate(-3deg)}
+.upnote .lane b{display:grid;place-items:center;width:18px;height:18px;border-radius:50%;background:var(--lane-b);color:#071417;font-size:10px}
+.upnote strong{display:block;font:400 26px/1 var(--fd);color:#1d150d;margin:4px 0 6px}
+.upnote p{margin:0 0 14px;font-size:13px;line-height:1.45;color:rgba(29,21,13,.78)}
+.upnote .row{display:flex;gap:8px;flex-wrap:wrap}
+.upnote .btn.primary{padding:11px 16px;box-shadow:2px 3px 0 #1d150d}
+.upnote .btn.ghost{color:#1d150d;border-color:rgba(29,21,13,.35)}.upnote .btn.ghost:hover{background:rgba(29,21,13,.06)}
+.upnote .x{position:absolute;top:8px;right:8px;width:28px;height:28px;padding:0;border-radius:50%;border:0;background:transparent;color:rgba(29,21,13,.55);font:400 20px/1 var(--fb)}.upnote .x:hover{background:rgba(29,21,13,.08);color:#1d150d}
+.upnote.gone{animation:noteOut .35s ease-in both}
+@keyframes noteIn{from{opacity:0;transform:translateY(40px) rotate(4deg)}}@keyframes noteOut{to{opacity:0;transform:translateY(30px) rotate(3deg)}}
+
+/* ---- phones ---- */
+@media (max-width:860px){
+  main{padding:20px 16px 110px}
+  h1,.ph h1{font-size:40px;text-shadow:2px 2px 0 var(--ink),4px 4px 0 #050606}
+  h2,h2.plated{font-size:13px;margin:28px 0 12px}
+  .atmo::after{height:22vh}
+  .rail{background:rgba(9,11,12,.97);border-top:1px solid var(--line)}
+  .rail nav .pill{display:none}
+  .rail nav a{border-radius:0;height:64px;padding:0 10px}
+  .rail nav a .ix{display:none}.rail nav a.active .ic{color:var(--ink)}
+  .rail nav a .lb{font-size:8px;letter-spacing:.08em}
+  .upnote{right:12px;left:12px;width:auto;bottom:78px;padding:18px 14px 12px}.upnote strong{font-size:20px}.upnote p{font-size:12px;margin-bottom:10px}.upnote .btn{padding:9px 12px;font-size:10px}
+  .card{padding:16px}
+}
+@media (prefers-reduced-motion:reduce){.upnote,.atmo::after{animation:none}}

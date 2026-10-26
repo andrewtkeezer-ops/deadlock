@@ -17,6 +17,19 @@ const app = new Hono<{ Bindings: Env; Variables: { user?: Identity } }>();
 app.use("/api/*", cors());
 app.get("/api/assets", async (c) => c.json(await new DeadlockApi(c.env).uiAssets()));
 app.get("/api/health", (c) => c.json({ ok: true, now: Date.now() }));
+/** Newest official match-uploader release (deadlock-api-ingest), cached 3 h so members never hit GitHub's anonymous rate limit. */
+app.get("/api/uploader/latest", async (c) => {
+  const cacheKey = new Request("https://cache.soulscribe.internal/uploader-latest-v1");
+  const hit = await caches.default.match(cacheKey); if (hit) return new Response(hit.body, hit);
+  const r = await fetch("https://api.github.com/repos/deadlock-api/deadlock-api-ingest/releases/latest", { headers: { "user-agent": "soul-scribe", accept: "application/vnd.github+json" } });
+  if (!r.ok) return c.json({ error: "github", status: r.status }, 502);
+  const rel = await r.json<{ tag_name: string; published_at: string; html_url: string; assets: { name: string; size: number; browser_download_url: string }[] }>();
+  const exe = rel.assets.find((a) => /-setup\.exe$/i.test(a.name));
+  const body = { version: rel.tag_name.replace(/^v/, ""), published_at: rel.published_at, notes_url: rel.html_url, download_url: exe?.browser_download_url ?? "https://github.com/deadlock-api/deadlock-api-ingest/releases/latest/download/deadlock-api-ingest-setup.exe", size: exe?.size ?? null };
+  const res = new Response(JSON.stringify(body), { headers: { "content-type": "application/json", "cache-control": "public, max-age=10800" } });
+  c.executionCtx.waitUntil(caches.default.put(cacheKey, res.clone()));
+  return res;
+});
 /**
  * Called by the squad uploader (our deadlock-api-ingest fork) right after it uploads a match.
  * No login: the uploader has no cookie. It can only trigger a re-sync of an already-tracked
