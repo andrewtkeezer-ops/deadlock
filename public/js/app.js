@@ -1,4 +1,5 @@
 // Shared helpers. No framework, no build step.
+import { start as gameStart } from "/js/game.js";
 export const api = async (path, opts = {}) => {
   const res = await fetch(`/api${path}`, { headers: { "content-type": "application/json", ...(opts.headers || {}) }, ...opts,
     body: opts.body && typeof opts.body !== "string" ? JSON.stringify(opts.body) : opts.body });
@@ -146,6 +147,7 @@ export function shell(active) {
     document.body.prepend(h("div", { class: "atmo" }, h("div", { class: "base" }), h("div", { class: "beams" }, h("i", { class: "main" }), h("i", { class: "trail" })), h("div", { class: "fog" }), h("div", { class: "grain" }), h("div", { class: "mark" }), h("div", { class: "vig" })));
     const page = h("div", { class: "page" }); const mains = [...document.body.querySelectorAll(":scope > main")]; mains.forEach((m) => { if (active !== "/heroes.html") m.classList.add("stagger"); page.append(m); }); document.body.append(page);
   }
+  try { gameStart(); } catch (e) { console.warn("game layer skipped", e); document.documentElement.classList.remove("booting"); }
   const links = [["/", "Leaderboard", "trophy"], ["/heroes.html", "Heroes", "hero"], ["/counters.html", "Draft", "swords"], ["/heatmap.html", "Map", "map"], ["/library.html", "Builds", "book"], ["/items.html", "Items", "bag"], ["/setup.html", "Setup", "gear"]];
   let ix = 0;
   const mk = ([href, label, ic]) => { const a = h("a", { href, class: href === active ? "active" : "" }); a.innerHTML = `<span class="ix">${String(++ix).padStart(2, "0")}</span><span class="ic">${ICONS[ic]}</span><span class="lb">${label}</span>`; return a; };
@@ -257,6 +259,6 @@ export function kda(k, d, a, { dec = 0, bar = true, size = "" } = {}) {
 export function ratio(v, { good = 1.5, even = 1, dec = 2 } = {}) { const cls = v == null ? "" : v >= good ? "g" : v >= even ? "m" : "p"; return h("b", { class: "ratio " + cls }, v == null ? "–" : v.toFixed(dec)); }
 export const KD = { good: 1.5, even: 1 }, KDA = { good: 3, even: 2 };
 /** Count-up animation for a number element. */
-export function countUp(el, to, { decimals = 0, suffix = "", ms = 700 } = {}) { const start = performance.now(); const from = 0; const step = (t) => { const k = Math.min(1, (t - start) / ms); const v = from + (to - from) * (1 - Math.pow(1 - k, 3)); el.textContent = v.toFixed(decimals).replace(/\B(?=(\d{3})+(?!\d))/g, ",") + suffix; if (k < 1) requestAnimationFrame(step); }; requestAnimationFrame(step); return el; }
+export function countUp(el, to, { decimals = 0, suffix = "", ms = 700 } = {}) { const start = performance.now(); const from = 0; const step = (t) => { const k = Math.min(1, (t - start) / ms); const v = from + (to - from) * (1 - Math.pow(1 - k, 3)); el.textContent = v.toFixed(decimals).replace(/\B(?=(\d{3})+(?!\d))/g, ",") + suffix; if (k < 1) requestAnimationFrame(step); else { el.classList.remove("tick-done"); void el.offsetWidth; el.classList.add("tick-done"); } }; requestAnimationFrame(step); return el; }
 export function showError(el, e) { const msg = String(e?.message || e || "unknown error"); const hint = /signed out|401|unauthori/i.test(msg) ? "Your session may have expired — sign in again." : /503|retry|rate|timeout|upstream/i.test(msg) ? "deadlock-api.com is busy; it usually clears in a few seconds." : /not tracked|404|not found/i.test(msg) ? "That record isn't in the squad database." : "";
   el.replaceChildren(h("div", { class: "card error", style: "display:flex;gap:14px;align-items:center;flex-wrap:wrap" }, h("div", { style: "flex:1" }, h("b", { style: "display:block;font-family:var(--fh)" }, "Something went wrong"), h("span", { class: "muted", style: "font-size:13px" }, msg, hint ? ` — ${hint}` : "")), h("button", { onclick: () => location.reload() }, "Retry"))); }

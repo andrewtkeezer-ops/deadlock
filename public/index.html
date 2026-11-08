@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Soul Scribe</title><link rel="icon" type="image/png" href="/img/favicon.png"><link rel="apple-touch-icon" href="/img/icon.png"><link rel="stylesheet" href="/css/app.css">
+<!doctype html><html lang="en"><head><meta charset="utf-8"><script>try{if(!sessionStorage.getItem("ss.booted")&&!matchMedia("(prefers-reduced-motion: reduce)").matches)document.documentElement.classList.add("booting")}catch(e){}</script><meta name="viewport" content="width=device-width,initial-scale=1"><title>Soul Scribe</title><link rel="icon" type="image/png" href="/img/favicon.png"><link rel="apple-touch-icon" href="/img/icon.png"><link rel="stylesheet" href="/css/app.css">
 <style>
 .lb td{vertical-align:middle}.lb .p{display:flex;align-items:center;gap:10px}.lb .p img.av{width:36px;height:36px;border-radius:50%}.lb .pos{font-family:var(--fh);font-size:20px;color:var(--muted);width:30px}
 .lb tr:first-child .pos{color:var(--accent)}.lb .wr{min-width:120px}.lb .wr .bar{margin-top:4px}.lb .streak{font-size:12px;color:var(--muted)}
@@ -13,7 +13,7 @@
 .pd{--lane:var(--lane-b);--tint:var(--tint-b);--tilt:-1.4deg;position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;text-align:center;padding:26px 18px 18px;border-radius:20px;color:var(--text);
   background:linear-gradient(180deg,color-mix(in srgb,var(--tint) 92%,#fff 3%),var(--tint));border:1px solid color-mix(in srgb,var(--lane) 26%,transparent);box-shadow:0 30px 50px -24px rgba(0,0,0,.9),inset 0 1px 0 rgba(247,233,213,.06);transform:rotate(var(--tilt));transition:transform .45s var(--snap),box-shadow .3s;animation:podIn .8s var(--snap) backwards}
 .pd.l-g{--lane:var(--lane-g);--tint:var(--tint-g);--tilt:1.3deg}.pd.l-y{--lane:var(--lane-y);--tint:var(--tint-y);--tilt:0deg}
-.pd:nth-child(1){animation-delay:.18s}.pd:nth-child(2){animation-delay:.04s}.pd:nth-child(3){animation-delay:.3s}
+.pd:nth-of-type(1){animation-delay:.18s}.pd:nth-of-type(2){animation-delay:.04s}.pd:nth-of-type(3){animation-delay:.3s}
 @keyframes podIn{from{opacity:0;transform:translateY(40px) rotate(calc(var(--tilt) - 5deg))}}
 .pd:hover{transform:translateY(-6px) rotate(0);box-shadow:0 40px 60px -24px rgba(0,0,0,.95),0 0 0 1px color-mix(in srgb,var(--lane) 45%,transparent);color:var(--text)}
 .pd .print{position:relative;width:74%;aspect-ratio:1;padding:8px 8px 26px;background:#efe1c8;border-radius:3px;box-shadow:0 14px 24px -8px rgba(0,0,0,.8);transform:rotate(calc(var(--tilt) * -1.6))}
@@ -48,6 +48,22 @@
 .lb tbody tr{will-change:transform}
 @media(max-width:860px){.seg{margin-left:0!important;order:3}.seg button{min-width:54px;padding:8px 12px}}
 @media(prefers-reduced-motion:reduce){.seg .thumb{transition:none}}
+/* v5: the leader stands in a spotlight; prints tilt toward the cursor with a glare */
+.pd{transform:perspective(900px) rotate(var(--tilt)) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg))}
+.pd.lit{transition:transform .08s linear,box-shadow .3s}
+.pd:hover{transform:perspective(900px) translateY(-8px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg))}
+.pd::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;background:radial-gradient(280px circle at var(--gx,50%) var(--gy,30%),rgba(255,248,230,.14),transparent 60%);transition:opacity .3s;z-index:4}
+.pd.lit::after{opacity:1}
+.pd.first{border-color:rgba(255,225,77,.38);box-shadow:0 40px 70px -26px rgba(0,0,0,.95),0 0 0 1px rgba(255,225,77,.15),0 0 80px -20px rgba(255,225,77,.35)}
+.pd.first::before{content:"";position:absolute;left:50%;bottom:30%;width:150%;height:260%;margin-left:-75%;z-index:-1;pointer-events:none;transform-origin:50% 0;clip-path:polygon(44% 0,56% 0,100% 100%,0 100%);background:linear-gradient(180deg,rgba(255,236,170,.0),rgba(255,236,170,.16) 55%,rgba(255,236,170,.0));filter:blur(8px);top:-150%;bottom:auto;animation:spot 7s ease-in-out infinite alternate}
+@keyframes spot{from{transform:rotate(-4deg);opacity:.75}to{transform:rotate(4deg);opacity:1}}
+.pd.first .print::after{content:"";position:absolute;inset:8px 8px 26px;pointer-events:none;background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.35) 50%,transparent 65%);background-size:300% 100%;animation:shine 4s 1.5s ease-in-out infinite;mix-blend-mode:soft-light}
+.podium .dust{position:absolute;inset:-40px 20% 30%;pointer-events:none;z-index:0;background-image:radial-gradient(rgba(255,236,170,.7) 1px,transparent 1.5px),radial-gradient(rgba(255,236,170,.5) 1px,transparent 1.5px);background-size:90px 110px,140px 160px;background-position:0 0,40px 60px;animation:dust 18s linear infinite;-webkit-mask:radial-gradient(40% 60% at 50% 40%,#000,transparent);mask:radial-gradient(40% 60% at 50% 40%,#000,transparent);opacity:.6}
+@keyframes dust{to{background-position:30px -330px,-20px -420px}}
+.pd .stop{transition:transform .35s var(--snap)}.pd:hover .stop{transform:translateY(-3px) scale(1.04)}
+.pd .stop b{animation:stopPulse 3s ease-in-out infinite}.pd.first .stop b{box-shadow:0 0 18px rgba(255,225,77,.6)}
+@keyframes stopPulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--lane) 60%,transparent)}50%{box-shadow:0 0 0 6px transparent}}
+@media(prefers-reduced-motion:reduce){.pd.first::before,.podium .dust,.pd .stop b,.pd.first .print::after{animation:none}}
 </style></head>
 <body><main>
 <div class="hdr"><h1>Leaderboard</h1><span class="muted" id="count" style="align-self:flex-end;margin-bottom:28px"></span><div class="seg" id="sortSeg" role="radiogroup" aria-label="Sort standings by" style="align-self:flex-end;margin-bottom:26px;margin-left:auto"><span class="thumb" aria-hidden="true"></span><button type="button" role="radio" data-k="mmr">MMR</button><button type="button" role="radio" data-k="kda">KDA</button><button type="button" role="radio" data-k="kd">KD</button></div><select id="days" style="align-self:flex-end;margin-bottom:26px"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option><option value="3650">All time</option></select></div>
@@ -100,7 +116,7 @@ async function render(fresh = false) {
   const before = new Map([...out.querySelectorAll("tbody tr[data-id]")].map((tr) => [tr.dataset.id, tr.getBoundingClientRect().top]));
   const top = players.slice(0, 3); const order = top.length === 3 ? [top[1], top[0], top[2]] : top;
   const LANES = ["l-y", "l-b", "l-g"]; // 1st Yellow line, 2nd Broadway, 3rd Greenwich
-  $("#podium").replaceChildren(...await Promise.all(order.map(async (p) => { const i = players.indexOf(p); const wr = p.games ? p.wins / p.games : null; const kdaV = kdaOf(p.kills, p.deaths, p.assists), kdV = kdOf(p.kills, p.deaths);
+  $("#podium").replaceChildren(h("div", { class: "dust", "aria-hidden": "true" }), ...await Promise.all(order.map(async (p) => { const i = players.indexOf(p); const wr = p.games ? p.wins / p.games : null; const kdaV = kdaOf(p.kills, p.deaths, p.assists), kdV = kdOf(p.kills, p.deaths);
       const deck = i === 0 ? (wr != null && wr >= .5 ? "Runs this town. Rivals left reeling." : "Tops the standings despite a rough run of form.") : i === 1 ? "A close second; the gap is closing." : "Rounds out the podium and vows to climb.";
       const ini = p.name.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
       return h("a", { class: `pd ${LANES[i]}` + (i === 0 ? " first" : ""), href: `/player.html?id=${p.account_id}` },
