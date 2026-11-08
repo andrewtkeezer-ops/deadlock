@@ -102,11 +102,13 @@ export class DeadlockApi {
   matchHistory(accountId: number) {
     return this.get<import("./types").MatchHistoryRow[]>(`/v1/players/${accountId}/match-history`, {}, 600);
   }
-  mmr(accountIds: number[]) {
-    return this.get<import("./types").MmrRow[]>(`/v1/players/mmr`, { account_ids: accountIds.join(",") }, 1800);
-  }
-  mmrHistory(accountId: number) {
-    return this.get<import("./types").MmrRow[]>(`/v1/players/${accountId}/mmr-history`, {}, 3600);
+  /** Rank from each player's latest ranked match (`/v1/players/rank`, which replaced the removed `/v1/players/mmr`).
+   *  Mapped to the old MMR row shape: `rank` = badge (tier*10 + subrank), `player_score` = badge as one number, 1-66.
+   *  Players with no ranked result (badge 0) are left out, as the old endpoint did. */
+  async mmr(accountIds: number[]) {
+    const rows = await this.get<import("./types").RankRow[]>(`/v1/players/rank`, { account_ids: accountIds.join(",") }, 1800);
+    return rows.filter((r) => r.badge > 0).map((r): import("./types").MmrRow => ({ account_id: r.account_id, match_id: r.last_match?.match_id, start_time: r.last_match?.start_time,
+      rank: r.badge, player_score: (r.rank - 1) * 6 + r.subrank, division: r.rank, division_tier: r.subrank }));
   }
   matchMetadata(matchId: number) {
     return this.get<unknown>(`/v1/matches/${matchId}/metadata`, {}, 0); // stored in D1 instead

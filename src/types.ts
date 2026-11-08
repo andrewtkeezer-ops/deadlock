@@ -43,6 +43,9 @@ export type MatchHistoryRow = {
   match_result: number; player_match_outcome?: number; // 0/1 = winning team id; won = match_result === player_team
 };
 
+// One row of GET /v1/players/rank (batch). badge = tier*10 + subrank; 0 = no ranked result.
+export type RankRow = { account_id: number; badge: number; rank: number; subrank: number; last_match: { match_id: number; start_time: number } | null };
+
 export type MmrRow = {
   account_id: number;
   match_id?: number;
