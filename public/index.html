@@ -67,7 +67,7 @@
 </style></head>
 <body><main>
 <div class="hdr"><h1>Leaderboard</h1><span class="muted" id="count" style="align-self:flex-end;margin-bottom:28px"></span><div class="seg" id="sortSeg" role="radiogroup" aria-label="Sort standings by" style="align-self:flex-end;margin-bottom:26px;margin-left:auto"><span class="thumb" aria-hidden="true"></span><button type="button" role="radio" data-k="mmr">MMR</button><button type="button" role="radio" data-k="kda">KDA</button><button type="button" role="radio" data-k="kd">KD</button></div><select id="days" style="align-self:flex-end;margin-bottom:26px"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option><option value="3650">All time</option></select></div>
-<div class="wire" id="wire" hidden><div class="track" id="wireTrack"></div></div>
+<div id="patchBanner"></div><div class="wire" id="wire" hidden><div class="track" id="wireTrack"></div></div>
 <div id="podium" class="podium"></div>
 <p class="muted" id="rankNote" style="text-align:center;font-size:12px;margin:-6px 0 14px">Standings: <span class="term" id="rankNoteMmr" tabindex="0">MMR</span> (your rank as a number) first; players without an MMR yet are ordered by win rate (smoothed so one game can't carry you), then KDA, then games played. Win rate, KDA and souls/min use the selected window.</p>
 <div id="out" class="card">Loading…</div>
@@ -153,6 +153,11 @@ async function render(fresh = false) {
     tr.animate([{ transform: `translateY(${dy}px)` }, { transform: "none" }], { duration: 650, easing: "cubic-bezier(.34,1.3,.64,1)" }); }
 }
 $("#days").addEventListener("change", load); load();
+// Patch watch: a banner for a balance patch from the last 5 days, naming the squad's heroes it touches.
+(async () => { try { const [{ patches, squad }, hs] = await Promise.all([api("/patches"), heroes()]); const p = patches.find((x) => x.heroes.length || x.items.length); if (!p || Date.now() / 1000 - p.date > 5 * 86400) return;
+  const sq = new Map(); for (const s of squad) for (const x of s.heroes) if (p.heroes.some((c) => c.id === x.hero_id)) sq.set(x.hero_id, (sq.get(x.hero_id) || 0) + 1);
+  const names = [...sq.keys()].map((id) => hs.find((x) => x.id === id)?.name).filter(Boolean);
+  $("#patchBanner").replaceChildren(h("a", { class: "patchbanner", href: "/patches.html" }, h("span", { class: "sticker" }, "New patch"), h("span", {}, h("b", {}, p.title), names.length ? ` changes ${names.slice(0, 4).join(", ")}${names.length > 4 ? ` and ${names.length - 4} more` : ""} from the squad's pool.` : ` · ${p.heroes.length} heroes, ${p.items.length} items changed.`), h("span", { class: "go" }, "Patch watch →"))); } catch {} })();
 (async () => { const el = $("#duos"); try { const [duos, list] = await Promise.all([api("/players/duos"), api("/players")]); const P = new Map(list.map((p) => [p.account_id, p]));
   const rows = duos.filter((d) => d.games >= 2).slice(0, 10);
   if (!rows.length) return el.replaceChildren(h("p", { class: "muted", style: "margin:0" }, "No shared games yet. Once two tracked friends play on the same team, their duo shows up here."));

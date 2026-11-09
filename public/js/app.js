@@ -129,6 +129,7 @@ export function suggestInput(opts) {
 
 // ---- page chrome: atmosphere + left rail ----
 const ICONS = {
+  news: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h13v14H6a2 2 0 0 1-2-2V5z"/><path d="M17 9h3v8a2 2 0 0 1-2 2"/><path d="M8 9h5M8 13h5M8 17h3"/></svg>',
   trophy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M7 6H4a3 3 0 0 0 3 5M17 6h3a3 3 0 0 1-3 5"/></svg>',
   hero: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7c0-2 3-4 8-4s8 2 8 4v6c0 4-4 8-8 8s-8-4-8-8V7z"/><path d="M8 11c1 1 2 1 3 0M13 11c1 1 2 1 3 0M9 16c2 1 4 1 6 0"/></svg>',
   swords: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21l6-6M21 3l-9 9M14 5l5 5M5 14l5 5M3 3l9 9M19 21l-6-6M10 5L5 10M19 14l-5 5"/></svg>',
@@ -148,7 +149,7 @@ export function shell(active) {
     const page = h("div", { class: "page" }); const mains = [...document.body.querySelectorAll(":scope > main")]; mains.forEach((m) => { if (active !== "/heroes.html") m.classList.add("stagger"); page.append(m); }); document.body.append(page);
   }
   try { gameStart(); } catch (e) { console.warn("game layer skipped", e); document.documentElement.classList.remove("booting"); }
-  const links = [["/", "Leaderboard", "trophy"], ["/heroes.html", "Heroes", "hero"], ["/counters.html", "Draft", "swords"], ["/heatmap.html", "Map", "map"], ["/library.html", "Builds", "book"], ["/items.html", "Items", "bag"], ["/setup.html", "Setup", "gear"]];
+  const links = [["/", "Leaderboard", "trophy"], ["/heroes.html", "Heroes", "hero"], ["/counters.html", "Draft", "swords"], ["/heatmap.html", "Map", "map"], ["/library.html", "Builds", "book"], ["/items.html", "Items", "bag"], ["/patches.html", "Patches", "news"], ["/setup.html", "Setup", "gear"]];
   let ix = 0;
   const mk = ([href, label, ic]) => { const a = h("a", { href, class: href === active ? "active" : "" }); a.innerHTML = `<span class="ix">${String(++ix).padStart(2, "0")}</span><span class="ic">${ICONS[ic]}</span><span class="lb">${label}</span>`; return a; };
   const pill = h("span", { class: "pill" });
@@ -204,10 +205,20 @@ async function uploaderNotice() {
   document.body.append(box);
 }
 
+/** Sliding segmented switch: [[value, label], …]. The orange thumb glides to the picked option. */
+export function segmented(opts, value, onChange, label = "Choose") {
+  const thumb = h("span", { class: "thumb", "aria-hidden": "true" });
+  const el = h("div", { class: "seg", role: "radiogroup", "aria-label": label }, thumb, ...opts.map(([v, l]) => h("button", { type: "button", role: "radio", "data-k": String(v) }, l)));
+  const move = () => { const b = el.querySelector(`[data-k="${CSS.escape(String(value))}"]`) || el.querySelector("button"); el.querySelectorAll("button").forEach((x) => x.setAttribute("aria-checked", String(x === b))); if (!b.offsetWidth) return; thumb.style.width = b.offsetWidth + "px"; thumb.style.transform = `translateX(${b.offsetLeft}px)`; };
+  el.addEventListener("click", (e) => { const b = e.target.closest("button[data-k]"); if (!b || b.dataset.k === String(value)) return; value = b.dataset.k; move(); onChange(value); });
+  new ResizeObserver(move).observe(el); requestAnimationFrame(move); document.fonts?.ready.then(move);
+  el.set = (v) => { value = String(v); move(); }; return el;
+}
+
 /** Eyebrow sticker above the page title, in the Deadlock site's postcard voice. Pages with their own hero header (hero.html) opt out with data-ph="off". */
 /** Canonical page key: Cloudflare serves /heroes.html as /heroes, so look up by the .html form either way. */
 export function pageKey() { const p = location.pathname.replace(/\/+$/, "") || "/"; if (p === "/" || p === "/index" || p === "/index.html") return "/"; return p.endsWith(".html") ? p : p + ".html"; }
-const EYEBROWS = { "/": "The squad standings", "/index.html": "The squad standings", "/heroes.html": "Meet the locals", "/counters.html": "Know your enemy", "/heatmap.html": "Where it happens", "/library.html": "The playbook", "/items.html": "The corner shop", "/setup.html": "Get connected", "/admin.html": "Back office", "/player.html": "Squad member", "/match.html": "Match report", "/editor.html": "Build editor", "/builds.html": "Build wizard" };
+const EYEBROWS = { "/": "The squad standings", "/index.html": "The squad standings", "/heroes.html": "Meet the locals", "/counters.html": "Know your enemy", "/heatmap.html": "Where it happens", "/library.html": "The playbook", "/patches.html": "Hot off the press", "/items.html": "The corner shop", "/setup.html": "Get connected", "/admin.html": "Back office", "/player.html": "Squad member", "/match.html": "Match report", "/editor.html": "Build editor", "/builds.html": "Build wizard" };
 function pageHeader() {
   const main = document.querySelector("main"); if (!main || main.dataset.ph === "off") return;
   const eyebrow = main.dataset.eyebrow || EYEBROWS[pageKey()]; if (!eyebrow) return;

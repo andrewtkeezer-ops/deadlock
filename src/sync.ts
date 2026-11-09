@@ -1,7 +1,10 @@
 import { DeadlockApi } from "./deadlock";
 import type { Env, MatchHistoryRow, Player } from "./types";
 import { notifyMatches, notifyRankChanges } from "./notify";
-import { setSetting } from "./settings";
+import { getSetting, setSetting } from "./settings";
+import { feedSync } from "./feed";
+import { refreshAchievements, ACH_VERSION } from "./achievements";
+import { patchWatch } from "./patches";
 
 /**
  * Pull each tracked friend's match history + MMR into D1.
@@ -24,6 +27,15 @@ export async function syncAll(env: Env): Promise<{ players: number; newMatches: 
     }
   }
 
+  // Our own feed: one request for every match any squad member played that deadlock-api has a full record of.
+  let feedFound = 0;
+  try { feedFound = (await feedSync(env, api, players.map((p) => p.account_id))).found; newMatches += feedFound; }
+  catch (e) { errors.push(`Feed: ${(e as Error).message}`); }
+  // Achievements are derived from stored games, so new games (or a new rule set) mean a recount; old games backfill.
+  try { if (newMatches > 0 || (await getSetting<number>(env, "ach_version")) !== ACH_VERSION) await refreshAchievements(env, newMatches > 0); }
+  catch (e) { errors.push(`Achievements: ${(e as Error).message}`); }
+  try { await patchWatch(env); } catch (e) { errors.push(`Patch watch: ${(e as Error).message}`); }
+
   if (players.length) {
     try {
       const rows = await api.mmr(players.map((p) => p.account_id));
@@ -42,7 +54,7 @@ export async function syncAll(env: Env): Promise<{ players: number; newMatches: 
     }
   }
   // Remember how the last run went so Admin can show it (one small write per sync).
-  await setSetting(env, "last_sync", { at: Math.floor(Date.now() / 1000), players: players.length, newMatches, errors }).catch(() => {});
+  await setSetting(env, "last_sync", { at: Math.floor(Date.now() / 1000), players: players.length, newMatches, feedFound, errors }).catch(() => {});
   return { players: players.length, newMatches, errors };
 }
 
@@ -54,8 +66,8 @@ export async function syncPlayer(env: Env, api: DeadlockApi, accountId: number):
 
   const stmt = env.DB.prepare(
     `INSERT OR IGNORE INTO player_matches
-     (account_id, match_id, hero_id, start_time, duration_s, won, team, kills, deaths, assists, net_worth, last_hits, denies, hero_level, match_mode, game_mode, raw)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+     (account_id, match_id, hero_id, start_time, duration_s, won, team, kills, deaths, assists, net_worth, last_hits, denies, hero_level, match_mode, game_mode, raw, source)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'history')`
   );
   const batch = fresh.map((m: MatchHistoryRow) =>
     stmt.bind(

@@ -4,6 +4,7 @@ import type { Env } from "./types";
 import { syncAll, syncPlayer } from "./sync";
 import { ApiError, DeadlockApi } from "./deadlock";
 import players from "./routes/players";
+import { parsedPatches, squadInterests } from "./patches";
 import heroes from "./routes/heroes";
 import builds from "./routes/builds";
 import library from "./routes/builds-library";
@@ -81,6 +82,7 @@ app.get("/api/me", async (c) => {
   return c.json({ email: null, role: sup ? "admin" : "member", account_id: steam, signed_in, super: sup, unconfigured: !authConfigured(c.env) });
 });
 
+app.get("/api/patches", async (c) => { const [patches, squad] = await Promise.all([parsedPatches(c.env, 15), squadInterests(c.env)]); return c.json({ patches, squad }); });
 app.route("/api/players", players);
 app.route("/api/heroes", heroes);
 app.route("/api/library", library);

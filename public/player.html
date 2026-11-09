@@ -14,6 +14,9 @@
 <div id="banner"></div>
 <div class="tiles" id="tiles"></div>
 <div class="card"><h2 style="margin-top:0">Personal records <span class="muted" style="font:400 13px var(--fb);letter-spacing:0;text-transform:none">· from the last 50 games</span></h2><div class="recs" id="recs"></div></div>
+<div class="card" id="achCard"><h2 style="margin-top:0" id="achievements">Achievements <span class="muted achcount"></span></h2><div class="ach">Loading…</div></div>
+<div class="card" id="trendCard"><h2 style="margin-top:0">Trends <span class="muted tsub">· are you getting better?</span></h2><div class="tctl"></div><div class="tsum"></div><div class="trend">Loading…</div></div>
+<div class="card" id="benchCard"><h2 style="margin-top:0" class="btitle">Compared to your rank</h2><div class="bench">Loading…</div></div>
 <div class="cols">
 <div class="card"><h2 style="margin-top:0">Heroes</h2><div id="heroes" class="hrows">Loading…</div></div>
 <div class="card"><h2 style="margin-top:0"><span id="mmrHead">MMR</span> history</h2><canvas id="mmr" width="900" height="260" style="width:100%"></canvas><p id="mmrnote" class="muted"></p></div>
@@ -24,11 +27,13 @@
 <script type="module">
 import { api, h, $, pct, ago, dur, fmt, heroes, rankBadge, heroIcon, items, itemImg, shell, showError, kda, ratio, kdOf, kdaOf, KD, KDA, me as whoAmI, term } from "/js/app.js";
 $("#mmrHead")?.replaceWith(term("MMR"));
+import { mountAchievements, mountTrends, mountBench } from "/js/profile.js";
 shell("/");
 const qs = new URLSearchParams(location.search); const id = qs.get("id");
 try {
   const [d, hs, assets, me] = await Promise.all([api(`/players/${id}`), heroes(), api("/assets"), whoAmI().catch(() => null)]);
   const p = d.player; document.title = `${p.name} · Soul Scribe`;
+  mountAchievements($("#achCard"), id, me?.account_id === p.account_id); mountTrends($("#trendCard"), id, hs); mountBench($("#benchCard"), id, hs);
   const tier = p.mmr_rank ? Math.floor(p.mmr_rank / 10) : 0; const rinfo = p.mmr_rank ? assets.ranks.find((r) => r.tier === tier) : null;
   $("#head").replaceChildren(p.avatar_url ? h("div", { class: "avw" }, h("img", { class: "av", src: p.avatar_url, alt: "" })) : "", h("div", { style: "flex:1" }, h("h1", {}, p.name), h("div", { class: "muted" }, `Synced ${ago(p.last_sync_at)}`, d.ingest?.active ? ` · uploader active, last upload ${ago(d.ingest.last_upload_at)}` : "")),
     h("div", { class: "rank" }, await rankBadge(p.mmr_rank, "large"), h("div", {}, h("b", {}, rinfo ? `${rinfo.name} ${p.mmr_rank % 10 || ""}` : "Unranked"), h("span", {}, ...(p.mmr_score != null ? [term("MMR"), ` ${Math.round(p.mmr_score)}`] : ["needs more games"])))));

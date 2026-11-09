@@ -1,0 +1,47 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><script>try{if(!sessionStorage.getItem("ss.booted")&&!matchMedia("(prefers-reduced-motion: reduce)").matches)document.documentElement.classList.add("booting")}catch(e){}</script><meta name="viewport" content="width=device-width,initial-scale=1"><title>Patch watch · Soul Scribe</title><link rel="icon" type="image/png" href="/img/favicon.png"><link rel="stylesheet" href="/css/app.css">
+<style>
+.pfilter{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:0 0 18px}
+.news{display:grid;gap:6px;margin-top:8px}.news a{display:flex;gap:12px;align-items:baseline;padding:8px 12px;border-radius:10px;background:rgba(0,0,0,.2);border:1px solid var(--line);color:var(--text);font-size:13.5px}.news a:hover{border-color:var(--line2)}.news a span{margin-left:auto;font:700 10px var(--fh);letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+</style></head>
+<body><main>
+<h1>Patch watch</h1>
+<p class="lead">Every balance change from the official notes, matched to heroes and items. Changes to heroes your squad plays, and items in your saved builds, are marked.</p>
+<div class="pfilter" id="pfilter"></div>
+<div id="out" class="pt-list">Loading…</div>
+<h2>Other news</h2>
+<div id="news" class="news"></div>
+</main>
+<script type="module">
+import { api, h, $, heroes, items, me, shell, showError, heroIcon, itemImg, segmented } from "/js/app.js";
+shell("/patches.html");
+const when = (t) => { const d = (Date.now() / 1000 - t) / 86400; return d < 1 ? "Today" : d < 2 ? "Yesterday" : d < 14 ? `${Math.floor(d)} days ago` : new Date(t * 1000).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }); };
+try {
+  const [{ patches, squad }, hs, its, who] = await Promise.all([api("/patches"), heroes(), items(), me().catch(() => ({}))]);
+  const mine = squad.find((s) => s.account_id === who.account_id);
+  const myHeroes = new Set((mine?.heroes ?? []).map((x) => x.hero_id)), myItems = new Set(mine?.items ?? []);
+  const changes = patches.filter((p) => p.heroes.length || p.items.length), news = patches.filter((p) => !p.heroes.length && !p.items.length);
+  let only = "all";
+  const render = () => {
+    if (!changes.length) return $("#out").replaceChildren(h("div", { class: "empty-note" }, h("b", {}, "No balance notes in the feed right now"), h("p", { class: "muted" }, "Check back after the next update.")));
+    $("#out").replaceChildren(...changes.map((p, i) => {
+      const touched = squad.map((s) => ({ s, hz: p.heroes.filter((c) => s.heroes.some((x) => x.hero_id === c.id)) })).filter((x) => x.hz.length);
+      let hz = [...p.heroes].sort((a, b) => (myHeroes.has(b.id) - myHeroes.has(a.id)) || (touched.some((t) => t.hz.includes(b)) - touched.some((t) => t.hz.includes(a))) || a.name.localeCompare(b.name));
+      let ix = [...p.items].sort((a, b) => (myItems.has(b.id) - myItems.has(a.id)) || a.name.localeCompare(b.name));
+      if (only === "squad") { const sq = new Set(squad.flatMap((s) => s.heroes.map((x) => x.hero_id))); hz = hz.filter((c) => sq.has(c.id)); ix = ix.filter((c) => squad.some((s) => s.items.includes(c.id))); }
+      const card = (c, kind) => { const hx = kind === "h" ? hs.find((x) => x.id === c.id) : null, it = kind === "i" ? its.find((x) => x.id === c.id) : null; const isMine = kind === "h" ? myHeroes.has(c.id) : myItems.has(c.id);
+        const fans = kind === "h" ? squad.filter((s) => s.heroes.some((x) => x.hero_id === c.id)).map((s) => s.name) : [];
+        return h("div", { class: "cg" + (isMine ? " mine" : "") }, h("div", { class: "hd" }, kind === "h" ? heroIcon(hx, 26) : itemImg(it, 26), h("b", {}, c.name), isMine ? h("span", { class: "tag" }, kind === "h" ? "Your hero" : "In your builds") : fans.length ? h("span", { class: "tag", style: "color:var(--muted)" }, fans.slice(0, 2).join(", ") + (fans.length > 2 ? ` +${fans.length - 2}` : "")) : ""),
+          h("ul", {}, ...c.lines.map((l) => h("li", {}, l)))); };
+      const body = [hz.length ? h("div", { class: "chg" }, ...hz.map((c) => card(c, "h"))) : "", ix.length ? [h("h2", { style: "margin:18px 0 0" }, "Items"), h("div", { class: "chg" }, ...ix.map((c) => card(c, "i")))] : "", p.general.length && only === "all" ? [h("h2", { style: "margin:18px 0 0" }, "General"), h("div", { class: "cg", style: "margin-top:12px" }, h("ul", {}, ...p.general.slice(0, 40).map((l) => h("li", {}, l))))] : ""];
+      return h("article", { class: "pt" + (i === 0 ? " latest" : "") },
+        h("div", { class: "top" }, i === 0 ? h("span", { class: "sticker" }, "Latest") : "", h("h3", {}, p.title), h("span", { class: "src" }, p.source === "forum" ? "Forum" : "Steam"), h("span", { class: "when", style: "margin-left:auto" }, when(p.date))),
+        h("div", { class: "meta" }, h("span", {}, h("b", {}, String(p.heroes.length)), " heroes"), h("span", {}, h("b", {}, String(p.items.length)), " items"), h("span", {}, h("b", {}, String(p.total)), " changes"), h("a", { href: p.link, target: "_blank", rel: "noopener" }, "Full notes ↗")),
+        touched.length ? h("div", { class: "yours" }, h("h4", {}, "Hits the squad"), h("div", { class: "who" }, ...touched.map(({ s, hz }) => h("span", { class: "p" }, s.avatar_url ? h("img", { src: s.avatar_url, alt: "" }) : "", s.name, h("span", { class: "hz" }, ...hz.slice(0, 5).map((c) => heroIcon(hs.find((x) => x.id === c.id), 20))))))) : "",
+        h("details", { open: i === 0 ? "" : undefined }, h("summary", {}, i === 0 ? "Changes" : "Show changes"), ...body.flat()));
+    }));
+  };
+  $("#pfilter").append(segmented([["all", "Everything"], ["squad", "Squad heroes only"]], only, (v) => { only = v; render(); }, "Show"));
+  render();
+  $("#news").replaceChildren(...(news.length ? news.map((n) => h("a", { href: n.link, target: "_blank", rel: "noopener" }, n.title, h("span", {}, when(n.date)))) : [h("p", { class: "muted" }, "Nothing else lately.")]));
+} catch (e) { showError($("#out"), e); }
+</script></body></html>

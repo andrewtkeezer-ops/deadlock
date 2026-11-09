@@ -107,4 +107,16 @@ function hud() {
   document.addEventListener("pointerleave", () => cur && reset(cur));
 }
 
+/* ---------------- "Achievement unlocked" banner ---------------- */
+const queue = []; let showing = false;
+/** Queue a game-style unlock banner. `a` = { icon, name, tier (1-3), how, lane }. */
+export function achievementToast(a) { queue.push(a); if (!showing) next(); }
+function next() {
+  const a = queue.shift(); if (!a) { showing = false; return; } showing = true;
+  const el = h("div", { class: `achtoast t${a.tier || 1}`, role: "status" }, h("div", { class: "medal" }, h("span", {}, a.icon || "★")),
+    h("div", { class: "tx" }, h("small", {}, a.kicker || "Achievement unlocked"), h("b", {}, a.name, a.tier ? h("em", {}, ["", "I", "II", "III"][a.tier]) : ""), a.how ? h("span", {}, a.how) : ""));
+  document.body.append(el); const close = () => { el.classList.add("out"); setTimeout(() => { el.remove(); next(); }, 450); };
+  el.addEventListener("click", close); setTimeout(close, RM ? 3500 : 4600);
+}
+
 export function start() { city(); boot(); wipes(); hud(); }

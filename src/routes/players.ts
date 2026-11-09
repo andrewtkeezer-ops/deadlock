@@ -2,6 +2,8 @@ import { Hono } from "hono";
 import type { Env, Player } from "../types";
 import { DeadlockApi } from "../deadlock";
 import { bigAvatar } from "../deadlock";
+import { ACHIEVEMENTS, achievementsFor } from "../achievements";
+import { getSetting } from "../settings";
 
 const r = new Hono<{ Bindings: Env }>();
 
@@ -76,6 +78,70 @@ r.get("/global/:region", async (c) => {
 });
 
 // Catch-all for a single account id — must stay LAST or it swallows /steam-names, /match/… etc.
+/** Squad coverage: who has recent games, how many the feed rescued, and whether their uploader has been seen. */
+r.get("/coverage", async (c) => {
+  const now = Math.floor(Date.now() / 1000), d7 = now - 7 * 86400, d30 = now - 30 * 86400;
+  const { results } = await c.env.DB.prepare(
+    `SELECT p.account_id, p.name, p.avatar_url, MAX(m.start_time) last_game, SUM(m.start_time > ?) g7, SUM(m.start_time > ?) g30, SUM(m.source='feed' AND m.start_time > ?) feed30, COUNT(m.match_id) total
+       FROM players p LEFT JOIN player_matches m ON m.account_id=p.account_id GROUP BY p.account_id ORDER BY last_game DESC`
+  ).bind(d7, d30, d30).all<{ account_id: number; name: string; avatar_url: string | null; last_game: number | null; g7: number; g30: number; feed30: number; total: number }>();
+  const api = new DeadlockApi(c.env);
+  const ingest = await Promise.all(results.map((p) => api.ingestStatus(p.account_id).catch(() => null)));
+  const [feed, sync] = await Promise.all([getSetting(c.env, "feed_last"), getSetting(c.env, "last_sync")]);
+  return c.json({ players: results.map((p, i) => ({ ...p, g7: p.g7 ?? 0, g30: p.g30 ?? 0, feed30: p.feed30 ?? 0, ingest: ingest[i] })), feed, sync });
+});
+
+/** Every stored game in a window, oldest first, for the trend charts (rolling averages are drawn client-side). */
+r.get("/:id{[0-9]+}/trends", async (c) => {
+  const id = Number(c.req.param("id")), days = Math.min(3650, Math.max(7, Number(c.req.query("days")) || 90));
+  const since = Math.floor(Date.now() / 1000) - days * 86400;
+  const { results } = await c.env.DB.prepare("SELECT match_id, start_time, hero_id, won, kills, deaths, assists, net_worth, duration_s FROM player_matches WHERE account_id=? AND start_time>? ORDER BY start_time ASC LIMIT 1500").bind(id, since).all();
+  return c.json({ days, games: results });
+});
+
+/** Achievements, recomputed from stored games (so they always include old games). */
+r.get("/:id{[0-9]+}/achievements", async (c) => {
+  const id = Number(c.req.param("id"));
+  return c.json({ defs: ACHIEVEMENTS, results: await achievementsFor(c.env, id) });
+});
+
+/** "Compared to your rank": the player's typical game (median per match, last 90 days) placed inside the distribution of
+ *  single games at their rank tier (last 30 days), overall and on their three most played heroes. Uses the last known
+ *  rank; with none there is nothing honest to compare against. */
+const BENCH: { key: string; label: string; fmt: "n1" | "n0" | "pct"; lower?: boolean }[] = [
+  { key: "kda", label: "KDA", fmt: "n1" }, { key: "net_worth_per_min", label: "Souls / min", fmt: "n0" }, { key: "player_damage_per_min", label: "Hero damage / min", fmt: "n0" },
+  { key: "last_hits", label: "Last hits", fmt: "n0" }, { key: "accuracy", label: "Accuracy", fmt: "pct" }, { key: "deaths", label: "Deaths", fmt: "n1", lower: true },
+];
+type MV = { avg: number | null; percentile1: number | null; percentile5: number | null; percentile10: number | null; percentile25: number | null; percentile50: number | null; percentile75: number | null; percentile90: number | null; percentile95: number | null; percentile99: number | null };
+function placeIn(v: number, m: MV): number | null {
+  const pts = ([[1, m.percentile1], [5, m.percentile5], [10, m.percentile10], [25, m.percentile25], [50, m.percentile50], [75, m.percentile75], [90, m.percentile90], [95, m.percentile95], [99, m.percentile99]] as [number, number | null][]).filter((p): p is [number, number] => p[1] != null && Number.isFinite(p[1]));
+  if (pts.length < 3) return null;
+  if (v <= pts[0][1]) return pts[0][0]; if (v >= pts[pts.length - 1][1]) return pts[pts.length - 1][0];
+  for (let i = 1; i < pts.length; i++) { const [p0, v0] = pts[i - 1], [p1, v1] = pts[i]; if (v <= v1) return v1 === v0 ? (p0 + p1) / 2 : p0 + ((v - v0) / (v1 - v0)) * (p1 - p0); }
+  return null;
+}
+r.get("/:id{[0-9]+}/benchmarks", async (c) => {
+  const id = Number(c.req.param("id"));
+  const p = await c.env.DB.prepare("SELECT mmr_rank FROM players WHERE account_id=?").bind(id).first<{ mmr_rank: number | null }>();
+  if (!p?.mmr_rank) return c.json({ rank: null });
+  const tier = Math.floor(p.mmr_rank / 10); const since = Math.floor(Date.now() / 1000) - 90 * 86400;
+  const { results: top } = await c.env.DB.prepare("SELECT hero_id, COUNT(*) n FROM player_matches WHERE account_id=? AND start_time>? GROUP BY hero_id ORDER BY n DESC LIMIT 3").bind(id, since).all<{ hero_id: number; n: number }>();
+  const api = new DeadlockApi(c.env), path = "/v1/analytics/player-stats/metrics", band = { min_average_badge: tier * 10 + 1, max_average_badge: tier * 10 + 6 };
+  const heroIds = top.map((t) => t.hero_id).join(",");
+  type Bucket = Record<string, MV> & { bucket?: number };
+  const [bracket, bracketH, own, ownH] = await Promise.all([
+    api.get<Bucket>(path, band, 6 * 3600),
+    heroIds ? api.get<Bucket[]>(path, { ...band, bucket: "hero", hero_ids: heroIds }, 6 * 3600) : Promise.resolve([] as Bucket[]),
+    api.get<Bucket>(path, { account_ids: id, min_unix_timestamp: since }, 3600),
+    heroIds ? api.get<Bucket[]>(path, { account_ids: id, min_unix_timestamp: since, bucket: "hero", hero_ids: heroIds }, 3600) : Promise.resolve([] as Bucket[]),
+  ]);
+  const group = (label: string, hero_id: number | null, mine: Bucket | undefined, them: Bucket | undefined, games?: number) => ({ label, hero_id, games,
+    metrics: BENCH.map((b) => { const you = mine?.[b.key]?.percentile50, ref = them?.[b.key]; if (you == null || !Number.isFinite(you) || !ref) return null; const at = placeIn(you, ref); if (at == null) return null;
+      return { ...b, you, median: ref.percentile50, p25: ref.percentile25, p75: ref.percentile75, pct: Math.round(b.lower ? 100 - at : at) }; }).filter(Boolean) });
+  const groups = [group("Overall", null, own, bracket), ...top.map((t) => group("", t.hero_id, ownH.find((b) => b.bucket === t.hero_id), bracketH.find((b) => b.bucket === t.hero_id), t.n))].filter((g) => g.metrics.length);
+  return c.json({ rank: p.mmr_rank, tier, groups });
+});
+
 /** One friend's profile: recent matches + per-hero breakdown + MMR history. */
 r.get("/:id{[0-9]+}", async (c) => {
   const id = Number(c.req.param("id"));

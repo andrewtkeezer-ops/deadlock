@@ -22,13 +22,16 @@
 <p id="s2s" class="status muted"></p></div></div>
 <div class="step" id="s3"><div class="n"><span>3</span></div><div class="card"><h2>Play, then check the leaderboard</h2><p>The site re-syncs everyone hourly, so uploaded games show up within the hour. Your <a id="mylink" href="/">profile</a> shows your rank, heroes and matches; <a href="/library.html">Builds</a> is where you keep and share builds.</p><p id="s3s" class="status muted"></p></div></div>
 </div>
+<h2 id="coverage">Squad coverage</h2>
+<p class="muted" style="margin-top:-4px">Who's getting their games in. Soul Scribe checks two places every 10 minutes: each player's match history, and its own feed of every full match record the squad appears in (rescues games someone else uploaded).</p>
+<div class="card"><div class="cov" id="cov">Loading…</div><div class="cov-foot" id="covFoot"></div></div>
 </main>
 <script type="module">
 import("/js/app.js").then(async ({ uploaderLatest }) => { try { const rel = await uploaderLatest(); const a = document.getElementById("dlLink"); a.href = rel.download_url; a.textContent = `Download the match uploader (v${rel.version}${rel.size ? `, ~${Math.round(rel.size / 1048576)} MB` : ""})`; a.addEventListener("click", () => { try { localStorage.setItem("ss.uploader.ack", rel.version); } catch {} });
   document.getElementById("dlNote").textContent = `The open-source deadlock-api-ingest tool, released ${new Date(rel.published_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}. Its status window (Start menu → Deadlock API Ingest) shows your version bottom-left.`; } catch {} });
 document.getElementById("copyBf").onclick = async (e) => { try { await navigator.clipboard.writeText(document.getElementById("backfill").textContent); e.target.textContent = "Copied"; } catch { e.target.textContent = "Select and copy"; } setTimeout(() => (e.target.textContent = "Copy"), 2000); };
 
-import { api, h, $, ago, me, shell } from "/js/app.js";
+import { api, h, $, ago, me, shell, showError } from "/js/app.js";
 shell("/setup.html");
 const st = new URLSearchParams(location.search).get("steam");
 if (st) $("#s1s").innerHTML = st === "failed" ? '<span class="error">Steam sign-in could not be verified. Try again.</span>' : "Steam sign-in was cancelled.";
@@ -37,4 +40,15 @@ try { const m = await me(); if (m.account_id) { $("#s1").classList.add("done"); 
   const newest = d.matches[0]?.start_time;
   if (newest && Date.now() / 1000 - newest > 86400) $("#s2s").append(h("div", { class: "error", style: "margin-top:6px" }, `Your newest game here is from ${ago(newest)}. If you've played since, update the uploader (step 2 above) and run the backfill command.`));
   if (d.matches.length) { $("#s3").classList.add("done"); $("#s3s").textContent = `${d.matches.length} matches tracked.`; } } } catch {}
+
+// squad coverage
+(async () => { const el = $("#cov"); try { const d = await api("/players/coverage"); const now = Date.now() / 1000;
+  el.replaceChildren(...d.players.map((p) => { const lu = p.ingest?.last_upload_at ? (typeof p.ingest.last_upload_at === "number" ? p.ingest.last_upload_at : Date.parse(p.ingest.last_upload_at) / 1000) : null;
+    const quiet = !p.last_game || now - p.last_game > 7 * 86400, upOk = !!p.ingest?.active;
+    const [cls, txt] = !p.total ? ["bad", "No games yet"] : quiet && !upOk ? ["bad", "Uploader not seen"] : quiet ? ["warn", "No games this week"] : !upOk ? ["warn", "Covered by friends"] : ["ok", "All good"];
+    return h("div", { class: "row" }, p.avatar_url ? h("img", { class: "av", src: p.avatar_url, alt: "" }) : h("span"), h("div", { class: "nm" }, h("a", { href: `/player.html?id=${p.account_id}` }, h("b", {}, p.name)), h("span", {}, p.last_game ? `Last game ${ago(p.last_game)}` : "No games stored", lu ? ` · last upload ${ago(lu)}` : " · uploader never seen")),
+      h("div", { class: "k" }, h("b", {}, String(p.g7)), h("span", {}, "7 days")), h("div", { class: "k" }, h("b", {}, String(p.g30)), h("span", {}, "30 days")), h("div", { class: "k" }, h("b", { style: p.feed30 ? "color:var(--lane-y)" : "" }, String(p.feed30)), h("span", {}, "via feed")),
+      h("span", { class: `st ${cls}` }, txt)); }));
+  $("#covFoot").textContent = [d.sync?.at ? `Last sync ${ago(d.sync.at)}` : "", d.feed?.at ? `feed checked ${d.feed.checked} squad matches, found ${d.feed.found} new` : "", "\"via feed\" = games the feed found that match history didn't have (30 days)."].filter(Boolean).join(" · ");
+} catch (e) { showError(el, e); } })();
 </script></body></html>
