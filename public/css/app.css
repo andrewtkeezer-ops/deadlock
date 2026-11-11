@@ -760,14 +760,6 @@ a.ach-m:hover{transform:translateY(-3px);border-color:rgba(255,211,107,.35);colo
 .src .sr b{font:600 12.5px var(--fh);text-align:right;font-variant-numeric:tabular-nums}.src .sr>span:last-child{font:700 11px var(--fh);text-align:right}
 .lanebox{margin-top:18px;padding-top:14px;border-top:1px dashed var(--line2)}.lanebox .lk{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}.lanebox .lk b{display:block;font:600 22px/1 var(--fh)}.lanebox .lk span{font-size:11.5px;color:var(--dim)}
 .lanebox .lp{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12.5px;border-bottom:1px solid var(--line)}.lanebox .lp .duo{display:flex}.lanebox .lp .duo img+img{margin-left:-6px}.lanebox .lp b{margin-left:auto;font:600 13px var(--fh)}.lanebox .lp small{color:var(--dim)}
-/* live now */
-.livepill{display:flex;align-items:center;gap:8px;margin:0 20px 8px;padding:6px 12px;border-radius:999px;background:rgba(239,107,94,.12);border:1.5px solid rgba(239,107,94,.5);color:#ffb3aa;font:700 10.5px/1 var(--fh);letter-spacing:.16em;text-transform:uppercase;width:max-content}
-.livepill i,.livestrip .lv i{width:8px;height:8px;border-radius:50%;background:var(--loss);box-shadow:0 0 0 0 rgba(239,107,94,.7);animation:livePulse 1.6s ease-out infinite}
-@keyframes livePulse{70%{box-shadow:0 0 0 8px rgba(239,107,94,0)}100%{box-shadow:0 0 0 0 rgba(239,107,94,0)}}
-.livestrip{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:0 0 14px;padding:10px 14px;border-radius:14px;background:linear-gradient(100deg,rgba(239,107,94,.14),rgba(239,107,94,.02));border:1px solid rgba(239,107,94,.35)}
-.livestrip .lv{display:inline-flex;align-items:center;gap:8px;font:700 11px/1 var(--fh);letter-spacing:.18em;text-transform:uppercase;color:#ffb3aa}
-.livestrip .lm{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:4px 12px 4px 4px;border-radius:999px;background:rgba(0,0,0,.3);font:600 12.5px var(--fh)}.livestrip .lp{display:inline-flex;align-items:center;gap:6px;color:var(--text)}.livestrip .lp img{border-radius:7px}
-.lb .p.islive a::after{content:"LIVE";margin-left:8px;padding:2px 6px 1px;border-radius:999px;background:var(--loss);color:#fff;font:700 9px/1.2 var(--fh);letter-spacing:.12em;vertical-align:2px;animation:blink 1.6s steps(1) infinite}
 /* accolades on scoreboards */
 .accs{display:inline-flex;flex-wrap:wrap;gap:4px;margin-left:6px;vertical-align:1px}.acc{display:inline-block;padding:2px 7px 1px;border-radius:999px;background:rgba(255,211,107,.12);border:1px solid rgba(255,211,107,.35);color:var(--lane-y);font:700 9.5px/1.3 var(--fh);letter-spacing:.06em;white-space:nowrap;cursor:help}.acc.more{color:var(--muted);border-color:var(--line2);background:none}
-@media (prefers-reduced-motion:reduce){.so-c,.bp-it,.cchart .refl,.cchart .gap,.livepill i,.livestrip .lv i,.lb .p.islive a::after{animation:none!important}.cchart .refl{stroke-dashoffset:0}}
+@media (prefers-reduced-motion:reduce){.so-c,.bp-it,.cchart .refl,.cchart .gap{animation:none!important}.cchart .refl{stroke-dashoffset:0}}
