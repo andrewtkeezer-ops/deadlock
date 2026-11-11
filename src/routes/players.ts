@@ -142,6 +142,31 @@ r.get("/:id{[0-9]+}/benchmarks", async (c) => {
   return c.json({ rank: p.mmr_rank, tier, groups });
 });
 
+/** How a player's games unfold: their average souls/kills/deaths by game minute (player-performance-curve, 90 days)
+ *  against typical games at their rank (or all ranks when unranked), plus where their souls come from and how their
+ *  lanes go (souls lead at 15 min, lane-matchup-stats). */
+r.get("/:id{[0-9]+}/curve", async (c) => {
+  const id = Number(c.req.param("id")); const now = Math.floor(Date.now() / 1000);
+  const p = await c.env.DB.prepare("SELECT mmr_rank FROM players WHERE account_id=?").bind(id).first<{ mmr_rank: number | null }>();
+  const tier = p?.mmr_rank ? Math.floor(p.mmr_rank / 10) : null;
+  const api = new DeadlockApi(c.env), path = "/v1/analytics/player-performance-curve";
+  type Pt = Record<string, number> & { game_time: number };
+  type Lane = { hero_ids: number[]; wins: number; matches_played: number; net_worth_diff: number };
+  const band = tier ? { min_average_badge: tier * 10 + 1, max_average_badge: tier * 10 + 6 } : {};
+  const [you, ref, lanes] = await Promise.all([
+    api.get<Pt[]>(path, { account_ids: id, resolution: 0, min_unix_timestamp: now - 90 * 86400 }, 3600),
+    api.get<Pt[]>(path, { resolution: 0, ...band }, 12 * 3600),
+    api.get<Lane[]>("/v1/analytics/lane-matchup-stats", { account_ids: id, group_by: "hero_ids", min_unix_timestamp: now - 90 * 86400, sample_time_s: 900 }, 3600).catch(() => [] as Lane[]),
+  ]);
+  const SRC = ["gold_player", "gold_lane_creep", "gold_neutral_creep", "gold_boss", "gold_treasure", "gold_breakable", "gold_assists", "gold_team_bonus", "gold_denied", "gold_death_loss"];
+  const trim = (pts: Pt[]) => pts.filter((x) => x.game_time > 0 && x.game_time <= 2700).map((x) => ({ t: x.game_time, nw: Math.round(x.net_worth_avg), k: +x.kills_avg.toFixed(2), d: +x.deaths_avg.toFixed(2), a: +x.assists_avg.toFixed(2),
+    src: Object.fromEntries(SRC.map((k) => [k, Math.round((x[`${k}_avg`] ?? 0) + (x[`${k}_orbs_avg`] ?? x[`${k}_orb_avg`] ?? 0))])) }));
+  const lm = lanes.reduce((n, l) => n + l.matches_played, 0);
+  const lane = lm ? { matches: lm, win_rate: lanes.reduce((n, l) => n + l.wins, 0) / lm, souls_lead_15: Math.round(lanes.reduce((n, l) => n + l.net_worth_diff * l.matches_played, 0) / lm),
+    partners: lanes.filter((l) => l.matches_played >= 2).sort((a, b) => b.matches_played - a.matches_played).slice(0, 4).map((l) => ({ heroes: l.hero_ids, matches: l.matches_played, souls_lead_15: Math.round(l.net_worth_diff), win_rate: l.wins / l.matches_played })) } : null;
+  return c.json({ tier, you: trim(you), ref: trim(ref), lane });
+});
+
 /** One friend's profile: recent matches + per-hero breakdown + MMR history. */
 r.get("/:id{[0-9]+}", async (c) => {
   const id = Number(c.req.param("id"));

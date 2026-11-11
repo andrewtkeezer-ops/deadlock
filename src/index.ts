@@ -83,6 +83,15 @@ app.get("/api/me", async (c) => {
 });
 
 app.get("/api/patches", async (c) => { const [patches, squad] = await Promise.all([parsedPatches(c.env, 15), squadInterests(c.env)]); return c.json({ patches, squad }); });
+/** Live now: squad members in a match the game's Watch tab lists (Valve's top ~200 live matches, so mostly higher ranks). */
+app.get("/api/live", async (c) => {
+  const { results } = await c.env.DB.prepare("SELECT account_id FROM players").all<{ account_id: number }>(); if (!results.length) return c.json([]);
+  type Active = { match_id: number; start_time?: number; duration_s?: number; spectators?: number; net_worth_team_0?: number; net_worth_team_1?: number; match_mode_parsed?: string; players: { account_id?: number; hero_id?: number; team?: number }[] };
+  const ids = new Set(results.map((r) => r.account_id));
+  const rows = await new DeadlockApi(c.env).get<Active[]>("/v1/matches/active", { account_ids: [...ids].join(",") }, 60).catch(() => [] as Active[]);
+  return c.json(rows.map((m) => ({ match_id: m.match_id, start_time: m.start_time, duration_s: m.duration_s, spectators: m.spectators, mode: m.match_mode_parsed, souls: [m.net_worth_team_0 ?? 0, m.net_worth_team_1 ?? 0],
+    squad: m.players.filter((p) => p.account_id && ids.has(p.account_id)).map((p) => ({ account_id: p.account_id, hero_id: p.hero_id, team: p.team })) })).filter((m) => m.squad.length));
+});
 app.route("/api/players", players);
 app.route("/api/heroes", heroes);
 app.route("/api/library", library);

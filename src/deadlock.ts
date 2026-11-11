@@ -187,7 +187,7 @@ export class DeadlockApi {
       const cls = raw.items?.[slot]; if (!cls) return null;
       const a = await this.asset<RawAbility>(`/v1/assets/items/${cls}`, undefined, 86400).catch(() => null); if (!a) return null;
       const num = (k: string) => { const v = a.properties?.[k]?.value; const n = typeof v === "string" ? parseFloat(v) : Number(v); return Number.isFinite(n) && n !== 0 ? n : undefined; };
-      return { slot: i + 1, key: i === 3 ? "ultimate" : `${i + 1}`, name: a.name, type: a.ability_type, image: a.image_webp ?? a.image,
+      return { id: a.id, slot: i + 1, key: i === 3 ? "ultimate" : `${i + 1}`, name: a.name, type: a.ability_type, image: a.image_webp ?? a.image,
         description: a.description?.desc, quip: a.description?.quip, tiers: [a.description?.t1_desc, a.description?.t2_desc, a.description?.t3_desc].filter(Boolean),
         cooldown: num("AbilityCooldown"), duration: num("AbilityDuration"), range: num("AbilityCastRange"), charges: num("AbilityCharges"), radius: num("Radius"),
         upgrades: (a.upgrades ?? []).map((u) => u.property_upgrades?.map((pu) => `${pu.name} ${typeof pu.bonus === "number" && pu.bonus > 0 ? "+" : ""}${pu.bonus}`) ?? []) };
@@ -197,9 +197,10 @@ export class DeadlockApi {
   /** Ranks, game colours, fonts and the official map, trimmed for the front end. */
   uiAssets() {
     return this.asset<UiAssets>(`/v1/assets/map`, undefined, 86400).then(async (map) => {
-      const [ranks, colors, fonts] = await Promise.all([this.asset<RawRank[]>(`/v1/assets/ranks`), this.asset<Record<string, { red: number; green: number; blue: number }>>(`/v1/assets/colors`), this.asset<Record<string, string>>(`/v1/assets/fonts`)]);
+      const [ranks, colors, fonts, accolades] = await Promise.all([this.asset<RawRank[]>(`/v1/assets/ranks`), this.asset<Record<string, { red: number; green: number; blue: number }>>(`/v1/assets/colors`), this.asset<Record<string, string>>(`/v1/assets/fonts`), this.asset<{ id: number; flavor_name?: string; class_name: string; description?: string; tracked_stat_name?: string }[]>(`/v1/assets/accolades`, undefined, 86400).catch(() => [])]);
       return {
         ranks: ranks.map((r) => ({ tier: r.tier, name: r.name, color: r.color, large: r.images?.large_webp ?? r.images?.large, small: Array.from({ length: 6 }, (_, i) => r.images?.[`small_subrank${i + 1}_webp`] ?? r.images?.[`small_subrank${i + 1}`]), badge: Array.from({ length: 6 }, (_, i) => r.images?.[`subrank${i + 1}_webp`] ?? r.images?.[`subrank${i + 1}`]) })),
+        accolades: accolades.map((a) => ({ id: a.id, name: a.flavor_name || a.class_name, stat: a.tracked_stat_name, desc: (a.description ?? "").replace(/<[^>]+>/g, "").replace(/\{g:[^}]*\}/g, "{v}").replace(/\{stat_value, plural, one\{([^}]*)\} other\{([^}]*)\}\}/g, "$2") })),
         colors: Object.fromEntries(Object.entries(colors).map(([k, v]) => [k, `rgb(${v.red},${v.green},${v.blue})`])),
         fonts: Object.fromEntries(Object.entries(fonts).filter(([k]) => k.startsWith("radiance") || k.startsWith("reaver"))),
         map: { radius: map.radius, images: map.images, objectives: map.objective_positions, camps: (map.neutral_camps ?? []).map((c) => ({ name: c.name, kind: c.kind, left: c.left_relative, top: c.top_relative, icon: c.icon })) },
@@ -253,7 +254,7 @@ type RawRank = { tier: number; name: string; color: string; images?: Record<stri
 export type UiAssets = {
   radius: number; images: Record<string, string>; objective_positions: Record<string, { left_relative: number; top_relative: number }>;
   neutral_camps?: { name: string; kind: string; left_relative: number; top_relative: number; icon?: string }[];
-  ranks?: unknown; colors?: unknown; fonts?: unknown; map?: unknown;
+  ranks?: unknown; colors?: unknown; fonts?: unknown; map?: unknown; accolades?: unknown;
 };
 type RawItem = { id: number; name: string; class_name: string; type: string; item_slot_type?: "weapon" | "vitality" | "spirit"; item_tier?: number; cost?: number;
   shopable?: boolean; disabled?: boolean; is_active_item?: boolean; heroes?: number[]; image?: string; image_webp?: string; shop_image_webp?: string;

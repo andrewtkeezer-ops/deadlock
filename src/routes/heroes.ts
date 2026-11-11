@@ -172,4 +172,53 @@ r.get("/:id/matchups", async (c) => {
   return c.json({ hero_id: id, name: names.get(id), counters: counters.sort((a, b) => a.win_rate - b.win_rate), synergies: synergies.sort((a, b) => b.win_rate - a.win_rate) });
 });
 
+const DAY = 86400, nowS = () => Math.floor(Date.now() / 1000);
+
+/** Skill order: the most played ability-upgrade orders over the last 3 weeks (deadlock-api ability-order-stats), with
+ *  win rates and when each point usually goes in. Orders are compared on the first 12 points. */
+r.get("/:id/skill-order", async (c) => {
+  const id = Number(c.req.param("id")); const api = new DeadlockApi(c.env);
+  type Row = { abilities: number[]; avg_upgrade_times_s: number[]; wins: number; losses: number; matches: number };
+  const [rows, abilities] = await Promise.all([api.get<Row[]>("/v1/analytics/ability-order-stats", { hero_id: id, min_matches: 30, min_unix_timestamp: nowS() - 21 * DAY }, 6 * 3600), api.heroAbilities(id)]);
+  const merged = new Map<string, Row>();
+  for (const r0 of rows) { const k = r0.abilities.slice(0, 12).join(","); const m = merged.get(k); if (!m) merged.set(k, { ...r0, abilities: r0.abilities.slice(0, 16), avg_upgrade_times_s: r0.avg_upgrade_times_s.slice(0, 16) }); else { m.wins += r0.wins; m.losses += r0.losses; m.matches += r0.matches; } }
+  const all = [...merged.values()].sort((a, b) => b.matches - a.matches); const total = all.reduce((n, r0) => n + r0.matches, 0);
+  const popular = all.slice(0, 4), floor = Math.max(100, (popular[0]?.matches ?? 0) * 0.08);
+  const best = [...all].filter((r0) => r0.matches >= floor).sort((a, b) => b.wins / b.matches - a.wins / a.matches)[0];
+  const pick = [...popular]; if (best && !pick.includes(best)) pick.push(best);
+  return c.json({ abilities, total, orders: pick.map((r0) => ({ abilities: r0.abilities, times: r0.avg_upgrade_times_s.map((t) => Math.round(t)), matches: r0.matches, share: total ? r0.matches / total : 0, win_rate: r0.wins / Math.max(1, r0.matches), best: r0 === best })) });
+});
+
+/** Build path: which items win most in each phase of the game (0-9, 9-20, 20-30, 30+ min), from item-flow-stats.
+ *  Uses the wealth-adjusted win rate so items bought by players already ahead don't look better than they are. */
+r.get("/:id/build-path", async (c) => {
+  const id = Number(c.req.param("id")); const api = new DeadlockApi(c.env);
+  type Node = { column: number; item_id: number; wins: number; matches: number; adjusted_win_rate: number; avg_net_worth_at_buy: number };
+  const [flow, items] = await Promise.all([api.get<{ nodes: Node[]; reached_per_column?: number[]; reached_wins_per_column?: number[] }>("/v1/analytics/item-flow-stats", { hero_ids: id, min_unix_timestamp: nowS() - 21 * DAY, min_matches: 30 }, 6 * 3600), api.items()]);
+  const shop = new Set(items.map((i) => i.id)); const LABELS = ["0–9 min", "9–20 min", "20–30 min", "30+ min"];
+  const columns = LABELS.map((label, col) => {
+    const reached = flow.reached_per_column?.[col] ?? 0, base = reached ? (flow.reached_wins_per_column?.[col] ?? 0) / reached : null;
+    const nodes = flow.nodes.filter((n) => n.column === col && shop.has(n.item_id) && n.matches >= Math.max(40, reached * 0.03));
+    const fmtN = (n: Node) => ({ item_id: n.item_id, matches: n.matches, pick_rate: reached ? n.matches / reached : null, win_rate: n.adjusted_win_rate, raw_win_rate: n.wins / n.matches, souls_at_buy: Math.round(n.avg_net_worth_at_buy) });
+    return { label, reached, base_win_rate: base, best: [...nodes].sort((a, b) => b.adjusted_win_rate - a.adjusted_win_rate).slice(0, 6).map(fmtN), popular: [...nodes].sort((a, b) => b.matches - a.matches).slice(0, 6).map(fmtN) };
+  });
+  return c.json({ columns });
+});
+
+/** Laning: best lane partners for this hero and the enemy duos it struggles against (souls lead at 15 min + win rate). */
+r.get("/:id/laning", async (c) => {
+  const id = Number(c.req.param("id")); const api = new DeadlockApi(c.env);
+  type Lane = { hero_ids: number[]; enemy_hero_ids: number[]; wins: number; matches_played: number; net_worth_diff: number };
+  const q = { hero_ids: id, min_unix_timestamp: nowS() - 30 * DAY, sample_time_s: 900 };
+  const [partners, enemies] = await Promise.all([
+    api.get<Lane[]>("/v1/analytics/lane-matchup-stats", { ...q, group_by: "hero_ids", min_matches: 100 }, 6 * 3600),
+    api.get<Lane[]>("/v1/analytics/lane-matchup-stats", { ...q, group_by: "enemy_hero_ids", min_matches: 60 }, 6 * 3600),
+  ]);
+  const row = (l: Lane, ids: number[]) => ({ heroes: ids, matches: l.matches_played, win_rate: l.wins / Math.max(1, l.matches_played), souls_lead_15: Math.round(l.net_worth_diff) });
+  const P = partners.filter((l) => l.hero_ids.includes(id) && l.hero_ids.length === 2).map((l) => row(l, l.hero_ids.filter((x) => x !== id)));
+  const E = enemies.filter((l) => l.enemy_hero_ids.length === 2).map((l) => row(l, l.enemy_hero_ids));
+  const byLead = (a: { souls_lead_15: number }, b: { souls_lead_15: number }) => b.souls_lead_15 - a.souls_lead_15;
+  return c.json({ partners: [...P].sort(byLead).slice(0, 8), tough: [...E].sort((a, b) => a.souls_lead_15 - b.souls_lead_15).slice(0, 6), easy: [...E].sort(byLead).slice(0, 6) });
+});
+
 export default r;

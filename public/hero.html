@@ -76,9 +76,15 @@ details.sec .inner{padding:0 20px 20px}details.sec p{margin:0;color:#cfd3e6;max-
 <a class="back" href="/heroes.html">← All heroes</a>
 <header id="head" class="hero-head"></header>
 <section class="sec"><h2>Abilities</h2><div id="abilities" class="abil">Loading…</div></section>
+<section class="sec"><h2>Skill order <span class="sub">How players put their ability points in, and what wins.</span></h2><div id="skillorder" class="so">Loading…</div></section>
 <div class="cols">
 <section class="sec squad"><h2>Your squad on this hero</h2><div id="squad" class="muted">Loading…</div></section>
 <section class="sec sbuilds"><h2>Squad builds</h2><div class="fade"></div><div id="sbuilds" class="list muted">Loading…</div></section>
+</div>
+<section class="sec"><h2>Build path <span class="sub">The items that win in each phase of the game.</span></h2><div id="buildpath">Loading…</div></section>
+<div class="cols">
+<section class="sec"><h2>Best lane partners</h2><div id="lanep" class="ln">Loading…</div></section>
+<section class="sec"><h2>Toughest lanes</h2><div id="lanet" class="ln">Loading…</div></section>
 </div>
 <div class="cols">
 <section class="sec mu bad"><h2>Struggles against</h2><div class="fade"></div><div id="counters" class="rows">Loading…</div></section>
@@ -90,9 +96,11 @@ details.sec .inner{padding:0 20px 20px}details.sec p{margin:0;color:#cfd3e6;max-
 </main>
 <script type="module">
 import { api, h, $, pct, ago, heroes, itemImg, abilityTooltip, withTipBuilder, shell, showError } from "/js/app.js";
+import { mountSkillOrder, mountBuildPath, mountLaning } from "/js/hero-extras.js";
 shell("/heroes.html");
 const id = +new URLSearchParams(location.search).get("id");
 const [hs, items] = await Promise.all([heroes(), api("/library/items")]); const x = hs.find((y) => y.id === id); const item = (i) => items.find((y) => y.id === i);
+mountSkillOrder($("#skillorder"), id); mountBuildPath($("#buildpath"), id, items); mountLaning($("#lanep"), $("#lanet"), id, hs);
 if (!x) { $("#head").textContent = "Unknown hero"; throw new Error("no hero"); }
 document.title = `${x.name} · Soul Scribe`;
 

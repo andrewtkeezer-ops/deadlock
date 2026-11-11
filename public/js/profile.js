@@ -118,3 +118,45 @@ export async function mountBench(card, id, hs) {
     render();
   } catch (e) { showError(box, e); }
 }
+
+/* ---------------- how your games unfold ---------------- */
+const SRC_LABEL = { gold_lane_creep: ["Lane troopers", "var(--lane-y)"], gold_neutral_creep: ["Jungle camps", "var(--lane-g)"], gold_player: ["Hero kills", "var(--ink)"], gold_assists: ["Assists", "#e9a07a"], gold_boss: ["Objectives", "var(--lane-b)"], gold_treasure: ["Urn & treasure", "#c792ea"], gold_breakable: ["Crates", "#b0a18a"], gold_team_bonus: ["Team bonus", "#7f8c8d"], gold_denied: ["Denies", "#9aa"] };
+export async function mountCurve(card, id, hs) {
+  const box = card.querySelector(".curve"), sub = card.querySelector(".csub");
+  try {
+    const [d, a] = await Promise.all([api(`/players/${id}/curve`), assets()]);
+    if (d.you.length < 3) return box.replaceChildren(h("div", { class: "empty-note" }, h("b", {}, "Not enough full games yet"), h("p", { class: "muted" }, "This needs games with full stats (uploaded by someone in the match) from the last 90 days.")));
+    const rn = d.tier ? a.ranks.find((x) => x.tier === d.tier)?.name : null; const who = rn ? `typical ${rn}` : "typical player";
+    sub.textContent = `· you vs a ${who}`;
+    const ref = new Map(d.ref.map((p) => [p.t, p])); const pts = d.you.filter((p) => ref.has(p.t) && p.t <= 2400);
+    const Wd = 900, Ht = 250, pl = 54, pr = 16, pt = 18, pb = 30, tMax = pts.at(-1).t, vMax = Math.max(...pts.map((p) => Math.max(p.nw, ref.get(p.t).nw))) * 1.06;
+    const X = (t) => pl + (t / tMax) * (Wd - pl - pr), Y = (v) => pt + (1 - v / vMax) * (Ht - pt - pb);
+    const line = (get) => pts.map((p, i) => `${i ? "L" : "M"}${X(p.t).toFixed(1)},${Y(get(p)).toFixed(1)}`).join("");
+    const youL = line((p) => p.nw), refL = line((p) => ref.get(p.t).nw);
+    const gap = `${youL}${[...pts].reverse().map((p) => `L${X(p.t).toFixed(1)},${Y(ref.get(p.t).nw).toFixed(1)}`).join("")}Z`;
+    const at = (sec) => { const p = pts.reduce((b, x) => (Math.abs(x.t - sec) < Math.abs(b.t - sec) ? x : b), pts[0]); return { p, r: ref.get(p.t) }; };
+    const marks = [900, 1800].filter((s) => s <= tMax).map(at);
+    const NS = "http://www.w3.org/2000/svg", svg = document.createElementNS(NS, "svg"); svg.setAttribute("viewBox", `0 0 ${Wd} ${Ht}`); svg.setAttribute("class", "tchart cchart");
+    const yt = [0, .25, .5, .75, 1].map((f) => vMax * f);
+    svg.innerHTML = `<defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--lane-b)" stop-opacity=".25"/><stop offset="1" stop-color="var(--lane-b)" stop-opacity="0"/></linearGradient></defs>
+      ${yt.map((v) => `<line x1="${pl}" x2="${Wd - pr}" y1="${Y(v)}" y2="${Y(v)}" class="grid"/><text x="${pl - 8}" y="${Y(v) + 4}" class="ax" text-anchor="end">${v >= 1000 ? Math.round(v / 1000) + "k" : 0}</text>`).join("")}
+      ${pts.filter((p) => p.t % 300 === 0 || p.t === 180).map((p) => `<text x="${X(p.t)}" y="${Ht - 8}" class="ax" text-anchor="middle">${Math.round(p.t / 60)}m</text>`).join("")}
+      <path d="${gap}" class="gap ${pts.at(-1).nw >= ref.get(pts.at(-1).t).nw ? "ahead" : "behind"}"/>
+      <path d="${refL}" class="refl" pathLength="1"/><path d="${youL}" class="line youl" pathLength="1"/>
+      ${marks.map(({ p, r }) => `<line x1="${X(p.t)}" x2="${X(p.t)}" y1="${pt}" y2="${Ht - pb}" class="mk"/><circle cx="${X(p.t)}" cy="${Y(p.nw)}" r="5" class="head"/>`).join("")}
+      <text x="${X(pts.at(-1).t) - 4}" y="${Y(pts.at(-1).nw) - 10}" class="ax lab you" text-anchor="end">You</text><text x="${X(pts.at(-1).t) - 4}" y="${Y(ref.get(pts.at(-1).t).nw) + 18}" class="ax lab" text-anchor="end">${rn ?? "Typical"}</text>`;
+    const callouts = marks.map(({ p, r }) => { const diff = (p.nw - r.nw) / Math.max(1, r.nw);
+      return h("div", { class: "co" }, h("small", {}, `At ${Math.round(p.t / 60)} minutes`), h("b", {}, `${p.nw.toLocaleString()} souls`), h("span", { class: diff >= 0 ? "win" : "loss" }, `${diff >= 0 ? "+" : "−"}${Math.abs(diff * 100).toFixed(0)}% vs ${r.nw.toLocaleString()}`)); });
+    // where the souls come from at ~15 min, you vs typical
+    const { p: p15, r: r15 } = at(900); const keys = Object.keys(SRC_LABEL).filter((k) => (p15.src[k] || 0) + (r15.src[k] || 0) > 150);
+    const sMax = Math.max(...keys.map((k) => Math.max(p15.src[k] || 0, r15.src[k] || 0)), 1);
+    const sources = h("div", { class: "src" }, h("h4", {}, `Where the souls come from by ${Math.round(p15.t / 60)} minutes`), ...keys.sort((x, y) => (r15.src[y] || 0) - (r15.src[x] || 0)).map((k) => { const y = p15.src[k] || 0, t = r15.src[k] || 0, diff = t ? (y - t) / t : 0;
+      return h("div", { class: "sr" }, h("span", { class: "sl" }, h("i", { style: `background:${SRC_LABEL[k][1]}` }), SRC_LABEL[k][0]), h("div", { class: "sb2" }, h("i", { class: "y", style: `width:${y / sMax * 100}%;background:${SRC_LABEL[k][1]}` }), h("i", { class: "t", style: `width:${t / sMax * 100}%` })),
+        h("b", {}, y.toLocaleString()), h("span", { class: Math.abs(diff) < 0.08 ? "muted" : diff > 0 ? "win" : "loss" }, `${diff >= 0 ? "+" : "−"}${Math.abs(diff * 100).toFixed(0)}%`)); }),
+      h("p", { class: "fine" }, `Solid bar = you, outline = ${who}.`));
+    const L = d.lane; const lane = L ? h("div", { class: "lanebox" }, h("h4", {}, "Your lanes"), h("div", { class: "lk" }, h("div", {}, h("b", { class: L.souls_lead_15 >= 0 ? "win" : "loss" }, `${L.souls_lead_15 >= 0 ? "+" : "−"}${Math.abs(L.souls_lead_15).toLocaleString()}`), h("span", {}, "souls vs your lane opponents at 15 min")), h("div", {}, h("b", {}, pct(L.win_rate)), h("span", {}, `of ${L.matches} duo-lane games won`))),
+      ...L.partners.map((x) => h("div", { class: "lp" }, h("span", { class: "duo" }, ...x.heroes.map((hid) => heroIcon(hs.find((y) => y.id === hid), 24))), h("span", {}, x.heroes.map((hid) => hs.find((y) => y.id === hid)?.name ?? hid).join(" + "), h("small", {}, ` · ${x.matches} lanes`)), h("b", { class: x.souls_lead_15 >= 0 ? "win" : "loss" }, `${x.souls_lead_15 >= 0 ? "+" : "−"}${Math.abs(x.souls_lead_15).toLocaleString()}`)))) : null;
+    box.replaceChildren(h("div", { class: "cgrid" }, h("div", { class: "cmain" }, svg, h("div", { class: "cos" }, ...callouts)), h("div", { class: "cside" }, sources, lane)),
+      h("p", { class: "fine" }, `Your average over the last 90 days of games with full stats, against ${rn ? `${rn} games` : "all games"} from the last 30 days (deadlock-api).`));
+  } catch (e) { showError(box, e); }
+}

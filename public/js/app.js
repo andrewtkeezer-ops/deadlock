@@ -157,6 +157,7 @@ export function shell(active) {
   const who = h("div", { class: "who" });
   const rail = h("aside", { class: "rail" }, h("a", { class: "brand", href: "/", title: "Soul Scribe" }, h("img", { class: "mark", src: "/img/icon.png", alt: "" }), h("img", { class: "word", src: "/img/logo.webp", alt: "Soul Scribe" })), nav, who);
   document.body.prepend(rail);
+  livePill(rail);
   pageHeader();
   // "Take a tour" — in the page header when there is one, otherwise a small floating pill bottom-right. Never automatic.
   import("/js/tour.js").then((t) => { const b = t.tourButton(); if (!b) return; const top = document.querySelector(".ph .ph-top"); if (top) top.append(b); else { b.classList.add("fab"); document.body.append(b); } }).catch(() => {});
@@ -213,6 +214,16 @@ export function segmented(opts, value, onChange, label = "Choose") {
   el.addEventListener("click", (e) => { const b = e.target.closest("button[data-k]"); if (!b || b.dataset.k === String(value)) return; value = b.dataset.k; move(); onChange(value); });
   new ResizeObserver(move).observe(el); requestAnimationFrame(move); document.fonts?.ready.then(move);
   el.set = (v) => { value = String(v); move(); }; return el;
+}
+
+/** Squad members in a live match the game's Watch tab can see (cached ~1 min by the Worker). */
+let liveP = null, liveAt = 0;
+export function live(force = false) { if (force || !liveP || Date.now() - liveAt > 60000) { liveAt = Date.now(); liveP = api("/live").catch(() => []); } return liveP; }
+function livePill(rail) {
+  const pill = h("a", { class: "livepill", href: "/#live", hidden: "" }, h("i"), h("span", {}, "Live"));
+  rail.querySelector(".brand")?.after(pill);
+  const tick = async () => { if (document.hidden) return; const m = await live(true); const n = m.reduce((k, x) => k + x.squad.length, 0); pill.hidden = !n; pill.lastChild.textContent = n ? `${n} live now` : "Live"; };
+  tick(); setInterval(tick, 90000);
 }
 
 /** Eyebrow sticker above the page title, in the Deadlock site's postcard voice. Pages with their own hero header (hero.html) opt out with data-ph="off". */
