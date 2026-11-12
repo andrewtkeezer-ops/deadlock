@@ -21,8 +21,14 @@ main{max-width:1300px}
 .mx{border-collapse:collapse;font-variant-numeric:tabular-nums}.mx th{padding:4px;font-weight:400}.mx th img{width:30px;height:30px;border-radius:6px;display:block}.mx td{padding:0;width:44px;height:30px;text-align:center;font:600 11px var(--fh);border:1px solid rgba(0,0,0,.4);color:var(--cream)}.mx .rh{text-align:left;padding-right:6px}.mx .rh img{width:30px;height:30px;border-radius:6px}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:18px}@media(max-width:1000px){.two{grid-template-columns:1fr}}
 .sec h2{display:flex;align-items:baseline;gap:10px}.sec h2 small{font:400 12px var(--fb);color:var(--muted);text-transform:none;letter-spacing:0}
+/* v6: rows say they open */
+.sb tr.p td:first-child{position:relative;padding-left:26px}.sb tr.p td:first-child::before{content:"›";position:absolute;left:8px;top:50%;margin-top:-11px;color:var(--dim);font:400 18px/22px var(--fh);transition:transform .25s var(--ease),color .2s}
+.sb tr.p:hover td:first-child::before{color:var(--ink)}.sb tr.p[aria-expanded=true] td:first-child::before{transform:rotate(90deg);color:var(--ink)}
+.sb tr.p:focus-visible{outline:2px solid var(--lane-b);outline-offset:-2px}.sb tr.det>td{animation:detIn .3s var(--ease)}@keyframes detIn{from{opacity:0;transform:translateY(-6px)}}
+@media(prefers-reduced-motion:reduce){.sb tr.det>td{animation:none}}
 </style></head>
 <body><main>
+<div id="crumb"></div>
 <div class="card mhead" id="head">Loading…</div>
 <div class="two"><div class="card sec"><h2 style="margin-top:0">Soul lead <small>team net worth difference over the match</small></h2><div class="graph"><canvas id="lead" width="1100" height="300"></canvas><div class="cap"><span><i style="background:#e4b94f"></i>Amber ahead</span><span><i style="background:#4ab3ff"></i>Sapphire ahead</span><span><i style="background:var(--loss)"></i>death</span><span><i style="background:var(--cream)"></i>objective</span></div></div></div>
 <div class="card sec"><h2 style="margin-top:0">Timeline <small>kills and objectives</small></h2><div id="feed" class="feed muted">Loading…</div></div></div>
@@ -30,8 +36,9 @@ main{max-width:1300px}
 <div class="card sec"><h2 style="margin-top:0">Who hit whom <small>hero damage dealt, rows → columns. Click a player row above for their item timeline and accuracy.</small></h2><div class="two" id="matrix"></div></div>
 <details class="muted" style="margin-top:16px"><summary>Raw data</summary><pre id="raw"></pre></details></main>
 <script type="module">
-import { api, h, $, dur, fmt, heroes, items, itemImg, rankBadge, shell, showError, kda, ratio, kdaOf, KDA, pct } from "/js/app.js";
+import { api, h, $, dur, fmt, heroes, items, itemImg, rankBadge, shell, showError, kda, ratio, kdaOf, KDA, pct, crumb } from "/js/app.js";
 shell("/");
+$("#crumb").append(crumb("Leaderboard", "/"));
 const id = new URLSearchParams(location.search).get("id");
 const OBJ = { 0: "Patron", 1: "Guardian · lane 1", 2: "Guardian · lane 2", 3: "Guardian · lane 3", 4: "Guardian · lane 4", 5: "Walker · lane 1", 6: "Walker · lane 2", 7: "Walker · lane 3", 8: "Walker · lane 4", 9: "Weakened Patron", 10: "Shrine 1", 11: "Shrine 2", 12: "Base guardians · lane 1", 13: "Base guardians · lane 2", 14: "Base guardians · lane 3", 15: "Base guardians · lane 4" };
 const mm = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
@@ -53,10 +60,10 @@ try {
   const series = times.map((t) => ({ t, d: mi.players.reduce((s, p) => s + (p.team === 0 ? 1 : -1) * nwAt(p, t), 0) }));
   const deaths = mi.players.flatMap((p) => (p.death_details || []).map((d) => ({ t: d.game_time_s, victim: p, killer: bySlot.get(d.killer_player_slot) }))).sort((a, b) => a.t - b.t);
   const objs = (mi.objectives || []).filter((o) => o.destroyed_time_s).map((o) => ({ t: o.destroyed_time_s, team: o.team, name: OBJ[o.team_objective_id] ?? `Objective ${o.team_objective_id}` })).sort((a, b) => a.t - b.t);
-  (() => { const cv = $("#lead"), c = cv.getContext("2d"), W = cv.width, H = cv.height, L = 54, R = 16, T = 18, B = 30; if (series.length < 2) { c.fillStyle = "#8f93a3"; c.font = "14px Jost,sans-serif"; c.fillText("No timeline data in this match's replay.", L, H / 2); return; }
+  (() => { const cv = $("#lead"), cw = cv.clientWidth || 1100, dpr = window.devicePixelRatio || 1, W = Math.max(320, Math.round(cw)), H = Math.round(Math.max(220, Math.min(300, W * 0.5))); cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); cv.style.aspectRatio = `${W} / ${H}`; const c = cv.getContext("2d"); c.scale(dpr, dpr); const L = 54, R = 16, T = 18, B = 30; if (series.length < 2) { c.fillStyle = "#8f93a3"; c.font = "14px Jost,sans-serif"; c.fillText("No timeline data in this match's replay.", L, H / 2); return; }
     const T1 = Math.max(mi.duration_s, times[times.length - 1]); const amp = Math.max(2000, ...series.map((s) => Math.abs(s.d))); const X = (t) => L + t / T1 * (W - L - R), Y = (d) => T + (1 - (d + amp) / (2 * amp)) * (H - T - B);
     c.strokeStyle = "rgba(247,233,213,.08)"; c.lineWidth = 1; for (let i = -2; i <= 2; i++) { const y = Y(amp * i / 2); c.beginPath(); c.moveTo(L, y); c.lineTo(W - R, y); c.stroke(); c.fillStyle = "#8f93a3"; c.font = "11px Jost,sans-serif"; c.textAlign = "right"; c.fillText((i > 0 ? "+" : "") + fmt(amp * i / 2), L - 6, y + 4); }
-    c.textAlign = "center"; for (let t = 0; t <= T1; t += 300) { c.fillText(mm(t), X(t), H - 10); }
+    c.textAlign = "center"; for (let t = 0, stepT = W < 520 ? 600 : 300; t <= T1; t += stepT) { c.fillText(mm(t), X(t), H - 10); }
     const pts = [{ t: 0, d: 0 }, ...series]; const fill = (sign) => { c.beginPath(); c.moveTo(X(0), Y(0)); for (let i = 1; i < pts.length; i++) { const a = pts[i - 1], b = pts[i]; if ((a.d >= 0) !== (b.d >= 0)) { const tz = a.t + (0 - a.d) / (b.d - a.d) * (b.t - a.t); c.lineTo(X(tz), Y(0)); } c.lineTo(X(b.t), Y(sign * Math.max(0, sign * b.d))); } c.lineTo(X(pts[pts.length - 1].t), Y(0)); c.closePath(); c.fillStyle = sign > 0 ? "rgba(228,185,79,.28)" : "rgba(74,179,255,.28)"; c.fill(); }; fill(1); fill(-1);
     c.beginPath(); pts.forEach((p, i) => (i ? c.lineTo(X(p.t), Y(p.d)) : c.moveTo(X(p.t), Y(p.d)))); c.strokeStyle = "#f1e6c4"; c.lineWidth = 2.5; c.lineJoin = "round"; c.stroke();
     for (const d of deaths) { c.fillStyle = d.victim.team === 0 ? "rgba(228,185,79,.9)" : "rgba(74,179,255,.9)"; c.beginPath(); c.arc(X(d.t), H - B + 6, 3, 0, Math.PI * 2); c.fill(); }
@@ -81,14 +88,15 @@ try {
   const ACC = new Map((assets.accolades || []).map((a) => [a.id, a]));
   const accoladeChips = (p) => { const got = (p.accolades || []).filter((x) => x.accolade_threshold_achieved && ACC.has(x.accolade_id)); if (!got.length) return "";
     return h("span", { class: "accs" }, ...got.slice(0, 3).map((x) => { const a = ACC.get(x.accolade_id); return h("span", { class: "acc", title: (a.desc || "").replace("{v}", Number(x.accolade_stat_value).toLocaleString()) || a.name }, "★ ", a.name); }), got.length > 3 ? h("span", { class: "acc more", title: got.slice(3).map((x) => ACC.get(x.accolade_id).name).join(", ") }, `+${got.length - 3}`) : ""); };
-  const row = (p) => { const s = last(p), n = names.get(p.account_id), hx = hero(p.hero_id); const tr = h("tr", { class: "p" + (friends.has(p.account_id) ? " me" : ""), title: "Click for item timeline and combat detail" },
+  const row = (p) => { const s = last(p), n = names.get(p.account_id), hx = hero(p.hero_id); const tr = h("tr", { class: "p" + (friends.has(p.account_id) ? " me" : ""), title: "Item timeline and combat detail", tabindex: "0", "aria-expanded": "false" },
     h("td", {}, h("div", { class: "hero" }, hx?.images?.card ? h("img", { src: hx.images.card, alt: "" }) : "", h("div", { class: "n" }, friends.has(p.account_id) ? h("a", { href: `/player.html?id=${p.account_id}`, onclick: (e) => e.stopPropagation() }, n?.name ?? p.account_id) : h("span", {}, n?.name ?? String(p.account_id)), p.mvp_rank === 1 ? h("span", { class: "mvp" }, "MVP") : "", accoladeChips(p), h("small", {}, hx?.name ?? p.hero_id, h("span", { class: "lane" }, `lane ${p.assigned_lane ?? "?"}`), ` · lvl ${p.level}`)))),
     h("td", {}, kda(p.kills, p.deaths, p.assists, { size: "sm" })), h("td", { class: "num" }, ratio(kdaOf(p.kills, p.deaths, p.assists), KDA)),
     h("td", {}, h("div", { class: "num" }, fmt(p.net_worth)), h("div", { class: "bar" }, h("i", { style: `width:${p.net_worth / maxNw * 100}%;background:var(--accent)` }))),
     h("td", {}, h("div", { class: "num" }, fmt(s.player_damage)), h("div", { class: "bar" }, h("i", { style: `width:${(s.player_damage || 0) / maxDmg * 100}%;background:var(--loss)` }))),
     h("td", { class: "num" }, fmt(s.player_damage_taken)), h("td", { class: "num" }, fmt((s.player_healing || 0) + (s.teammate_healing || 0))), h("td", { class: "num" }, `${p.last_hits}/${p.denies}`),
     h("td", { class: "items" }, ...finalItems(p).map((it) => itemImg(item(it.item_id), 26))));
-    tr.onclick = () => { const open = tr.nextElementSibling?.classList.contains("det"); tr.parentElement.querySelectorAll("tr.det").forEach((x) => x.remove()); if (!open) tr.after(detail(p)); }; return tr; };
+    tr.onclick = () => { const open = tr.nextElementSibling?.classList.contains("det"); tr.parentElement.querySelectorAll("tr.det").forEach((x) => x.remove()); tr.parentElement.querySelectorAll("tr.p").forEach((x) => x.setAttribute("aria-expanded", "false")); if (!open) { tr.after(detail(p)); tr.setAttribute("aria-expanded", "true"); } };
+    tr.onkeydown = (e) => { if (e.target === tr && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); tr.click(); } }; return tr; };
   const table = (t, cls, label) => { const ps = mi.players.filter((p) => p.team === t).sort((a, b) => a.player_slot - b.player_slot);
     return h("div", { class: "team " + cls }, h("h2", {}, label, h("span", { class: "res muted" }, mi.winning_team === t ? "Victory" : "Defeat", ` · ${fmt(ps.reduce((s, p) => s + p.net_worth, 0))} souls · ${fmt(ps.reduce((s, p) => s + (last(p).player_damage || 0), 0))} hero damage`)),
       h("div", { style: "overflow:auto" }, h("table", { class: "sb" }, h("thead", {}, h("tr", {}, ...["Player", "K / D / A", "KDA", "Souls", "Hero damage", "Taken", "Healing", "LH/DN", "Final items"].map((x) => h("th", {}, x)))), h("tbody", {}, ...ps.map(row))))); };

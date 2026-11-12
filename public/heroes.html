@@ -34,19 +34,27 @@ main{max-width:none;padding:0;height:100vh;display:flex;flex-direction:column;ov
 .actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}.btn.lock.on{background:rgba(232,199,106,.22);border-color:var(--accent);color:var(--accent)}
 @media(max-width:1100px){.stage .layout{grid-template-columns:1fr;align-items:start;overflow:auto}.cardwrap{display:none}.select{grid-template-columns:minmax(360px,40%) 1fr}}
 @media(max-width:860px){main{height:auto;overflow:visible}.select{grid-template-columns:1fr}.grid-h{grid-template-columns:repeat(6,1fr)}@media(max-width:480px){.grid-h{grid-template-columns:repeat(5,1fr)}}.stage{min-height:70vh;margin-left:0;padding-left:0}.topbar{padding:14px 14px 8px;flex-wrap:wrap}.stage .layout{padding:18px 14px}.stage .name{height:52px}}
+/* v6: find-as-you-type, keyboard grid, phone flow */
+.topbar .ph{flex:none}.topbar .hint{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}@media(max-width:1500px){.topbar .hint{display:none}}
+.hfind{width:170px;height:38px}.hc:focus-visible{outline:0;transform:scale(1.08);border-color:var(--lane-b);z-index:3;box-shadow:0 0 0 3px rgba(96,205,227,.35)}
+.hc.nomatch{opacity:.12;filter:grayscale(1);pointer-events:none}
+.grid-none{grid-column:1/-1;margin:18px 0;color:var(--muted)}
+.stage .toTop{display:none}
+@media(max-width:860px){.hfind{flex:1 1 100%;width:100%}.stage{scroll-margin-top:8px}.stage .toTop{display:inline-flex;margin:0 0 12px}.topbar .hint{display:block;flex-basis:100%;white-space:normal}}
 </style></head>
 <body><main>
-<div class="topbar"><h1>Select hero</h1><span class="hint"><span class="hint-hover">Hover to preview · click to lock · double-click to open</span><span class="hint-touch">Tap a hero to preview · tap again to open</span></span><span class="sp"></span>
-<div class="filters" id="filters"></div><select id="band"><option value="">All ranks</option><option value="1,60">Initiate–Arcanist</option><option value="61,90">Oracle–Phantom</option><option value="91,116">Ascendant–Eternus</option></select><button id="metaBtn">Meta table</button></div>
+<div class="topbar"><h1>Select hero</h1><span class="hint"><span class="hint-hover">Hover to preview · click to lock · double-click or Enter to open</span><span class="hint-touch">Tap a hero to preview · tap again to open</span></span><span class="sp"></span>
+<input type="search" id="hfind" class="hfind" data-slash placeholder="Find a hero…  /" aria-label="Find a hero" autocomplete="off"><div class="filters" id="filters"></div><select id="band" aria-label="Rank band for win rates"><option value="">All ranks</option><option value="1,60">Initiate–Arcanist</option><option value="61,90">Oracle–Phantom</option><option value="91,116">Ascendant–Eternus</option></select><button id="metaBtn">Meta table</button></div>
 <div class="select"><div class="gridwrap"><div class="grid-h" id="grid"></div></div><div id="stage" class="stage"><div class="layout"><div class="info muted">Loading heroes…</div></div></div></div>
 </main>
 <script type="module">
 const TOUCH = matchMedia("(hover:none)").matches;
-import { api, h, $, pct, heroes, abilityTooltip, withTipBuilder, modal, heroIcon, countUp, shell } from "/js/app.js";
+import { api, h, $, pct, heroes, abilityTooltip, withTipBuilder, modal, heroIcon, countUp, shell, visit } from "/js/app.js";
 shell("/heroes.html");
 const hs = await heroes(); let stats = new Map(); let rows = []; let active = null; let locked = null; let roleFilter = ""; const abCache = new Map();
 const roles = [...new Set(hs.map((x) => x.hero_type).filter(Boolean))];
 $("#filters").replaceChildren(h("button", { class: "chipb on", onclick: () => setRole("") }, "All"), ...roles.map((r) => h("button", { class: "chipb", onclick: () => setRole(r) }, r.replace(/_/g, " "))));
+const NARROW = matchMedia("(max-width:860px)");
 function setRole(r) { roleFilter = r; [...$("#filters").children].forEach((b, i) => b.classList.toggle("on", i === 0 ? !r : b.textContent === r.replace(/_/g, " "))); document.querySelectorAll(".hc").forEach((el) => el.classList.toggle("dimmed", !!r && hs.find((x) => x.id === +el.dataset.id)?.hero_type !== r)); }
 function stage(x) { active = x; document.querySelectorAll(".hc").forEach((el) => { el.classList.toggle("active", +el.dataset.id === x.id); el.classList.toggle("locked", locked?.id === +el.dataset.id); });
   const st = stats.get(x.id); const el = $("#stage"); el.style.setProperty("--tint", x.color || "#4174bb"); el.classList.remove("in"); void el.offsetWidth;
@@ -55,7 +63,7 @@ function stage(x) { active = x; document.querySelectorAll(".hc").forEach((el) =>
   const card = h("div", { class: "hcard" }, h("img", { src: x.images.gloat || x.images.card, alt: x.name }), h("div", { class: "frame" }));
   const wrap = h("div", { class: "cardwrap", onmousemove: (e) => { const r = wrap.getBoundingClientRect(); const dx = (e.clientX - r.left) / r.width - .5, dy = (e.clientY - r.top) / r.height - .5; card.style.transform = `rotateY(${dx * 14}deg) rotateX(${-dy * 10}deg) translateZ(10px)`; }, onmouseleave: () => (card.style.transform = "") }, card);
   el.replaceChildren(h("div", { class: "bg", style: x.images.background ? `background-image:url(${x.images.background})` : "" }), h("div", { class: "tint" }), h("div", { class: "sweep" }),
-    h("div", { class: "layout" }, h("div", { class: "info" }, x.images.name ? h("img", { class: "name", src: x.images.name, alt: x.name }) : h("h2", { class: "name" }, x.name),
+    h("div", { class: "layout" }, h("div", { class: "info" }, h("button", { class: "btn toTop", type: "button", onclick: () => $(".topbar").scrollIntoView({ behavior: "smooth" }) }, "↑ All heroes"), x.images.name ? h("img", { class: "name", src: x.images.name, alt: x.name }) : h("h2", { class: "name" }, x.name),
       h("div", { class: "tags" }, ...(x.tags || []).map((t) => h("span", { class: "tag" }, t))),
       h("div", { class: "stats" }, h("div", { class: "stat" }, wrEl, h("span", {}, "win rate")), h("div", { class: "stat" }, prEl, h("span", {}, "pick rate")), h("div", { class: "stat" }, h("b", {}, "●".repeat(x.complexity || 1) + "○".repeat(3 - (x.complexity || 1))), h("span", {}, "complexity")), x.gun_tag ? h("div", { class: "stat" }, h("b", { style: "font-size:18px;padding-top:7px" }, x.gun_tag), h("span", {}, "weapon")) : ""),
       abrow, x.description?.role ? h("p", { class: "role" }, x.description.role) : "",
@@ -65,7 +73,9 @@ function stage(x) { active = x; document.querySelectorAll(".hc").forEach((el) =>
   if (st) { countUp(wrEl, st.win_rate * 100, { decimals: 1, suffix: "%", ms: 600 }); countUp(prEl, st.pick_rate * 100, { decimals: 1, suffix: "%", ms: 600 }); }
   const fill = (abs) => { if (active?.id !== x.id) return; abrow.replaceChildren(...abs.map((a) => withTipBuilder(h("img", { src: a.image, alt: a.name }), () => abilityTooltip(a)))); };
   if (abCache.has(x.id)) fill(abCache.get(x.id)); else api(`/heroes/${x.id}/abilities`).then((abs) => { abCache.set(x.id, abs); fill(abs); }).catch(() => {}); }
-$("#grid").replaceChildren(...hs.map((x) => h("div", { class: "hc", "data-id": x.id, onmouseenter: () => { if (!locked) stage(x); }, onclick: () => { if (TOUCH && locked?.id === x.id) return (location.href = `/hero.html?id=${x.id}`); locked = locked?.id === x.id ? null : x; stage(locked || x); }, ondblclick: () => (location.href = `/hero.html?id=${x.id}`) }, h("img", { src: x.images.card || x.images.icon, alt: x.name, loading: "lazy", decoding: "async" }), h("div", { class: "wr" }, x.name))));
+const openHero = (x) => visit(`/hero.html?id=${x.id}`);
+$("#grid").replaceChildren(...hs.map((x) => h("div", { class: "hc", "data-id": x.id, tabindex: "0", role: "button", "aria-label": `${x.name}: preview. Press Enter to open.`, onmouseenter: () => { if (!locked) stage(x); }, onfocus: () => { if (!locked && active?.id !== x.id) stage(x); },
+  onclick: () => { if (TOUCH && locked?.id === x.id) return openHero(x); locked = locked?.id === x.id ? null : x; stage(locked || x); if (NARROW.matches) $("#stage").scrollIntoView({ behavior: "smooth", block: "start" }); }, ondblclick: () => openHero(x) }, h("img", { src: x.images.card || x.images.icon, alt: x.name, loading: "lazy", decoding: "async" }), h("div", { class: "wr" }, x.name))));
 async function loadStats() { const [lo, hi] = ($("#band").value || ",").split(","); const q = new URLSearchParams({ min_unix_timestamp: Math.floor(Date.now() / 1000) - 14 * 86400 }); if (lo) { q.set("min_average_badge", lo); q.set("max_average_badge", hi); }
   // deadlock-api allows browser reads, so ask it directly (no Worker CPU, no shared-IP rate limits); the Worker route is the fallback.
   q.set("min_unix_timestamp", String(Math.floor(Date.now() / 3600000) * 3600 - 14 * 86400));
@@ -77,5 +87,16 @@ function metaTable() { let key = "win_rate", dir = -1; const body = h("div"); co
     body.replaceChildren(h("table", {}, h("thead", {}, h("tr", {}, ...[["name", "Hero"], ["win_rate", "Win rate"], ["pick_rate", "Pick rate"], ["matches", "Matches"]].map(([k, t]) => h("th", { class: key === k ? "sorted" : "", onclick: () => { if (key === k) dir = -dir; else { key = k; dir = k === "name" ? 1 : -1; } render(); } }, t, key === k ? (dir < 0 ? " ▼" : " ▲") : "")))),
       h("tbody", {}, ...sorted.map((r) => h("tr", {}, h("td", {}, heroIcon(hs.find((x) => x.id === r.hero_id)), " ", h("a", { href: `/hero.html?id=${r.hero_id}` }, r.name)), h("td", { class: "num " + (r.win_rate >= .5 ? "win" : "loss") }, pct(r.win_rate)), h("td", { class: "num" }, pct(r.pick_rate)), h("td", { class: "num" }, r.matches.toLocaleString())))))); }; render(); return body; }
 $("#metaBtn").onclick = () => { if (!rows.length) { modal("Hero meta", h("p", { class: "muted" }, "Hero stats haven't loaded yet — deadlock-api.com may be busy. They retry automatically; try the button again in a few seconds.")); return; } modal(`Hero meta · last 14 days${$("#band").selectedIndex ? " · " + $("#band").selectedOptions[0].text : ""}`, metaTable()); };
+// keyboard: arrows walk the grid, Enter opens, Space locks; "/" or just typing in the box narrows the grid
+$("#grid").addEventListener("keydown", (e) => { const el = e.target.closest(".hc"); if (!el) return; const x = hs.find((y) => y.id === +el.dataset.id);
+  if (e.key === "Enter") { e.preventDefault(); return openHero(x); } if (e.key === " ") { e.preventDefault(); locked = locked?.id === x.id ? null : x; return stage(x); }
+  const cells = [...$("#grid").querySelectorAll(".hc:not(.nomatch)")], i = cells.indexOf(el); if (i < 0) return; const cols = Math.max(1, Math.round($("#grid").clientWidth / (el.offsetWidth + 6)));
+  const to = { ArrowRight: i + 1, ArrowLeft: i - 1, ArrowDown: i + cols, ArrowUp: i - cols, Home: 0, End: cells.length - 1 }[e.key]; if (to == null) return; e.preventDefault(); cells[Math.max(0, Math.min(cells.length - 1, to))].focus(); });
+const hfind = $("#hfind");
+function applyFind() { const q = hfind.value.trim().toLowerCase(); let first = null, n = 0; document.querySelectorAll(".hc").forEach((el) => { const x = hs.find((y) => y.id === +el.dataset.id); const hit = !q || x.name.toLowerCase().includes(q); el.classList.toggle("nomatch", !hit); el.tabIndex = hit ? 0 : -1; if (hit) { n++; first ??= x; } });
+  $("#grid").querySelector(".grid-none")?.remove(); if (!n) $("#grid").append(h("p", { class: "grid-none" }, `No hero matches "${hfind.value.trim()}".`)); else if (q && first && !locked) stage(first); return first; }
+hfind.addEventListener("input", applyFind);
+hfind.addEventListener("keydown", (e) => { if (e.key === "Enter") { const f = applyFind(); if (f && hfind.value.trim()) openHero(f); } else if (e.key === "Escape") { hfind.value = ""; applyFind(); hfind.blur(); } else if (e.key === "ArrowDown") { e.preventDefault(); $("#grid").querySelector(".hc:not(.nomatch)")?.focus(); } });
+addEventListener("keydown", (e) => { if (e.key === "/" && !e.target.closest("input,select,textarea") && !e.ctrlKey && !e.metaKey) { e.preventDefault(); hfind.focus(); hfind.select(); } });
 $("#band").onchange = loadStats; stage(hs[Math.floor(Math.random() * hs.length)]); loadStats();
 </script></body></html>

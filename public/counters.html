@@ -8,6 +8,12 @@
 .picker{display:grid;grid-template-columns:repeat(auto-fill,minmax(54px,1fr));gap:6px;margin-top:10px}.picker img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;cursor:pointer;border:2px solid transparent;opacity:.9}.picker img:hover{border-color:var(--accent);opacity:1}.picker img.taken{opacity:.25;pointer-events:none}
 .sug .r{display:grid;grid-template-columns:40px 1.2fr 70px 80px 80px 1.6fr 90px;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line)}.sug .r:first-child{color:var(--accent)}.sug .why{font-size:12px;color:var(--muted);line-height:1.3}.sug .why b{color:var(--cream);font-weight:600}.sug .me{font-size:12px}.sug .me b{font-family:var(--fh)}.sug .star{color:var(--accent);margin-right:4px}@media(max-width:800px){.sug .r{grid-template-columns:36px 1fr 60px 70px}.sug .r>:nth-child(n+5){display:none}}
 .mu{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}.mu .r{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--line)}
+/* v6: the side being filled is obvious; slots are real buttons */
+.board .team{transition:box-shadow .25s,border-color .25s,opacity .25s}.board .team:not(.on){opacity:.72}
+.board .team.ally.on{box-shadow:0 0 0 2px var(--lane-g),0 0 34px -8px rgba(151,218,121,.45)}.board .team.enemy.on{box-shadow:0 0 0 2px var(--loss),0 0 34px -8px rgba(229,87,79,.45)}
+button.slot{padding:0;font:400 24px/1 var(--fb);letter-spacing:0;box-shadow:none;cursor:pointer;color:#6d7592}button.slot:hover{color:var(--cream);border-color:var(--cream)}button.slot.next{border-color:var(--cream);color:var(--cream);animation:slotNext 1.6s ease-in-out infinite}@keyframes slotNext{50%{box-shadow:0 0 0 4px rgba(247,233,213,.12)}}
+#picker img:focus-visible{outline:2px solid var(--lane-b);outline-offset:2px}
+@media(prefers-reduced-motion:reduce){button.slot.next{animation:none}}
 </style></head>
 <body><main>
 <h1>Draft helper</h1><p class="muted">Fill in the heroes already locked on each side; Soul Scribe ranks what's left by synergy with your team and win rate against theirs, and marks the ones you personally do well on. <span id="pickingFor"></span></p>
@@ -16,7 +22,7 @@
 <div class="vs">VS</div>
 <div class="team enemy"><h3>Enemy team</h3><div class="slots" id="enemySlots"></div></div>
 </div>
-<div class="card"><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><strong>Add to:</strong> <button id="toAlly" class="primary">Your team</button> <button id="toEnemy">Enemy team</button> <input type="text" id="q" placeholder="Filter heroes…" style="margin-left:auto"></div><div id="picker" class="picker"></div></div>
+<div class="card"><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><strong>Add to:</strong> <button id="toAlly" class="primary">Your team</button> <button id="toEnemy">Enemy team</button> <button id="shareDraft" type="button" hidden>Copy link</button><button id="clearDraft" type="button" hidden>Clear</button><input type="text" id="q" placeholder="Filter, Enter to add…" aria-label="Filter heroes" style="margin-left:auto"></div><div id="picker" class="picker"></div></div>
 <div class="card"><h2 style="margin-top:0">Suggested picks</h2><div id="out" class="sug muted">Add at least one hero.</div></div>
 <div id="matchups"></div>
 </main>
@@ -26,9 +32,12 @@ const meP = (async () => { try { const m = await (await fetch("/api/me")).json()
 shell("/counters.html");
 const hs = await heroes(); const picks = { allies: [], enemies: [] }; let side = "allies";
 const hx = (id) => hs.find((x) => x.id === id);
-function renderSlots() { for (const [k, el, n] of [["allies", $("#allySlots"), 6], ["enemies", $("#enemySlots"), 6]]) el.replaceChildren(...Array.from({ length: n }, (_, i) => { const id = picks[k][i]; return id ? h("div", { class: "slot filled", title: hx(id)?.name }, h("img", { src: hx(id)?.images?.card || hx(id)?.images?.icon, alt: "" }), h("span", { class: "x", onclick: () => { picks[k].splice(i, 1); render(); } }, "×")) : h("div", { class: "slot", onclick: () => { side = k; $("#toAlly").className = side === "allies" ? "primary" : ""; $("#toEnemy").className = side === "enemies" ? "primary" : ""; } }, "+"); })); }
+const setSide = (k) => { side = k; render(); };
+function renderSlots() { for (const [k, el, n] of [["allies", $("#allySlots"), 6], ["enemies", $("#enemySlots"), 6]]) { el.closest(".team").classList.toggle("on", side === k);
+  el.replaceChildren(...Array.from({ length: n }, (_, i) => { const id = picks[k][i]; return id ? h("button", { type: "button", class: "slot filled", title: `Remove ${hx(id)?.name}`, "aria-label": `Remove ${hx(id)?.name}`, onclick: () => { picks[k].splice(i, 1); render(); } }, h("img", { src: hx(id)?.images?.card || hx(id)?.images?.icon, alt: "" }), h("span", { class: "x", "aria-hidden": "true" }, "×")) : h("button", { type: "button", class: "slot" + (side === k && i === picks[k].length ? " next" : ""), "aria-label": `Add to ${k === "allies" ? "your team" : "enemy team"}`, onclick: () => setSide(k) }, "+"); })); } }
+const add = (x) => { if (picks[side].length >= 6 || picks.allies.includes(x.id) || picks.enemies.includes(x.id)) return; picks[side].push(x.id); if (picks[side].length >= 6 && picks[side === "allies" ? "enemies" : "allies"].length < 6) side = side === "allies" ? "enemies" : "allies"; render(); };
 function renderPicker() { const q = $("#q").value.toLowerCase(); const taken = new Set([...picks.allies, ...picks.enemies]);
-  $("#picker").replaceChildren(...hs.filter((x) => !q || x.name.toLowerCase().includes(q)).map((x) => h("img", { src: x.images?.card || x.images?.icon, title: x.name, alt: x.name, class: taken.has(x.id) ? "taken" : "", onclick: () => { if (picks[side].length < 6) { picks[side].push(x.id); render(); } } }))); }
+  $("#picker").replaceChildren(...hs.filter((x) => !q || x.name.toLowerCase().includes(q)).map((x) => h("img", { src: x.images?.card || x.images?.icon, title: x.name, alt: x.name, tabindex: taken.has(x.id) ? "-1" : "0", role: "button", class: taken.has(x.id) ? "taken" : "", onclick: () => add(x), onkeydown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); add(x); } } }))); }
 async function suggest() { const out = $("#out"); if (!picks.allies.length && !picks.enemies.length) { out.className = "sug muted"; out.textContent = "Add at least one hero."; return; } out.textContent = "Thinking…";
   try { const [r, mine] = await Promise.all([api(`/heroes/suggest?allies=${picks.allies}&enemies=${picks.enemies}`), meP]); out.className = "sug";
     // comfort bonus: your own win rate on the hero (needs 3+ games) nudges the ranking
@@ -39,8 +48,18 @@ async function suggest() { const out = $("#out"); if (!picks.allies.length && !p
         h("div", { class: "why" }, s.best_vs ? [h("b", {}, `${pct(s.best_vs.wr)} vs ${nm(s.best_vs.id)}`), s.worst_vs && s.worst_vs.id !== s.best_vs.id ? ` · weak into ${nm(s.worst_vs.id)} (${pct(s.worst_vs.wr)})` : ""] : "", s.best_with ? [s.best_vs ? h("br") : "", `pairs with ${nm(s.best_with.id)} (${pct(s.best_with.wr)})`] : "", !s.best_vs && !s.best_with ? "not enough data" : ""),
         h("div", { class: "me" }, s.m ? [h("b", { class: s.m.wins / s.m.games >= .5 ? "win" : "loss" }, pct(s.m.wins / s.m.games)), h("span", { class: "muted" }, ` · ${s.m.games}g`)] : h("span", { class: "muted" }, "never played")))));
     if (!mine.size) out.append(h("p", { class: "muted", style: "font-size:12px;margin:10px 0 0" }, "Sign in through Steam and your own hero record will factor in (★ = heroes you win on).")); } catch (e) { showError(out, e); } }
-function render() { renderSlots(); renderPicker(); suggest(); $("#pickingFor").textContent = `Adding to: ${side === "allies" ? "your team" : "enemy team"}.`; }
-$("#toAlly").onclick = () => { side = "allies"; $("#toAlly").className = "primary"; $("#toEnemy").className = ""; render(); }; $("#toEnemy").onclick = () => { side = "enemies"; $("#toEnemy").className = "primary"; $("#toAlly").className = ""; render(); }; $("#q").oninput = renderPicker;
+// The draft lives in the address bar (?a=1,2&e=3), so a line-up can be pasted to the squad and survives a reload.
+const qs0 = new URLSearchParams(location.search); const ids = (v) => (v || "").split(",").map(Number).filter((n) => hx(n)).slice(0, 6);
+picks.allies = ids(qs0.get("a")); picks.enemies = ids(qs0.get("e")).filter((n) => !picks.allies.includes(n));
+let lastKey = null;
+function render() { $("#toAlly").className = side === "allies" ? "primary" : ""; $("#toEnemy").className = side === "enemies" ? "primary" : ""; renderSlots(); renderPicker();
+  const key = `${picks.allies}|${picks.enemies}`; if (key !== lastKey) { lastKey = key; suggest(); const u = new URLSearchParams(location.search); picks.allies.length ? u.set("a", picks.allies.join(",")) : u.delete("a"); picks.enemies.length ? u.set("e", picks.enemies.join(",")) : u.delete("e"); history.replaceState(null, "", location.pathname + (u.toString() ? "?" + u.toString().replace(/%2C/g, ",") : "")); }
+  const any = picks.allies.length + picks.enemies.length; $("#clearDraft").hidden = !any; $("#shareDraft").hidden = !any;
+  $("#pickingFor").textContent = `Adding to: ${side === "allies" ? "your team" : "enemy team"}.`; }
+$("#toAlly").onclick = () => setSide("allies"); $("#toEnemy").onclick = () => setSide("enemies"); $("#q").oninput = renderPicker;
+$("#q").onkeydown = (e) => { if (e.key !== "Enter") return; const q = $("#q").value.toLowerCase(); const taken = new Set([...picks.allies, ...picks.enemies]); const first = q && hs.find((x) => x.name.toLowerCase().includes(q) && !taken.has(x.id)); if (first) { add(first); $("#q").value = ""; renderPicker(); } };
+$("#clearDraft").onclick = () => { picks.allies = []; picks.enemies = []; side = "allies"; render(); };
+$("#shareDraft").onclick = async (e) => { const b = e.currentTarget; try { await navigator.clipboard.writeText(location.href); b.textContent = "Link copied"; } catch { b.textContent = "Copy the address bar"; } setTimeout(() => (b.textContent = "Copy link"), 1800); };
 render();
 const pre = new URLSearchParams(location.search).get("hero");
 if (pre) { try { const m = await api(`/heroes/${pre}/matchups`); const row = (r, cls) => h("div", { class: "r" }, heroIcon(hx(r.hero_id)), h("a", { href: `/hero.html?id=${r.hero_id}`, style: "flex:1" }, r.name), h("span", { class: "num " + cls(r) }, pct(r.win_rate)), h("span", { class: "muted", style: "font-size:12px" }, `${r.matches}`));

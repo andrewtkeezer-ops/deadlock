@@ -68,34 +68,42 @@ main{--hero:var(--accent);--hero-soft:color-mix(in srgb,var(--hero) 18%,transpar
 details.sec{padding:0}details.sec summary{list-style:none;cursor:pointer;padding:14px 20px;font-weight:700;font-size:14px;display:flex;align-items:center;gap:10px;color:var(--text)}details.sec summary::-webkit-details-marker{display:none}details.sec summary::before{content:"›";font-size:20px;line-height:1;color:var(--accent);transition:transform .2s;display:inline-block}details[open].sec summary::before{transform:rotate(90deg)}
 details.sec .inner{padding:0 20px 20px}details.sec p{margin:0;color:#cfd3e6;max-width:80ch}
 
+/* v6: top row (back + previous/next hero) and a sticky section bar with scroll-spy */
+.hnavrow{position:relative;z-index:3;display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}.hnavrow .back{margin:0}.hnavrow .sp{flex:1}
+.hstep{display:inline-flex;align-items:center;gap:8px;max-width:46%;padding:6px 12px 5px;border-radius:999px;border:1px solid var(--line2);background:rgba(8,10,11,.55);color:var(--muted);font:700 11px/1 var(--fh);letter-spacing:.12em;text-transform:uppercase;white-space:nowrap;transition:color .18s,border-color .18s}.hstep b{overflow:hidden;text-overflow:ellipsis;font-weight:700}.hstep:hover{color:var(--cream);border-color:var(--hero-glow)}.hstep img{width:20px;height:20px;border-radius:5px}
+.secnav{position:sticky;top:10px;z-index:30;display:flex;gap:4px;width:max-content;max-width:100%;margin:0 0 16px;padding:4px;border-radius:999px;border:1px solid var(--line2);background:rgba(7,9,9,.9);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 10px 30px -10px rgba(0,0,0,.8);overflow-x:auto;scrollbar-width:none}.secnav::-webkit-scrollbar{display:none}
+.secnav a{flex:none;padding:9px 14px 8px;border-radius:999px;color:var(--muted);font:700 11px/1 var(--fh);letter-spacing:.14em;text-transform:uppercase;white-space:nowrap;transition:color .2s,background .25s}.secnav a:hover{color:var(--cream)}.secnav a.on{background:var(--hero);color:#0c0a06}
+main [data-nav]{scroll-margin-top:70px}
+@media(max-width:860px){.secnav{top:6px}.secnav a{padding:8px 11px 7px;font-size:10px;letter-spacing:.1em}.hstep{padding:6px 9px 5px}.hstep b{display:none}}
 @media(max-width:1100px){.abil{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:860px){.hero-head{min-height:300px}.hero-head .art{height:360px;top:-30px;max-width:70%;opacity:.55}.hero-head .name{height:60px}.hero-head h1{font-size:46px}.cols{grid-template-columns:1fr}.mu .rows{max-width:100%;grid-template-columns:30px 90px 1fr 50px}.mu .fade,.sbuilds .fade{display:none}.sbuilds .list,.sbuilds .proven{max-width:100%}.sbuilds .plus{position:static;transform:none;margin-top:10px}}
 @media(max-width:560px){.abil{grid-template-columns:1fr}.starters{grid-template-columns:1fr}.hero-head .stats{gap:14px}}
 </style></head>
 <body><main data-ph="off">
-<a class="back" href="/heroes.html">← All heroes</a>
+<div class="hnavrow"><a class="back" href="/heroes.html">← All heroes</a><span class="sp"></span><span id="hstep" style="display:contents"></span></div>
 <header id="head" class="hero-head"></header>
-<section class="sec"><h2>Abilities</h2><div id="abilities" class="abil">Loading…</div></section>
-<section class="sec"><h2>Skill order <span class="sub">How players put their ability points in, and what wins.</span></h2><div id="skillorder" class="so">Loading…</div></section>
-<div class="cols">
+<nav class="secnav" id="secnav" aria-label="On this page"></nav>
+<section class="sec" data-nav="Abilities" id="s-abilities"><h2>Abilities</h2><div id="abilities" class="abil">Loading…</div></section>
+<section class="sec" data-nav="Skill order" id="s-skills"><h2>Skill order <span class="sub">How players put their ability points in, and what wins.</span></h2><div id="skillorder" class="so">Loading…</div></section>
+<div class="cols" data-nav="Squad" id="s-squad">
 <section class="sec squad"><h2>Your squad on this hero</h2><div id="squad" class="muted">Loading…</div></section>
 <section class="sec sbuilds"><h2>Squad builds</h2><div class="fade"></div><div id="sbuilds" class="list muted">Loading…</div></section>
 </div>
-<section class="sec"><h2>Build path <span class="sub">The items that win in each phase of the game.</span></h2><div id="buildpath">Loading…</div></section>
-<div class="cols">
+<section class="sec" data-nav="Build path" id="s-path"><h2>Build path <span class="sub">The items that win in each phase of the game.</span></h2><div id="buildpath">Loading…</div></section>
+<div class="cols" data-nav="Laning" id="s-lanes">
 <section class="sec"><h2>Best lane partners</h2><div id="lanep" class="ln">Loading…</div></section>
 <section class="sec"><h2>Toughest lanes</h2><div id="lanet" class="ln">Loading…</div></section>
 </div>
-<div class="cols">
+<div class="cols" data-nav="Matchups" id="s-matchups">
 <section class="sec mu bad"><h2>Struggles against</h2><div class="fade"></div><div id="counters" class="rows">Loading…</div></section>
 <section class="sec mu good"><h2>Best teammates</h2><div class="fade"></div><div id="synergy" class="rows">Loading…</div></section>
 </div>
-<section class="sec" id="builds"><h2>Starter builds <span class="sub">The most-favourited community build for each playstyle, from the in-game library. Add one to your builds and adjust it.</span></h2><div id="starters" class="starters">Loading…</div></section>
+<section class="sec" id="builds" data-nav="Builds"><h2>Starter builds <span class="sub">The most-favourited community build for each playstyle, from the in-game library. Add one to your builds and adjust it.</span></h2><div id="starters" class="starters">Loading…</div></section>
 <details class="sec"><summary>More community builds</summary><div class="inner"><div id="cbuilds">Loading…</div></div></details>
 <details class="sec"><summary>Lore</summary><div class="inner"><p id="lore" class="muted" style="max-width:none;font-size:15px;line-height:1.7"></p></div></details>
 </main>
 <script type="module">
-import { api, h, $, pct, ago, heroes, itemImg, abilityTooltip, withTipBuilder, shell, showError } from "/js/app.js";
+import { api, h, $, pct, ago, heroes, itemImg, abilityTooltip, withTipBuilder, shell, showError, visit } from "/js/app.js";
 import { mountSkillOrder, mountBuildPath, mountLaning } from "/js/hero-extras.js";
 shell("/heroes.html");
 const id = +new URLSearchParams(location.search).get("id");
@@ -103,6 +111,17 @@ const [hs, items] = await Promise.all([heroes(), api("/library/items")]); const 
 mountSkillOrder($("#skillorder"), id); mountBuildPath($("#buildpath"), id, items); mountLaning($("#lanep"), $("#lanet"), id, hs);
 if (!x) { $("#head").textContent = "Unknown hero"; throw new Error("no hero"); }
 document.title = `${x.name} · Soul Scribe`;
+// previous / next hero (alphabetical; also the [ and ] keys) and the section bar
+{ const order = [...hs].sort((a, b) => a.name.localeCompare(b.name)), at = order.findIndex((y) => y.id === id), prevH = order[(at - 1 + order.length) % order.length], nextH = order[(at + 1) % order.length];
+  const step = (y, dir) => h("a", { class: "hstep", href: `/hero.html?id=${y.id}`, title: `${dir < 0 ? "Previous" : "Next"} hero: ${y.name}  ( ${dir < 0 ? "[" : "]"} )` }, dir < 0 ? "‹" : "", y.images?.icon ? h("img", { src: y.images.icon, alt: "" }) : "", h("b", {}, y.name), dir > 0 ? "›" : "");
+  $("#hstep").replaceChildren(step(prevH, -1), step(nextH, 1));
+  addEventListener("keydown", (e) => { if (e.target.closest("input,select,textarea") || e.ctrlKey || e.metaKey || e.altKey) return; if (e.key === "[") visit(`/hero.html?id=${prevH.id}`); if (e.key === "]") visit(`/hero.html?id=${nextH.id}`); });
+  const secs = [...document.querySelectorAll("main [data-nav]")], bar = $("#secnav"), RMo = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const links = secs.map((sec) => h("a", { href: `#${sec.id}`, onclick: (e) => { e.preventDefault(); sec.scrollIntoView({ behavior: RMo ? "auto" : "smooth", block: "start" }); history.replaceState(null, "", `#${sec.id}`); } }, sec.dataset.nav));
+  bar.replaceChildren(...links);
+  const setOn = (i) => links.forEach((a, k) => { const on = k === i; if (on && !a.classList.contains("on")) { const r = a.offsetLeft - bar.clientWidth / 2 + a.offsetWidth / 2; bar.scrollTo({ left: r, behavior: RMo ? "auto" : "smooth" }); } a.classList.toggle("on", on); if (on) a.setAttribute("aria-current", "true"); else a.removeAttribute("aria-current"); });
+  let tick = 0; const spy = () => { if (tick) return; tick = requestAnimationFrame(() => { tick = 0; let cur = 0; secs.forEach((sec, i) => { if (sec.getBoundingClientRect().top < innerHeight * 0.35) cur = i; }); if (innerHeight + scrollY >= document.documentElement.scrollHeight - 4) cur = secs.length - 1; setOn(cur); }); };
+  addEventListener("scroll", spy, { passive: true }); addEventListener("resize", spy); spy(); }
 
 // ---- theme the page with this hero's own art + colour ----
 const main = $("main"), art = x.images.gloat || x.images.card || x.images.vertical, bg = x.images.background;

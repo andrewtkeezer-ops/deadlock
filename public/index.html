@@ -74,26 +74,37 @@
 <div class="two"><div><h2>Squad duos <span class="muted" style="font:400 13px var(--fb);letter-spacing:0;text-transform:none">· who wins together</span></h2><div id="duos" class="card">Loading…</div></div><div><h2>Recent games</h2><div id="recent" class="card recent">Loading…</div></div></div>
 </main>
 <script type="module">
-import { api, h, $, pct, ago, dur, fmt, heroes, hero, rankBadge, heroIcon, shell, showError, kda, ratio, kdOf, kdaOf, KD, KDA, term } from "/js/app.js";
+import { api, h, $, pct, ago, dur, fmt, heroes, hero, rankBadge, heroIcon, shell, showError, kda, ratio, kdOf, kdaOf, KD, KDA, term, rowLink, me } from "/js/app.js";
 $("#rankNoteMmr")?.replaceWith(term("MMR"));
 shell("/");
 const SORTS = {
   mmr: { label: "MMR", note: () => ["Standings by ", term("MMR"), " (your rank as a number). Players without one yet fall back to KDA. KDA, KD and souls/min use the selected window."] },
   kda: { label: "KDA", note: () => "Standings by KDA: (kills + assists) ÷ deaths over the selected window." },
   kd: { label: "KD", note: () => "Standings by KD: kills ÷ deaths over the selected window." },
+  games: { label: "Games", note: () => "Sorted by games played in the selected window." },
+  wr: { label: "Win rate", note: () => "Sorted by win rate over the selected window (most games first on a tie)." },
+  spm: { label: "Souls/min", note: () => "Sorted by souls per minute over the selected window." },
+  last: { label: "Last played", note: () => "Sorted by who played most recently." },
 };
+const SEG_KEYS = ["mmr", "kda", "kd"];
+let myId = null; me().then((m) => { myId = m.account_id ?? null; if (data.length) render(); }).catch(() => {});
 const kdaP = (p) => (p.games ? kdaOf(p.kills, p.deaths, p.assists) : -1), kdP = (p) => (p.games ? kdOf(p.kills, p.deaths) : -1);
 const sorters = {
   mmr: (a, b) => (b.mmr_score ?? -1) - (a.mmr_score ?? -1) || kdaP(b) - kdaP(a) || b.games - a.games,
   kda: (a, b) => kdaP(b) - kdaP(a) || b.games - a.games,
   kd: (a, b) => kdP(b) - kdP(a) || b.games - a.games,
+  games: (a, b) => b.games - a.games || kdaP(b) - kdaP(a),
+  wr: (a, b) => (b.games ? b.wins / b.games : -1) - (a.games ? a.wins / a.games : -1) || b.games - a.games,
+  spm: (a, b) => (b.souls_per_min ?? -1) - (a.souls_per_min ?? -1),
+  last: (a, b) => (b.last_played ?? 0) - (a.last_played ?? 0),
 };
+function setSort(k) { if (!SORTS[k] || k === sortKey) return; sortKey = k; try { localStorage.setItem("ss.lb.sort", sortKey); } catch {} moveThumb(); render(); }
 let sortKey = "mmr"; try { sortKey = SORTS[localStorage.getItem("ss.lb.sort")] ? localStorage.getItem("ss.lb.sort") : "mmr"; } catch {}
 let data = [];
 const seg = $("#sortSeg"), thumb = seg.querySelector(".thumb");
-function moveThumb() { const b = seg.querySelector(`[data-k="${sortKey}"]`); seg.querySelectorAll("button").forEach((x) => x.setAttribute("aria-checked", String(x === b))); thumb.style.width = b.offsetWidth + "px"; thumb.style.transform = `translateX(${b.offsetLeft}px)`; }
-seg.addEventListener("click", (e) => { const b = e.target.closest("button[data-k]"); if (!b || b.dataset.k === sortKey) return; sortKey = b.dataset.k; try { localStorage.setItem("ss.lb.sort", sortKey); } catch {} moveThumb(); render(); });
-seg.addEventListener("keydown", (e) => { if (!/Arrow(Left|Right)/.test(e.key)) return; const ks = Object.keys(SORTS); const i = (ks.indexOf(sortKey) + (e.key === "ArrowRight" ? 1 : ks.length - 1)) % ks.length; seg.querySelector(`[data-k="${ks[i]}"]`).click(); seg.querySelector(`[data-k="${ks[i]}"]`).focus(); });
+function moveThumb() { const b = seg.querySelector(`[data-k="${sortKey}"]`); seg.querySelectorAll("button").forEach((x) => x.setAttribute("aria-checked", String(x === b))); thumb.style.opacity = b ? "1" : "0"; if (!b) return; thumb.style.width = b.offsetWidth + "px"; thumb.style.transform = `translateX(${b.offsetLeft}px)`; }
+seg.addEventListener("click", (e) => { const b = e.target.closest("button[data-k]"); if (b) setSort(b.dataset.k); });
+seg.addEventListener("keydown", (e) => { if (!/Arrow(Left|Right)/.test(e.key)) return; const ks = SEG_KEYS; const i = (Math.max(0, ks.indexOf(sortKey)) + (e.key === "ArrowRight" ? 1 : ks.length - 1)) % ks.length; seg.querySelector(`[data-k="${ks[i]}"]`).click(); seg.querySelector(`[data-k="${ks[i]}"]`).focus(); });
 requestAnimationFrame(moveThumb); addEventListener("resize", moveThumb); document.fonts?.ready.then(moveThumb);
 /** Rank cell / podium line: the MMR when there is one, otherwise KDA. */
 async function standing(p, big) {
@@ -128,7 +139,7 @@ async function render(fresh = false) {
         h("div", { class: "kv" }, h("div", {}, h("span", {}, "Win rate"), h("b", { class: wr == null ? "" : wr >= .5 ? "win" : "loss" }, wr == null ? "–" : pct(wr))),
           h("div", { class: sortKey === "kd" ? "on" : "" }, h("span", {}, sortKey === "kd" ? "KD" : "KDA"), sortKey === "kd" ? h("b", { class: kdV >= KD.good ? "win" : kdV < KD.even ? "loss" : "" }, p.games ? kdV.toFixed(2) : "–") : h("b", { class: kdaV >= KDA.good ? "win" : kdaV < KDA.even ? "loss" : "" }, p.games ? kdaV.toFixed(2) : "–")),
           h("div", {}, h("span", {}, "Games"), h("b", {}, String(p.games))), h("div", {}, h("span", {}, "Souls/min"), h("b", {}, fmt(p.souls_per_min))))); })));
-  const col = { mmr: 2, kd: 6, kda: 7 }[sortKey];
+  const col = { mmr: 2, games: 3, wr: 4, kd: 6, kda: 7, spm: 8, last: 9 }[sortKey];
   const rows = await Promise.all(players.map(async (p, i) => {
       const wr = p.games ? p.wins / p.games : null;
       const tds = [h("td", { class: "pos" }, String(i + 1)),
@@ -142,10 +153,13 @@ async function render(fresh = false) {
         h("td", { class: "num" }, fmt(p.souls_per_min)),
         h("td", { class: "muted", title: p.last_sync_at ? `Synced ${ago(p.last_sync_at)}` : "Never synced" }, ago(p.last_played))];
       tds[col].classList.add("on");
-      return h("tr", { "data-id": String(p.account_id) }, ...tds);
+      const tr = rowLink(h("tr", { "data-id": String(p.account_id), class: p.account_id === myId ? "you" : "" }, ...tds), `/player.html?id=${p.account_id}`);
+      if (p.account_id === myId) tr.querySelector(".p").append(h("span", { class: "youtag" }, "You"));
+      return tr;
   }));
   const heads = ["#", "Player", "Rank / MMR", "Games", "Win rate", "Avg K / D / A", "KD", "KDA", "Souls/min", "Last played"];
-  out.replaceChildren(h("table", { class: "lb" }, h("thead", {}, h("tr", {}, ...heads.map((t, i) => h("th", { class: i === col ? "on" : "" }, t === "Rank / MMR" ? ["Rank / ", term("MMR")] : t)))), h("tbody", {}, ...rows)),
+  const HEAD_SORT = { 2: "mmr", 3: "games", 4: "wr", 6: "kd", 7: "kda", 8: "spm", 9: "last" };
+  out.replaceChildren(h("table", { class: "lb" }, h("thead", {}, h("tr", {}, ...heads.map((t, i) => { const k = HEAD_SORT[i]; const th = h("th", { class: (i === col ? "on" : "") + (k ? " sortable" : ""), tabindex: k ? "0" : undefined, title: k ? `Sort by ${SORTS[k].label}` : undefined, "aria-sort": i === col ? "descending" : undefined }, t === "Rank / MMR" ? ["Rank / ", term("MMR")] : t); if (k) { th.addEventListener("click", (e) => { if (!e.target.closest(".term")) setSort(k); }); th.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSort(k); } }); } return th; }))), h("tbody", {}, ...rows)),
       h("div", { class: "lg-key" }, h("span", {}, h("i", { style: "background:var(--accent)" }), "kills"), h("span", {}, h("i", { style: "background:var(--loss)" }), "deaths"), h("span", {}, h("i", { style: "background:var(--sapph)" }), "assists"), h("span", { style: "margin-left:auto" }, "KD = kills ÷ deaths · KDA = (kills + assists) ÷ deaths")));
   if (fresh || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   for (const tr of out.querySelectorAll("tbody tr[data-id]")) { const was = before.get(tr.dataset.id); if (was == null) continue; const dy = was - tr.getBoundingClientRect().top; if (!dy) continue;
@@ -167,17 +181,18 @@ $("#days").addEventListener("change", load); load();
 (async () => {
   const el = $("#recent");
   try {
-    const [list, hs] = await Promise.all([api("/players"), heroes()]);
+    const [list, hs] = await Promise.all([api("/players"), heroes()]); const FIRST = 10;
     if (!list.length) return (el.textContent = "No games yet.");
     const all = (await Promise.all(list.map((p) => api(`/players/${p.account_id}`).then((d) => d.matches.slice(0, 10).map((m) => ({ ...m, player: p })))))).flat().sort((a, b) => b.start_time - a.start_time).slice(0, 25);
     // the wire: a slow ticker of the latest results
     const wireItems = all.slice(0, 12).map((m) => { const hx = hs.find((x) => x.id === m.hero_id); return h("span", { class: "w" }, heroIcon(hx, 20), h("a", { href: `/player.html?id=${m.player.account_id}` }, h("b", {}, m.player.name)), h("span", { class: "res " + (m.won ? "win" : "loss") }, m.won ? "Win" : "Loss"), `${hx?.name ?? ""} ${m.kills}/${m.deaths}/${m.assists}`, h("span", { style: "color:var(--dim)" }, ago(m.start_time))); });
     if (wireItems.length) { $("#wire").hidden = false; $("#wireTrack").replaceChildren(...wireItems, ...wireItems.map((x) => x.cloneNode(true))); $("#wire").style.setProperty("--dur", `${Math.max(30, wireItems.length * 6)}s`); }
     el.replaceChildren(h("table", {}, h("thead", {}, h("tr", {}, ...["When", "Player", "Hero", "Result", "K / D / A", "KDA", "Souls", "Length", ""].map((t) => h("th", {}, t)))),
-      h("tbody", {}, ...all.map((m) => { const hx = hs.find((x) => x.id === m.hero_id); return h("tr", {}, h("td", { class: "muted" }, ago(m.start_time)), h("td", {}, h("a", { href: `/player.html?id=${m.player.account_id}` }, m.player.name)),
+      h("tbody", {}, ...all.map((m, i) => { const hx = hs.find((x) => x.id === m.hero_id); return rowLink(h("tr", { class: i >= FIRST ? "extra" : "", hidden: i >= FIRST ? "" : undefined }, h("td", { class: "muted" }, ago(m.start_time)), h("td", {}, h("a", { href: `/player.html?id=${m.player.account_id}` }, m.player.name)),
         h("td", {}, h("div", { class: "hero" }, heroIcon(hx), h("a", { href: `/hero.html?id=${m.hero_id}` }, hx?.name ?? m.hero_id))),
         h("td", { class: m.won ? "win" : "loss" }, m.won ? "Win" : "Loss"), h("td", {}, kda(m.kills, m.deaths, m.assists, { size: "sm" })), h("td", { class: "num" }, ratio(kdaOf(m.kills, m.deaths, m.assists), KDA)),
-        h("td", { class: "num" }, fmt(m.net_worth)), h("td", {}, dur(m.duration_s)), h("td", {}, h("a", { href: `/match.html?id=${m.match_id}` }, "scoreboard"))); }))));
+        h("td", { class: "num" }, fmt(m.net_worth)), h("td", {}, dur(m.duration_s)), h("td", {}, h("a", { href: `/match.html?id=${m.match_id}`, "aria-label": "Open scoreboard", title: "Open scoreboard" }, h("span", { class: "go", "aria-hidden": "true" }, "→")))), `/match.html?id=${m.match_id}`); }))),
+      all.length > FIRST ? h("button", { class: "morebtn ghost", type: "button", onclick: (e) => { el.querySelectorAll("tr.extra").forEach((tr) => (tr.hidden = false)); e.currentTarget.remove(); } }, `Show ${all.length - FIRST} more games`) : "");
   } catch (e) { showError(el, e); }
 })();
 </script></body></html>

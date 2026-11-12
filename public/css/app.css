@@ -763,3 +763,94 @@ a.ach-m:hover{transform:translateY(-3px);border-color:rgba(255,211,107,.35);colo
 /* accolades on scoreboards */
 .accs{display:inline-flex;flex-wrap:wrap;gap:4px;margin-left:6px;vertical-align:1px}.acc{display:inline-block;padding:2px 7px 1px;border-radius:999px;background:rgba(255,211,107,.12);border:1px solid rgba(255,211,107,.35);color:var(--lane-y);font:700 9.5px/1.3 var(--fh);letter-spacing:.06em;white-space:nowrap;cursor:help}.acc.more{color:var(--muted);border-color:var(--line2);background:none}
 @media (prefers-reduced-motion:reduce){.so-c,.bp-it,.cchart .refl,.cchart .gap{animation:none!important}.cchart .refl{stroke-dashoffset:0}}
+
+
+/* =====================================================================================
+   v6 "App shell" (2026-11-11): quick search, labelled phone tab bar + More sheet,
+   whole-row links, back links, quieter toasts, faster page wipes, touch tooltips.
+   ===================================================================================== */
+html.locked,html.locked body{overflow:hidden}
+kbd{display:inline-block;min-width:18px;padding:3px 6px 2px;border-radius:5px;border:1px solid var(--line2);border-bottom-width:2px;background:rgba(255,255,255,.04);color:var(--muted);font:600 10px/1 var(--fh);letter-spacing:.06em;text-align:center;text-transform:none}
+
+/* ---- rail: search + tour ---- */
+.rail .rail-find{display:flex;align-items:center;gap:12px;flex:none;height:40px;margin:0 14px 8px;padding:0 10px 0 12px;border-radius:10px;border:1px solid var(--line2);background:rgba(255,255,255,.03);box-shadow:none;color:var(--muted);font:600 12px/1 var(--fh);letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:border-color .18s,color .18s,background .18s}
+.rail .rail-find:hover{border-color:rgba(96,205,227,.5);background:rgba(96,205,227,.06);color:var(--cream)}
+.rail .rail-find .ic{width:18px;height:18px;display:inline-flex;flex:none}.rail .rail-find .ic svg{width:100%;height:100%}.rail .rail-find .lb{flex:1;text-align:left}
+.rail .rail-more{display:none}
+.rail-tour{display:flex;padding:0 14px 12px}.rail-tour:empty{display:none}.rail-tour .tour-btn{width:100%;justify-content:center;animation:none}
+
+/* ---- quick search ---- */
+.pal-wrap{position:fixed;inset:0;z-index:3500;display:flex;justify-content:center;align-items:flex-start;padding:12vh 16px 16px;background:rgba(4,6,7,.62);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);animation:fadeIn .14s ease}
+.pal{width:min(620px,100%);max-height:min(560px,76vh);display:flex;flex-direction:column;border-radius:16px;border:1px solid var(--line2);background:#0c1011;box-shadow:0 40px 90px -20px rgba(0,0,0,.95),0 0 0 1px rgba(96,205,227,.08);overflow:hidden;animation:palIn .22s var(--snap) both}
+@keyframes palIn{from{opacity:0;transform:translateY(-10px) scale(.97)}}
+.pal-in{display:flex;align-items:center;gap:10px;padding:6px 14px;border-bottom:1px solid var(--line)}
+.pal-in .ic{font-size:20px;color:var(--lane-b);line-height:1}
+.pal-in input{flex:1;min-width:0;height:44px;padding:0!important;border:0!important;border-radius:0;background:transparent!important;box-shadow:none!important;outline:0;color:var(--text);font:400 17px/1 var(--fb)}
+.pal-list{flex:1;overflow:auto;padding:6px;overscroll-behavior:contain}
+.pal-hd{padding:10px 10px 5px;color:var(--dim);font:700 10px/1 var(--fh);letter-spacing:.18em;text-transform:uppercase}
+.pal-row{display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:10px;cursor:pointer;scroll-margin:6px}
+.pal-row.on{background:rgba(96,205,227,.1);box-shadow:inset 3px 0 0 var(--lane-b)}
+.pal-row img,.pal-row .ph{width:30px;height:30px;flex:none;border-radius:7px;object-fit:cover;background:#191f21}.pal-row img.round{border-radius:50%}
+.pal-row .ph{display:grid;place-items:center;color:var(--muted);font:600 13px/1 var(--fh)}
+.pal-row .nm{flex:1;min-width:0;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pal-row .nm small{margin-left:10px;color:var(--dim);font-size:12px;text-transform:capitalize}
+.pal-row .k{flex:none;padding:4px 7px 3px;border-radius:4px;background:rgba(255,255,255,.05);color:var(--muted);font:700 9px/1 var(--fh);letter-spacing:.14em;text-transform:uppercase}
+.pal-row .k-player{color:var(--lane-y)}.pal-row .k-hero{color:var(--lane-b)}.pal-row .k-item{color:var(--lane-g)}
+.pal-none{margin:26px 10px;text-align:center;color:var(--muted)}
+.pal-ft{display:flex;gap:18px;padding:9px 14px;border-top:1px solid var(--line);color:var(--dim);font-size:12px}.pal-ft kbd{margin-right:3px}
+@media(max-width:860px){.pal-wrap{padding:10px}.pal{max-height:calc(100dvh - 20px)}.pal-ft,.pal-in kbd{display:none}}
+
+/* ---- whole-row links, back links ---- */
+.rowlink{cursor:pointer}tr.rowlink:hover td{background:rgba(247,233,213,.045)}.rowlink:focus-visible{outline:2px solid var(--lane-b);outline-offset:-2px;box-shadow:none}
+tr.rowlink td:last-child .go{display:inline-block;color:var(--dim);transition:transform .2s var(--ease),color .2s}tr.rowlink:hover td:last-child .go{transform:translateX(4px);color:var(--ink)}
+tr.you td:first-child{box-shadow:inset 3px 0 0 var(--lane-b)}.youtag{margin-left:8px;padding:3px 6px 2px;border-radius:3px;background:var(--lane-b);color:#041013;font:700 9px/1 var(--fh);letter-spacing:.14em;text-transform:uppercase;vertical-align:middle}
+.crumb{display:inline-flex;align-items:center;gap:8px;margin:0 0 12px;padding:6px 12px 5px 10px;border-radius:999px;border:1px solid var(--line2);background:rgba(8,10,11,.55);color:var(--muted);font:700 11px/1 var(--fh);letter-spacing:.14em;text-transform:uppercase;transition:color .18s,border-color .18s}
+.crumb span{transition:transform .2s var(--ease)}.crumb:hover{color:var(--cream);border-color:rgba(247,233,213,.4)}.crumb:hover span{transform:translateX(-3px)}
+th.sortable{cursor:pointer;user-select:none;transition:color .15s}th.sortable:hover{color:var(--cream)}th.sortable:focus-visible{outline:2px solid var(--lane-b);outline-offset:-2px}th.sortable.on::after{content:" ▾";color:var(--ink)}
+.morebtn{display:block;width:100%;margin-top:10px}
+
+/* ---- fixes ---- */
+.sg input{padding-left:36px!important}
+.seg button{white-space:nowrap}.seg button.primary{background:var(--ink);color:#170a04;box-shadow:2px 3px 0 #050606}.side .seg{display:grid;width:100%}.side .seg button{min-width:0;padding:9px 6px;letter-spacing:.08em}
+.itip.tapped{pointer-events:auto}
+/* unlock banners rise from the bottom so they never sit on the page title */
+.achtoast{top:auto;bottom:26px;animation:achUp .6s var(--snap) both}.achtoast.out{animation:achDown .4s ease-in both}
+@keyframes achUp{from{opacity:0;transform:translate(-50%,40px) scale(.94)}to{opacity:1;transform:translate(-50%,0)}}@keyframes achDown{to{opacity:0;transform:translate(-50%,30px)}}
+/* page wipes: same look, a third quicker (navigation should never feel like waiting) */
+.wipe.in .p1{animation-duration:.24s;animation-delay:0s}.wipe.in .p2{animation-duration:.24s;animation-delay:.03s}.wipe.in .p3{animation-duration:.24s;animation-delay:.06s}.wipe.in .emb{animation-duration:.2s;animation-delay:.14s}
+.wipe.out .p3{animation-duration:.45s;animation-delay:.04s}.wipe.out .p2{animation-duration:.45s;animation-delay:.09s}.wipe.out .p1{animation-duration:.45s;animation-delay:.14s}
+
+/* ---- phones: four labelled tabs + More ---- */
+.navsheet{display:none}
+@media(max-width:860px){
+  .rail{height:calc(62px + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);align-items:stretch}
+  .rail .rail-find,.rail .rail-tour,.rail .who,.rail a.out{display:none}
+  .rail nav{flex:4;display:grid;grid-template-columns:repeat(4,1fr);padding:0;overflow:visible}
+  .rail nav a.sec{display:none}
+  .rail nav a,.rail .rail-more{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;height:62px;padding:0 4px;border:0;border-radius:0;background:transparent;box-shadow:none;color:var(--muted);font:700 9.5px/1 var(--fh);letter-spacing:.08em;text-transform:uppercase}
+  .rail .rail-more{flex:1;cursor:pointer}
+  .rail nav a .ic,.rail .rail-more .ic{width:23px;height:23px;display:inline-flex}.rail .rail-more .ic svg{width:100%;height:100%}
+  .rail nav a .lb{display:block;font-size:9px;letter-spacing:.03em}
+  .rail nav a.active,.rail .rail-more.active,.rail .rail-more[aria-expanded=true]{color:var(--cream);background:none}
+  .rail nav a.active .ic,.rail .rail-more.active .ic,.rail .rail-more[aria-expanded=true] .ic{color:var(--ink)}
+  .rail nav a.active::before,.rail .rail-more.active::before{content:"";position:absolute;top:0;left:22%;right:22%;height:3px;border-radius:0 0 3px 3px;background:var(--ink);box-shadow:0 0 12px rgba(221,102,56,.7)}
+  .navsheet{display:flex;position:fixed;inset:0;z-index:59;align-items:flex-end;background:rgba(4,6,7,.66);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);animation:fadeIn .2s ease}
+  .navsheet.out{opacity:0;transition:opacity .22s}.navsheet.out .ns-card{transform:translateY(40px);transition:transform .22s ease-in}
+  .ns-card{width:100%;max-height:84dvh;overflow:auto;padding:8px 16px calc(80px + env(safe-area-inset-bottom));border-radius:22px 22px 0 0;border-top:1px solid var(--line2);background:#0c1011;box-shadow:0 -30px 60px rgba(0,0,0,.6);animation:nsUp .34s var(--ease) both}
+  @keyframes nsUp{from{transform:translateY(60%);opacity:.4}}
+  .ns-grab{display:block;width:44px;height:4px;margin:2px auto 14px;border-radius:2px;background:var(--line2)}
+  .ns-who a{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;border:1px solid var(--line);color:var(--text)}.ns-who .av{width:42px;height:42px;border-radius:50%;flex:none;object-fit:cover}.ns-who .nm{display:block;font:600 16px/1.2 var(--fh)}.ns-who .nm small{display:flex;align-items:center;gap:6px;margin-top:3px;color:var(--muted);font:400 12px var(--fb)}.ns-who img.rank{height:20px}
+  .ns-find{display:flex;align-items:center;gap:10px;width:100%;height:46px;margin:10px 0;padding:0 14px;border-radius:12px;border:1px solid var(--line2);background:rgba(255,255,255,.03);box-shadow:none;color:var(--muted);font:400 15px/1 var(--fb);letter-spacing:0;text-transform:none;text-align:left}.ns-find .ic{font-size:19px;color:var(--lane-b)}
+  .ns-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .ns-grid a{display:flex;flex-direction:column;align-items:center;gap:9px;padding:15px 6px 13px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.02);color:var(--text);font:700 10.5px/1 var(--fh);letter-spacing:.1em;text-transform:uppercase}
+  .ns-grid a .ix,.ns-grid a .rp{display:none}.ns-grid a .ic{width:24px;height:24px;display:inline-flex;color:var(--muted)}.ns-grid a .ic svg{width:100%;height:100%}
+  .ns-grid a.active{border-color:var(--ink);color:var(--ink)}.ns-grid a.active .ic{color:var(--ink)}
+  .ns-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px}.ns-foot .tour-btn{animation:none}
+  .ns-foot a.out{display:inline-flex;align-items:center;gap:8px;margin-left:auto;color:var(--muted);font:700 11px/1 var(--fh);letter-spacing:.12em;text-transform:uppercase}.ns-foot a.out .ic{width:18px;height:18px;display:inline-flex}.ns-foot a.out .ic svg{width:100%;height:100%}.ns-foot a.out .lb{display:inline}
+  .achtoast{bottom:calc(76px + env(safe-area-inset-bottom))}
+  .page{padding-bottom:calc(70px + env(safe-area-inset-bottom))}
+  /* overflow-x:hidden on html+body turns body into a scroll container, which silently breaks every position:sticky bar on phones (profile tabs, hero section bar). clip stops sideways scroll without that side effect. */
+  html:not(.locked),html:not(.locked) body{overflow-x:clip}
+}
+@media(prefers-reduced-motion:reduce){.pal,.pal-wrap,.navsheet,.ns-card,.achtoast{animation:none}.crumb span,tr.rowlink td:last-child .go{transition:none}}
+
+tr[hidden]{display:none!important}

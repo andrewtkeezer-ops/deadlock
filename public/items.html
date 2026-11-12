@@ -16,7 +16,7 @@ main{max-width:1300px}.shop{display:grid;grid-template-columns:repeat(3,1fr);gap
 </style></head>
 <body><main>
 <h1>Items</h1>
-<p class="muted">The in-game shop. Hover for tooltips; click an item to pin its details.</p>
+<p class="muted">The in-game shop. Hover for tooltips; click an item for its full details.</p>
 <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:6px 0 2px"><span id="qwrap" style="min-width:300px"></span><span id="herowrap"></span><span id="count" class="count"></span></div>
 <p class="muted" style="margin:0">Filter by what an item gives you (combine chips; the bar under each item shows how much):</p>
 <div class="chips" id="chips"></div>
@@ -24,7 +24,7 @@ main{max-width:1300px}.shop{display:grid;grid-template-columns:repeat(3,1fr);gap
 <div id="pin"></div>
 </main>
 <script type="module">
-import { api, h, $, items, heroes, itemTooltip, withTip, heroPicker, suggestInput, shell } from "/js/app.js";
+import { api, h, $, items, heroes, itemTooltip, withTip, heroPicker, suggestInput, shell, modal } from "/js/app.js";
 shell("/items.html");
 const [its, hs, groups] = await Promise.all([items(), heroes(), api("/library/stat-groups")]);
 let qText = "", heroId = 0;
@@ -47,6 +47,10 @@ function render() { const q = qText.toLowerCase();
   $("#shop").replaceChildren(...["weapon", "vitality", "spirit"].map((slot) => h("div", { class: "cat " + slot }, h("h2", {}, slot),
     ...[1, 2, 3, 4].map((t) => { const rows = its.filter((i) => i.slot === slot && i.tier === t).sort((a, b) => a.name.localeCompare(b.name)); return h("div", { class: "tier" }, h("div", { class: "th" }, h("span", {}, `Tier ${t}`), h("span", {}, `${rows[0]?.cost?.toLocaleString() ?? ""} souls`)),
       h("div", { class: "items" }, ...rows.sort((a, b) => strength(b) - strength(a) || a.name.localeCompare(b.name)).map((i) => { const m = match(i), st = strength(i); return withTip(h("div", { class: "it" + (i.active ? " active" : "") + (m ? (sel.size ? " match" : "") : " dim"), onclick: () => pin(i) }, h("img", { src: i.image, alt: i.name, loading: "lazy" }), m && sel.size ? h("div", { class: "lv" }, h("i", { style: `width:${Math.round(st * 100)}%` })) : ""), i); }))); })))); }
-function pin(i) { const card = itemTooltip(i); card.style.width = "auto"; card.style.pointerEvents = "auto"; card.classList.add("card"); $("#pin").replaceChildren(h("h2", {}, i.name), card, h("p", {}, h("a", { href: `/editor.html?item=${i.id}` }, "Start a build with this item"))); $("#pin").scrollIntoView({ behavior: "smooth", block: "nearest" }); }
+// Item details open right where you clicked (a dialog), not at the bottom of the page.
+function pin(i) { const card = itemTooltip(i); card.style.cssText = "width:auto;pointer-events:auto;animation:none;position:static;box-shadow:none"; document.querySelector(".modal-wrap")?.close?.();
+  const w = modal(i.name, h("div", {}, card, h("p", { style: "margin:14px 0 0;display:flex;gap:10px;flex-wrap:wrap" }, h("a", { class: "btn primary", href: `/editor.html?item=${i.id}` }, "Start a build with this item")))); w.querySelector(".modal").style.width = "min(460px,100%)"; }
+$("#shop").dataset.notip = "";
 renderChips(); render();
+{ const want = +new URLSearchParams(location.search).get("item"); const it = want && its.find((x) => x.id === want); if (it) pin(it); }
 </script></body></html>

@@ -58,11 +58,19 @@ export function abilityTooltip(a) {
     a.description ? h("div", { class: "desc" }, stripHtml(a.description)) : "",
     ...(a.tiers || []).map((t, i) => h("div", { class: "tier" }, h("b", {}, `T${i + 1}`), stripHtml(t))));
 }
-/** Attach a hover tooltip built by `build()` to any element. */
+/** Attach a tooltip built by `build()` to any element: hover with a mouse, tap on touch screens (tap elsewhere to dismiss).
+ *  Elements inside [data-notip] keep their tap for their own action (e.g. the shop grid, where a tap opens the item). */
+const HOVERLESS = matchMedia("(hover: none)");
+function killTip() { tipEl?.remove(); tipEl = null; }
 export function withTipBuilder(el, build) {
-  el.addEventListener("mouseenter", (e) => { tipEl?.remove(); tipEl = build(); tipEl.style.position = "fixed"; document.body.append(tipEl); place(e); });
-  el.addEventListener("mousemove", place); el.addEventListener("mouseleave", () => { tipEl?.remove(); tipEl = null; });
-  function place(e) { if (!tipEl) return; const w = tipEl.offsetWidth, hgt = tipEl.offsetHeight; let x = e.clientX + 16, y = e.clientY + 16; if (x + w > innerWidth - 8) x = e.clientX - w - 16; if (y + hgt > innerHeight - 8) y = innerHeight - hgt - 8; tipEl.style.left = x + "px"; tipEl.style.top = y + "px"; }
+  const show = () => { killTip(); tipEl = build(); tipEl.style.position = "fixed"; document.body.append(tipEl); };
+  const place = (e) => { if (!tipEl) return; const w = tipEl.offsetWidth, hgt = tipEl.offsetHeight; let x = e.clientX + 16, y = e.clientY + 16; if (x + w > innerWidth - 8) x = e.clientX - w - 16; if (y + hgt > innerHeight - 8) y = innerHeight - hgt - 8; tipEl.style.left = Math.max(8, x) + "px"; tipEl.style.top = Math.max(8, y) + "px"; };
+  el.addEventListener("mouseenter", (e) => { if (HOVERLESS.matches) return; show(); place(e); });
+  el.addEventListener("mousemove", (e) => { if (!HOVERLESS.matches) place(e); }); el.addEventListener("mouseleave", () => { if (!HOVERLESS.matches) killTip(); });
+  el.addEventListener("click", (e) => { if (!HOVERLESS.matches || el.closest("[data-notip]")) return; const mine = tipEl && tipEl._for === el; killTip(); if (mine) return;
+    show(); tipEl._for = el; tipEl.classList.add("tapped"); const r = el.getBoundingClientRect(), w = tipEl.offsetWidth, hgt = tipEl.offsetHeight;
+    tipEl.style.left = Math.max(8, Math.min(r.left + r.width / 2 - w / 2, innerWidth - w - 8)) + "px"; tipEl.style.top = (r.bottom + 10 + hgt > innerHeight - 70 && r.top - hgt - 10 > 8 ? r.top - hgt - 10 : r.bottom + 10) + "px";
+    setTimeout(() => { const off = (ev) => { if (ev.target === el) return; killTip(); document.removeEventListener("pointerdown", off, true); removeEventListener("scroll", off, true); }; document.addEventListener("pointerdown", off, true); addEventListener("scroll", off, { capture: true, passive: true }); }, 0); });
   return el;
 }
 /** Plain-English explainer for jargon. Hover on desktop, tap on phones. */
@@ -73,28 +81,34 @@ export function term(label, key = label) {
   const [title, body] = GLOSSARY[key] || [label, ""];
   const el = h("span", { class: "term", tabindex: "0", "aria-label": `${label}: ${body}` }, label);
   withTipBuilder(el, () => h("div", { class: "itip ttip" }, h("b", {}, title), h("div", { class: "desc" }, body)));
-  // touch: tap toggles the tip instead of following a parent link
-  el.addEventListener("click", (e) => { if (!matchMedia("(hover: none)").matches) return; e.preventDefault(); e.stopPropagation();
-    if (tipEl) { tipEl.remove(); tipEl = null; return; }
-    tipEl = h("div", { class: "itip ttip" }, h("b", {}, title), h("div", { class: "desc" }, body)); tipEl.style.position = "fixed"; document.body.append(tipEl);
-    const r = el.getBoundingClientRect(); tipEl.style.left = Math.max(8, Math.min(r.left, innerWidth - tipEl.offsetWidth - 8)) + "px"; tipEl.style.top = (r.bottom + 8 + tipEl.offsetHeight > innerHeight ? r.top - tipEl.offsetHeight - 8 : r.bottom + 8) + "px";
-    setTimeout(() => document.addEventListener("click", () => { tipEl?.remove(); tipEl = null; }, { once: true }), 0); });
+  // touch: the tap opens the tip (withTipBuilder) instead of following a parent link
+  el.addEventListener("click", (e) => { if (HOVERLESS.matches) { e.preventDefault(); e.stopPropagation(); } });
   return el;
 }
-/** Glass modal. Returns the body element; closes on backdrop click or Esc. */
+/** Glass modal. Returns the wrapper; closes on backdrop click or Esc, keeps Tab inside, and hands focus back afterwards. */
 export function modal(title, body) {
-  const close = () => { wrap.remove(); document.removeEventListener("keydown", onKey); };
-  const onKey = (e) => { if (e.key === "Escape") close(); };
-  const wrap = h("div", { class: "modal-wrap", onclick: (e) => { if (e.target === wrap) close(); } }, h("div", { class: "modal" }, h("div", { class: "mh" }, h("h2", {}, title), h("button", { class: "close", onclick: close }, "×")), h("div", { class: "mb" }, body)));
-  document.body.append(wrap); document.addEventListener("keydown", onKey); return wrap;
+  const prev = document.activeElement;
+  const close = () => { wrap.remove(); document.removeEventListener("keydown", onKey); if (!document.querySelector(".modal-wrap")) document.documentElement.classList.remove("locked"); prev?.focus?.({ preventScroll: true }); };
+  const onKey = (e) => { if (e.key === "Escape") return close(); if (e.key !== "Tab") return; const f = [...wrap.querySelectorAll("a[href],button,input,select,textarea,[tabindex]:not([tabindex='-1'])")].filter((x) => x.offsetParent); if (!f.length) return;
+    const first = f[0], last = f[f.length - 1]; if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); } else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); } };
+  const x = h("button", { class: "close", type: "button", "aria-label": "Close", onclick: close }, "×");
+  const wrap = h("div", { class: "modal-wrap", onclick: (e) => { if (e.target === wrap) close(); } }, h("div", { class: "modal", role: "dialog", "aria-modal": "true", "aria-label": title }, h("div", { class: "mh" }, h("h2", {}, title), x), h("div", { class: "mb" }, body)));
+  document.body.append(wrap); document.documentElement.classList.add("locked"); document.addEventListener("keydown", onKey); x.focus({ preventScroll: true }); wrap.close = close; return wrap;
 }
-/** Attach a hover tooltip to any element for an item. */
-export function withTip(el, it) {
-  if (!it) return el;
-  el.addEventListener("mouseenter", (e) => { tipEl?.remove(); tipEl = itemTooltip(it); tipEl.style.position = "fixed"; document.body.append(tipEl); place(e); });
-  el.addEventListener("mousemove", place); el.addEventListener("mouseleave", () => { tipEl?.remove(); tipEl = null; });
-  function place(e) { if (!tipEl) return; const w = tipEl.offsetWidth, hgt = tipEl.offsetHeight; let x = e.clientX + 16, y = e.clientY + 16; if (x + w > innerWidth - 8) x = e.clientX - w - 16; if (y + hgt > innerHeight - 8) y = innerHeight - hgt - 8; tipEl.style.left = x + "px"; tipEl.style.top = y + "px"; }
-  return el;
+/** Attach the in-game item tooltip to any element. */
+export function withTip(el, it) { return it ? withTipBuilder(el, () => itemTooltip(it)) : el; }
+/** Make a whole table row (or card) open `href`: click anywhere that isn't already a link, or focus it and press Enter. */
+export function rowLink(el, href) {
+  el.classList.add("rowlink"); el.tabIndex = 0; el.setAttribute("role", "link");
+  const go = (e) => { if (e.target.closest("a,button,.term,input,select")) return; if (e.ctrlKey || e.metaKey) return void window.open(href, "_blank"); visit(href); };
+  el.addEventListener("click", go); el.addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target === el) go(e); }); return el;
+}
+/** Navigate like a clicked link (so the page transition plays). */
+export function visit(href) { const a = h("a", { href, style: "display:none" }); document.body.append(a); a.click(); a.remove(); }
+/** "← Back" link: returns to where the visitor came from when that was this site, otherwise to `href`. */
+export function crumb(label, href) {
+  let same = false; try { same = !!document.referrer && new URL(document.referrer).origin === location.origin && history.length > 1; } catch {}
+  return h("a", { class: "crumb", href, onclick: (e) => { if (same && !e.ctrlKey && !e.metaKey) { e.preventDefault(); e.stopPropagation(); history.back(); } } }, h("span", { "aria-hidden": "true" }, "←"), same ? "Back" : label);
 }
 
 // ---- pickers ----
@@ -138,6 +152,8 @@ const ICONS = {
   bag: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1 12H6L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>',
   gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
   out: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/></svg>',
+  find: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>',
+  more: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>',
   shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg>',
 };
 export function shell(active) {
@@ -151,15 +167,45 @@ export function shell(active) {
   try { gameStart(); } catch (e) { console.warn("game layer skipped", e); document.documentElement.classList.remove("booting"); }
   const links = [["/", "Leaderboard", "trophy"], ["/heroes.html", "Heroes", "hero"], ["/counters.html", "Draft", "swords"], ["/heatmap.html", "Map", "map"], ["/library.html", "Builds", "book"], ["/items.html", "Items", "bag"], ["/patches.html", "Patches", "news"], ["/setup.html", "Setup", "gear"]];
   let ix = 0;
-  const mk = ([href, label, ic]) => { const a = h("a", { href, class: href === active ? "active" : "" }); a.innerHTML = `<span class="ix">${String(++ix).padStart(2, "0")}</span><span class="ic">${ICONS[ic]}</span><span class="lb">${label}</span>`; return a; };
+  // Phones show four destinations in the bottom bar and the rest in a "More" sheet; a nine-icon strip isn't navigation.
+  const PRI = new Set(["/", "/heroes.html", "/counters.html", "/library.html"]);
+  const mk = ([href, label, ic]) => { const a = h("a", { href, class: (href === active ? "active " : "") + (PRI.has(href) ? "pri" : "sec") }); if (href === active) a.setAttribute("aria-current", "page"); a.innerHTML = `<span class="ix">${String(++ix).padStart(2, "0")}</span><span class="ic">${ICONS[ic]}</span><span class="lb">${label}</span>`; return a; };
   const pill = h("span", { class: "pill" });
-  const nav = h("nav", {}, pill, ...links.map(mk));
+  const nav = h("nav", { "aria-label": "Main" }, pill, ...links.map(mk));
   const who = h("div", { class: "who" });
-  const rail = h("aside", { class: "rail" }, h("a", { class: "brand", href: "/", title: "Soul Scribe" }, h("img", { class: "mark", src: "/img/icon.png", alt: "" }), h("img", { class: "word", src: "/img/logo.webp", alt: "Soul Scribe" })), nav, who);
+  const MAC = /Mac|iPhone|iPad/.test(navigator.platform || "");
+  const findBtn = h("button", { class: "rail-find", type: "button", title: "Search heroes, players, items and pages", onclick: () => openPalette() }); findBtn.innerHTML = `<span class="ic">${ICONS.find}</span><span class="lb">Search</span><kbd>${MAC ? "⌘" : "Ctrl "}K</kbd>`;
+  const moreBtn = h("button", { class: "rail-more", type: "button", "aria-haspopup": "dialog", "aria-expanded": "false", onclick: () => sheet() }); moreBtn.innerHTML = `<span class="ic">${ICONS.more}</span><span class="lb">More</span>`;
+  const railTour = h("div", { class: "rail-tour" });
+  const rail = h("aside", { class: "rail" }, h("a", { class: "brand", href: "/", title: "Soul Scribe" }, h("img", { class: "mark", src: "/img/icon.png", alt: "" }), h("img", { class: "word", src: "/img/logo.webp", alt: "Soul Scribe" })), findBtn, nav, moreBtn, railTour, who);
   document.body.prepend(rail);
   pageHeader();
-  // "Take a tour" — in the page header when there is one, otherwise a small floating pill bottom-right. Never automatic.
-  import("/js/tour.js").then((t) => { const b = t.tourButton(); if (!b) return; const top = document.querySelector(".ph .ph-top"); if (top) top.append(b); else { b.classList.add("fab"); document.body.append(b); } }).catch(() => {});
+  const syncMore = () => moreBtn.classList.toggle("active", !!nav.querySelector("a.sec.active")); syncMore();
+  // The phone "More" sheet: profile, search, every page that isn't in the bar, the tour and sign out.
+  let tourMod = null;
+  function sheet(open) {
+    let sh = document.querySelector(".navsheet"); open ??= !sh;
+    if (!open) { if (sh) { sh.classList.add("out"); setTimeout(() => sh.remove(), 240); } moreBtn.setAttribute("aria-expanded", "false"); document.documentElement.classList.remove("locked"); return; }
+    if (sh) return;
+    const copy = (a) => { const c = a.cloneNode(true); c.querySelectorAll(".rp").forEach((x) => x.remove()); return c; };
+    const prof = who.querySelector("a"), out = rail.querySelector("a.out"), tb = tourMod?.tourButton?.();
+    if (tb) tb.addEventListener("click", () => sheet(false), true);
+    sh = h("div", { class: "navsheet", role: "dialog", "aria-modal": "true", "aria-label": "More pages", onclick: (e) => { if (e.target === sh) sheet(false); } },
+      h("div", { class: "ns-card" }, h("i", { class: "ns-grab", "aria-hidden": "true" }),
+        prof ? h("div", { class: "ns-who" }, copy(prof)) : "",
+        h("button", { class: "ns-find", type: "button", onclick: () => { sheet(false); openPalette(); } }, h("span", { class: "ic", "aria-hidden": "true" }, "⌕"), "Search heroes, players, items"),
+        h("div", { class: "ns-grid" }, [...nav.querySelectorAll("a.sec")].map(copy)),
+        h("div", { class: "ns-foot" }, tb || "", out ? copy(out) : "")));
+    document.body.append(sh); moreBtn.setAttribute("aria-expanded", "true"); document.documentElement.classList.add("locked");
+  }
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && document.querySelector(".navsheet")) return sheet(false);
+    const typing = e.target.closest?.("input,textarea,select,[contenteditable]");
+    if ((e.key === "k" || e.key === "K") && (e.ctrlKey || e.metaKey) && !e.altKey) { e.preventDefault(); openPalette(); }
+    else if (e.key === "/" && !typing && !e.ctrlKey && !e.metaKey && !e.altKey && !document.querySelector("[data-slash]")) { e.preventDefault(); openPalette(); }
+  });
+  // "Take a tour" — in the page header when there is one, otherwise in the rail (and the phone sheet). Never automatic, never floating over content.
+  import("/js/tour.js").then((t) => { tourMod = t; const b = t.tourButton(); if (!b) return; const top = document.querySelector(".ph .ph-top"); if (top) top.append(b); else railTour.append(b); }).catch(() => {});
   import("/js/fx.js").then((fx) => fx.polish()).catch((e) => console.warn("polish layer skipped", e));
   // sliding active pill + hover preview + click ripple
   function movePill(target) { const a = target || nav.querySelector("a.active"); if (!a) { pill.style.opacity = 0; return; } pill.style.top = a.offsetTop + "px"; pill.style.opacity = 1; }
@@ -167,7 +213,7 @@ export function shell(active) {
   // (pill used to follow the hovered link; the 0.45s slide left the hovered label unreadable on the cream pill, so it now stays on the active page)
   nav.addEventListener("click", (e) => { const a = e.target.closest("a"); if (!a || reduced) return; const r = a.getBoundingClientRect(), s = Math.max(r.width, r.height); a.append(h("span", { class: "rp", style: `width:${s}px;height:${s}px;left:${e.clientX - r.left - s / 2}px;top:${e.clientY - r.top - s / 2}px` })); });
   me().then(async (m) => {
-    if (m.role === "admin") { nav.append(mk(["/admin.html", "Admin", "shield"])); movePill(); }
+    if (m.role === "admin") { nav.append(mk(["/admin.html", "Admin", "shield"])); movePill(); syncMore(); }
     if (m.account_id) {
       let p = null; try { p = (await api("/players")).find((x) => x.account_id === m.account_id); } catch {}
       const a = h("a", { href: `/player.html?id=${m.account_id}` }, p?.avatar_url ? h("img", { class: "av", src: p.avatar_url, alt: "" }) : h("span", { class: "av" }), h("span", { class: "nm" }, p?.name ?? "My profile", h("small", {}, "View profile")));
@@ -182,6 +228,9 @@ export function shell(active) {
   }).catch(() => {});
   if (!reduced) alive();
 }
+
+/** Quick search (Ctrl/⌘ K or "/"): jump to any page, hero, player or item. Loaded on first use. */
+export const openPalette = () => import("/js/palette.js").then((m) => m.open()).catch((e) => console.warn("search unavailable", e));
 
 /** Latest official uploader release, via the Worker (cached). */
 export const uploaderLatest = () => api("/uploader/latest");

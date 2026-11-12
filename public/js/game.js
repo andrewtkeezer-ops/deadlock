@@ -55,7 +55,7 @@ function wipeEl(mode) { return h("div", { class: `wipe ${mode}`, "aria-hidden": 
 function wipes() {
   if (RM) return;
   // arriving: the panels that covered the old page slide away
-  if (ss.get("ss.wipe") && !root.classList.contains("booting")) { ss.del("ss.wipe"); const w = wipeEl("out"); document.body.append(w); setTimeout(() => w.remove(), 900); }
+  if (ss.get("ss.wipe") && !root.classList.contains("booting")) { ss.del("ss.wipe"); const w = wipeEl("out"); document.body.append(w); setTimeout(() => w.remove(), 700); }
   else ss.del("ss.wipe");
   addEventListener("pageshow", (e) => { if (e.persisted) document.querySelectorAll(".wipe").forEach((w) => w.remove()); });
   const ok = (a, e) => {
@@ -64,12 +64,13 @@ function wipes() {
     const u = new URL(a.href, location.href); if (u.origin !== location.origin) return false;
     if (u.pathname.startsWith("/api/") || /\.(exe|zip|png|jpe?g|webp|json)$/i.test(u.pathname)) return false;
     if (u.pathname === location.pathname && u.search === location.search) return false; // same page / hash links
+    if (document.querySelector(".wipe.in")) return false; // already leaving
     return u;
   };
   document.addEventListener("click", (e) => {
     const a = e.target.closest?.("a[href]"); const u = ok(a, e); if (!u) return;
     e.preventDefault(); ss.set("ss.wipe", "1"); document.body.append(wipeEl("in"));
-    setTimeout(() => (location.href = u.href), 430);
+    setTimeout(() => (location.href = u.href), 300);
   });
   // warm the next page while the cursor is on its link
   const pre = new Set(); document.addEventListener("pointerover", (e) => { const a = e.target.closest?.("a[href]"); if (!a) return; const u = ok(a, { button: 0 }); if (!u || pre.has(u.pathname)) return; pre.add(u.pathname); document.head.append(h("link", { rel: "prefetch", href: u.pathname })); }, { passive: true });

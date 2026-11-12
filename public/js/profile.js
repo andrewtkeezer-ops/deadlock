@@ -34,7 +34,7 @@ export async function mountAchievements(card, id, isMe) {
       // Unlock banners for anything this browser hasn't celebrated yet (one summary the very first time, so a backfill isn't 30 banners).
       const keyOf = (k, t) => `${k}:${t}`, seen = new Set(store.get("ss.ach.seen") || []), all = results.flatMap((r) => r.tiers.map((t) => ({ ...t, key: r.key })));
       const fresh = all.filter((t) => !seen.has(keyOf(t.key, t.tier))).sort((a, b) => b.earned_at - a.earned_at);
-      if (!store.get("ss.ach.seen") && fresh.length > 3) achievementToast({ icon: "✦", name: `${fresh.length} achievements`, kicker: "Your record so far", how: "Every game you've played counts. Scroll down to see them." });
+      if (!store.get("ss.ach.seen") && fresh.length > 3) achievementToast({ icon: "✦", name: `${fresh.length} achievements`, kicker: "Your record so far", how: "Every game you've played counts. They're under the Achievements tab." });
       else fresh.slice(0, 3).forEach((t) => { const d = defs.find((x) => x.key === t.key); achievementToast({ icon: d.icon, name: d.name, tier: t.tier, how: d.how.replace("{n}", d.tiers[t.tier - 1].toLocaleString()) }); });
       store.set("ss.ach.seen", all.map((t) => keyOf(t.key, t.tier)));
     }
