@@ -12,7 +12,7 @@ main{max-width:1300px}.lay{display:grid;grid-template-columns:260px 1fr;gap:18px
 <div class="lay"><div class="side">
 <div class="card"><div class="sel" id="sel"><strong>All heroes</strong></div><input type="text" id="q" placeholder="Filter heroes…" style="width:100%;margin-bottom:6px"><div id="hp" class="hp"></div><p style="margin:8px 0 0"><button id="clear">All heroes</button></p></div>
 <div class="card"><strong>Show</strong><div class="seg" style="margin-top:6px"><button data-mode="deaths" class="primary">Deaths</button><button data-mode="kills">Kills</button><button data-mode="net">Net</button></div>
-<div style="margin-top:12px"><strong>Window</strong><div class="seg" style="margin-top:6px"><button data-days="7">7d</button><button data-days="30" class="primary">30d</button><button data-days="0">All</button></div></div>
+<div style="margin-top:12px"><strong>Window</strong><div class="seg" style="margin-top:6px"><button data-days="1">24h</button><button data-days="3">3d</button><button data-days="7" class="primary">7d</button><button data-days="14">14d</button></div></div>
 <div style="margin-top:12px"><strong>Who</strong><div class="seg" style="margin-top:6px"><button data-who="all" class="primary">Everyone</button><button data-who="squad">Just the squad</button></div></div>
 <div style="margin-top:12px"><strong>Game phase</strong><div class="seg" style="margin-top:6px"><button data-max="0" class="primary">Whole</button><button data-max="600">0–10m</button><button data-max="1200">0–20m</button></div></div>
 <details style="margin-top:12px"><summary class="muted">Calibration</summary>
@@ -27,7 +27,7 @@ main{max-width:1300px}.lay{display:grid;grid-template-columns:260px 1fr;gap:18px
 import { api, h, $, heroes, shell, showError } from "/js/app.js";
 shell("/heatmap.html");
 const [hs, assets] = await Promise.all([heroes(), api("/assets")]);
-const state = { hero: +new URLSearchParams(location.search).get("hero") || 0, mode: "deaths", days: 30, max: 0, who: "all" };
+const state = { hero: +new URLSearchParams(location.search).get("hero") || 0, mode: "deaths", days: 7, max: 0, who: "all" };
 const bg = new Image(); bg.crossOrigin = "anonymous"; bg.src = assets.map.images.minimap; const frame = new Image(); frame.crossOrigin = "anonymous"; frame.src = assets.map.images.frame;
 const cal = () => ({ ext: +$("#calExt").value, ox: +$("#calOx").value, oy: +$("#calOy").value, flipY: $("#calFlip").checked, flipX: $("#calFlipX").checked, swap: $("#calSwap").checked });
 for (const id of ["calExt", "calOx", "calOy"]) $("#" + id).oninput = (e) => { $("#" + id + "V").textContent = e.target.value; paint(); };
@@ -44,19 +44,35 @@ const UP = "https://api.deadlock-api.com/v1/analytics/kill-death-stats";
 /** Raw kill/death cells. Fetched straight from deadlock-api.com (CORS-open) so the 2–3 MB payload never passes through the Worker; falls back to our proxy. */
 async function cells(q) {
   if (q.get("squad") === "1") { squadIds ??= (await api("/players")).map((p) => p.account_id).join(","); q.delete("squad"); if (squadIds) q.set("account_ids", squadIds); }
-  try { const r = await fetch(`${UP}?${q}`, { signal: AbortSignal.timeout(25000) }); if (!r.ok) throw new Error(`upstream ${r.status}`); return merge(await r.json()); }
-  catch (e) { console.warn("direct heatmap fetch failed, using proxy:", e.message); const d = await api(`/analytics/heatmap?${q}`); return d; }
+  // deadlock-api computes this on demand from every kill in the window and gives up after ~20 s (HTTP 504). Measured 2026-11-12, everyone:
+  // 24h ≈ 2 s, 3–7 days ≈ 5–6 s, 14+ days times out; one hero: 7 days ≈ 11 s, 14 days ≈ 15 s, 30 days times out.
+  // A timeout means the window is too big, so asking again through our proxy would only double the wait: report it as "heavy" and let load() shorten the window.
+  const heavy = (msg) => Object.assign(new Error(msg), { heavy: true });
+  let r; try { r = await fetch(`${UP}?${q}`, { signal: AbortSignal.timeout(30000) }); }
+  catch (e) { if (e.name === "TimeoutError") throw heavy("deadlock-api took longer than 30 seconds"); console.warn("direct heatmap fetch failed, using proxy:", e.message); return api(`/analytics/heatmap?${q}`); }
+  if (r.status === 504 || r.status === 524 || r.status === 408) throw heavy(`deadlock-api timed out (${r.status})`);
+  if (!r.ok) { console.warn("direct heatmap fetch failed, using proxy:", r.status); return api(`/analytics/heatmap?${q}`); }
+  return merge(await r.json());
 }
 function merge(raw) { const m = new Map(); let maxK = 0, maxD = 0; for (const c of raw) { const k = c.position_x + ":" + c.position_y; const o = m.get(k) ?? { x: c.position_x, y: c.position_y, kills: 0, deaths: 0 }; o.kills += c.kills; o.deaths += c.deaths; m.set(k, o); }
   for (const o of m.values()) { maxK = Math.max(maxK, o.kills); maxD = Math.max(maxD, o.deaths); } return { step: 128, maxKills: maxK, maxDeaths: maxD, cells: [...m.values()] }; }
 const dataCache = new Map(); let current = null;
 const status = (msg, err = false) => { const el = $("#status"); el.hidden = !msg; el.className = "status" + (err ? " err" : ""); el.replaceChildren(...(msg && !err ? [h("span", { class: "sp" }), msg] : [msg || ""])); $("#mapwrap").classList.toggle("busy", !!msg && !err); };
-async function load() { const my = ++seq;
-  const q = new URLSearchParams(); if (state.hero) q.set("hero_ids", state.hero); if (state.days) q.set("min_unix_timestamp", Math.floor(Date.now() / 3600000) * 3600 - state.days * 86400); if (state.max) q.set("max_game_time_s", state.max); if (state.who === "squad") q.set("squad", "1");
-  const key = q.toString(); if (dataCache.has(key)) { current = dataCache.get(key); status(""); paint(); return; }
-  current = null; paint(); status(state.hero ? `Pulling every ${hs.find((y) => y.id === state.hero)?.name} kill and death…` : "Pulling every kill and death…");
-  try { const d = await cells(q); if (my !== seq) return; dataCache.set(key, d); current = d; status(""); paint(); }
-  catch (e) { if (my === seq) { status("Couldn't load map data: " + e.message, true); $("#note").textContent = "deadlock-api.com didn't answer in time — try again in a moment."; } } }
+const WINDOWS = [14, 7, 3, 1], dayLabel = (d) => (d === 1 ? "24 hours" : `${d} days`);
+const markDays = () => document.querySelectorAll("[data-days]").forEach((x) => (x.className = +x.dataset.days === state.days ? "primary" : ""));
+async function load() { const my = ++seq; let days = state.days, stepped = null;
+  for (;;) {
+    const q = new URLSearchParams(); if (state.hero) q.set("hero_ids", state.hero); q.set("min_unix_timestamp", Math.floor(Date.now() / 3600000) * 3600 - days * 86400); if (state.max) q.set("max_game_time_s", state.max); if (state.who === "squad") q.set("squad", "1");
+    const key = q.toString(); let d = dataCache.get(key);
+    if (!d) { current = null; paint(); const what = state.hero ? `every ${hs.find((y) => y.id === state.hero)?.name} kill and death` : "every kill and death";
+      status(stepped ? `${dayLabel(stepped)} was too much for deadlock-api. Trying the last ${dayLabel(days)}…` : `Counting ${what} from the last ${dayLabel(days)}. This takes 5–15 seconds the first time.`);
+      try { d = await cells(q); if (my !== seq) return; dataCache.set(key, d); }
+      catch (e) { if (my !== seq) return; const next = WINDOWS.find((w) => w < days);
+        if (e.heavy && next) { stepped ??= days; days = next; continue; }
+        status("Couldn't load map data: " + e.message, true); $("#note").textContent = e.heavy ? "deadlock-api.com couldn't finish even the shortest window. It's probably busy; try again in a minute." : "deadlock-api.com didn't answer. Try again in a moment."; return; } }
+    state.days = days; markDays(); current = d; status(""); paint();
+    if (stepped) $("#note").textContent += ` · ${dayLabel(stepped)} was too much data for deadlock-api to crunch in time, so this is the last ${dayLabel(days)}.`;
+    return; } }
 function paint() { const c = $("#map").getContext("2d"), S = 1024; c.clearRect(0, 0, S, S); if (bg.complete && bg.naturalWidth) c.drawImage(bg, 0, 0, S, S);
   const d = current; if (d) { const k = cal(), span = 2 * k.ext, cell = Math.ceil(S * d.step / span) + 1;
     for (const p of d.cells) { const v = state.mode === "deaths" ? p.deaths / d.maxDeaths : state.mode === "kills" ? p.kills / d.maxKills : (p.kills - p.deaths) / Math.max(d.maxKills, d.maxDeaths); if (!v) continue;

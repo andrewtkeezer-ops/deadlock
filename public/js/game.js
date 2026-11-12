@@ -51,29 +51,23 @@ function boot() {
 }
 
 /* ---------------- screen-wipe page transitions ---------------- */
+// (kept for reference; no longer used)
 function wipeEl(mode) { return h("div", { class: `wipe ${mode}`, "aria-hidden": "true" }, h("i", { class: "p1" }), h("i", { class: "p2" }), h("i", { class: "p3" }), h("span", { class: "emb" }, h("img", { src: "/img/icon.png", alt: "" }))); }
 function wipes() {
-  if (RM) return;
-  // arriving: the panels that covered the old page slide away
-  if (ss.get("ss.wipe") && !root.classList.contains("booting")) { ss.del("ss.wipe"); const w = wipeEl("out"); document.body.append(w); setTimeout(() => w.remove(), 700); }
-  else ss.del("ss.wipe");
+  // v6.1: the three full-screen colour panels are retired (they flashed the whole screen twice per click). Pages now cross-fade
+  // through the browser's own view transition (css: @view-transition), with the rail held still. This only tidies up and prefetches.
+  ss.del("ss.wipe");
   addEventListener("pageshow", (e) => { if (e.persisted) document.querySelectorAll(".wipe").forEach((w) => w.remove()); });
-  const ok = (a, e) => {
-    if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return false;
-    if (a.target && a.target !== "_self") return false; if (a.hasAttribute("download") || a.dataset.nowipe != null) return false;
+  if (RM) return;
+  const ok = (a) => {
+    if (!a || (a.target && a.target !== "_self") || a.hasAttribute("download")) return false;
     const u = new URL(a.href, location.href); if (u.origin !== location.origin) return false;
     if (u.pathname.startsWith("/api/") || /\.(exe|zip|png|jpe?g|webp|json)$/i.test(u.pathname)) return false;
-    if (u.pathname === location.pathname && u.search === location.search) return false; // same page / hash links
-    if (document.querySelector(".wipe.in")) return false; // already leaving
+    if (u.pathname === location.pathname && u.search === location.search) return false;
     return u;
   };
-  document.addEventListener("click", (e) => {
-    const a = e.target.closest?.("a[href]"); const u = ok(a, e); if (!u) return;
-    e.preventDefault(); ss.set("ss.wipe", "1"); document.body.append(wipeEl("in"));
-    setTimeout(() => (location.href = u.href), 300);
-  });
-  // warm the next page while the cursor is on its link
-  const pre = new Set(); document.addEventListener("pointerover", (e) => { const a = e.target.closest?.("a[href]"); if (!a) return; const u = ok(a, { button: 0 }); if (!u || pre.has(u.pathname)) return; pre.add(u.pathname); document.head.append(h("link", { rel: "prefetch", href: u.pathname })); }, { passive: true });
+  // warm the next page while the cursor is on its link, so the cross-fade has something to fade to straight away
+  const pre = new Set(); document.addEventListener("pointerover", (e) => { const a = e.target.closest?.("a[href]"); if (!a) return; const u = ok(a); if (!u || pre.has(u.pathname)) return; pre.add(u.pathname); document.head.append(h("link", { rel: "prefetch", href: u.pathname })); }, { passive: true });
 }
 
 /* ---------------- the living city ---------------- */

@@ -854,3 +854,20 @@ th.sortable{cursor:pointer;user-select:none;transition:color .15s}th.sortable:ho
 @media(prefers-reduced-motion:reduce){.pal,.pal-wrap,.navsheet,.ns-card,.achtoast{animation:none}.crumb span,tr.rowlink td:last-child .go{transition:none}}
 
 tr[hidden]{display:none!important}
+
+
+/* =====================================================================================
+   v6.1 (2026-11-12): calm page changes. No full-screen colour wipes: the rail stays put and
+   the content cross-fades in place (opacity only, no sliding, nothing brighter than the page).
+   ===================================================================================== */
+.wipe{display:none!important}
+@view-transition{navigation:auto}
+::view-transition-old(root){animation:vtFadeOut .14s ease-out both}
+::view-transition-new(root){animation:vtFadeIn .22s ease-out both}
+::view-transition-group(rail){animation:none}::view-transition-old(rail){display:none}::view-transition-new(rail){animation:none}
+@keyframes vtFadeOut{to{opacity:0}}@keyframes vtFadeIn{from{opacity:0}}
+/* moving between pages of the site: the content doesn't slide up again, it just settles (also the whole effect where view transitions aren't supported) */
+html.warm .page{animation:softIn .2s ease-out both}@keyframes softIn{from{opacity:.55}}
+@media(prefers-reduced-motion:reduce){@view-transition{navigation:none}html.warm .page{animation:none}}
+html.warm .stagger>*{animation:softIn .24s ease-out both;animation-delay:0s!important}
+@media(prefers-reduced-motion:reduce){html.warm .stagger>*{animation:none}}
