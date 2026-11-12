@@ -19,6 +19,20 @@
 .ppanel>.card:first-child,.ppanel>.cols:first-child{margin-top:0}
 @media(max-width:860px){.ptabbar{top:6px}.ptabbar .seg button{padding:9px 12px;font-size:11px}.pview{margin:0 -10px;padding:0 10px}.ppanel{padding:0 10px}}
 @media(prefers-reduced-motion:reduce){.ptrack,.pview,.ppanel{transition:none}.ppanel.on>*{animation:none}}
+/* road to Ranked: hero points toward placement matches */
+.rr-top{display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.rr-slots{display:flex;gap:8px}.rr-slot{width:50px;height:50px;border-radius:13px;border:2px dashed var(--line2);display:grid;place-items:center;color:var(--dim);font:600 17px/1 var(--fh);background:rgba(0,0,0,.22)}
+.rr-slot.on{border:2px solid var(--win);box-shadow:0 0 18px -4px rgba(151,218,121,.65);animation:rrPop .5s var(--snap) both}.rr-slot.on:nth-child(2){animation-delay:.08s}.rr-slot.on:nth-child(3){animation-delay:.16s}.rr-slot img,.rr-slot .hicon{width:40px;height:40px;border-radius:9px}
+@keyframes rrPop{from{transform:scale(.6);opacity:0}}
+.rr-msg{flex:1;min-width:220px}.rr-msg b{display:block;font:600 21px/1.2 var(--fh);color:var(--cream)}.rr-msg span{color:var(--muted);font-size:13.5px}
+.rr-r{display:grid;grid-template-columns:34px minmax(90px,1.1fr) minmax(80px,2fr) 62px minmax(128px,auto);gap:12px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.rr-r .nm{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rr-r .bar{height:8px;min-width:0}.rr-r .bar i{background:var(--lane-y);transition:width .9s var(--ease)}.rr-r.ok .bar i{background:var(--win);box-shadow:0 0 10px rgba(151,218,121,.5)}
+.rr-r .pts{font:600 14px/1 var(--fh);font-variant-numeric:tabular-nums;text-align:right}.rr-r .pts small{color:var(--dim);font-weight:400}
+.rr-r .stt{font-size:12.5px;color:var(--muted);text-align:right;white-space:nowrap}.rr-r.ok .stt{color:var(--win);font-weight:600}
+.rr-next{margin-left:8px;padding:3px 6px 2px;border-radius:3px;background:var(--lane-y);color:#141000;font:700 9px/1 var(--fh);letter-spacing:.14em;text-transform:uppercase;vertical-align:middle}
+.rr-fine{margin:12px 0 0;color:var(--dim);font-size:12px;line-height:1.5}
+@media(max-width:720px){.rr-r{grid-template-columns:32px minmax(0,1fr) 58px;row-gap:6px}.rr-r .bar{grid-column:1/-1;grid-row:2}.rr-r .stt{grid-column:1/-1;grid-row:3;text-align:left}.rr-slot{width:44px;height:44px}.rr-slot img,.rr-slot .hicon{width:34px;height:34px}}
+@media(prefers-reduced-motion:reduce){.rr-slot.on{animation:none}.rr-r .bar i{transition:none}}
 </style></head>
 <body><main>
 <div id="crumb"></div>
@@ -56,6 +70,7 @@
 import { api, h, $, pct, ago, dur, fmt, heroes, rankBadge, heroIcon, items, itemImg, shell, showError, kda, ratio, kdOf, kdaOf, KD, KDA, me as whoAmI, term, crumb, rowLink } from "/js/app.js";
 $("#mmrHead")?.replaceWith(term("MMR"));
 import { mountAchievements, mountTrends, mountBench, mountCurve } from "/js/profile.js";
+import { achievementToast } from "/js/game.js";
 shell("/");
 $("#crumb").append(crumb("Leaderboard", "/"));
 const qs = new URLSearchParams(location.search); const id = qs.get("id");
@@ -65,7 +80,7 @@ try {
   mountAchievements($("#achCard"), id, me?.account_id === p.account_id); mountTrends($("#trendCard"), id, hs); mountBench($("#benchCard"), id, hs); mountCurve($("#curveCard"), id, hs);
   const tier = p.mmr_rank ? Math.floor(p.mmr_rank / 10) : 0; const rinfo = p.mmr_rank ? assets.ranks.find((r) => r.tier === tier) : null;
   $("#head").replaceChildren(p.avatar_url ? h("div", { class: "avw" }, h("img", { class: "av", src: p.avatar_url, alt: "" })) : "", h("div", { style: "flex:1" }, h("h1", {}, p.name), h("div", { class: "muted" }, `Synced ${ago(p.last_sync_at)}`, d.ingest?.active ? ` · uploader active, last upload ${ago(d.ingest.last_upload_at)}` : "")),
-    h("div", { class: "rank" }, await rankBadge(p.mmr_rank, "large"), h("div", {}, h("b", {}, rinfo ? `${rinfo.name} ${p.mmr_rank % 10 || ""}` : "Unranked"), h("span", {}, ...(p.mmr_score != null ? [term("MMR"), ` ${Math.round(p.mmr_score)}`] : ["needs more games"])))));
+    h("div", { class: "rank" }, await rankBadge(p.mmr_rank, "large"), h("div", {}, h("b", {}, rinfo ? `${rinfo.name} ${p.mmr_rank % 10 || ""}` : "Unranked"), h("span", {}, ...(p.mmr_score != null ? [term("MMR"), ` ${Math.round(p.mmr_score)}`] : ["placements not played yet"])))));
   if (qs.has("welcome")) $("#banner").append(h("div", { class: "card banner" }, h("strong", {}, "You're in. "), `Imported ${qs.get("welcome")} matches so far. `, h("a", { href: "/setup.html" }, "Install the match uploader"), " to get the rest."));
   if (d.coverage && d.coverage.checked && d.coverage.with_stats < d.coverage.checked && me?.account_id === p.account_id) $("#banner").append(h("div", { class: "card banner" }, h("strong", {}, `${d.coverage.checked - d.coverage.with_stats} of your last ${d.coverage.checked} games have no detailed stats yet. `), "Keep the uploader running after you quit the game, or open those games in Match History → Watch Replay. ", h("a", { href: "/setup.html" }, "Setup")));
   else if (me?.account_id === p.account_id && d.matches[0]?.start_time && Date.now() / 1000 - d.matches[0].start_time > 86400) $("#banner").append(h("div", { class: "card banner" }, h("strong", {}, `Your newest game here is from ${ago(d.matches[0].start_time)}. `), "If you've played since, it hasn't been uploaded yet. Update the uploader to the latest version and run the backfill command on the ", h("a", { href: "/setup.html" }, "Setup page"), "."));
@@ -93,6 +108,27 @@ try {
   ] : [h("span", { class: "muted" }, "No games yet.")]));
   const maxG = Math.max(1, ...d.heroes.map((r) => r.games));
   $("#heroes").replaceChildren(...(d.heroes.length ? d.heroes.map((r) => { const hx = hs.find((x) => x.id === r.hero_id); const wr = r.wins / r.games; return h("div", { class: "r" }, heroIcon(hx, 34), h("a", { href: `/hero.html?id=${r.hero_id}` }, hx?.name ?? r.hero_id), h("span", { class: "num muted" }, `${r.games} g`), h("div", {}, h("span", { class: wr >= .5 ? "win" : "loss" }, pct(wr)), h("div", { class: "bar" }, h("i", { style: `width:${r.games / maxG * 100}%` }))), kda(r.k, r.d, r.a, { dec: 1, size: "sm" }), ratio(kdaOf(r.kills, r.deaths, r.assists), KDA)); }) : [h("span", { class: "muted" }, "No games yet.")]));
+  // ---- Road to Ranked: a hero is Ranked-ready at 35 hero points (2 for a win, 1 for a loss); three ready heroes open placement matches.
+  // Counted from the games stored here, so it's an estimate: the game's own number is the real one.
+  { const NEED = 35, SLOTS = 3, isMe = me?.account_id === p.account_id, hasRank = !!p.mmr_rank || d.ranked_games > 0;
+    const rows = d.heroes.map((r) => ({ ...r, pts: 2 * r.wins + (r.games - r.wins) })).sort((a, b) => b.pts - a.pts || b.games - a.games);
+    const ready = rows.filter((r) => r.pts >= NEED), wip = rows.filter((r) => r.pts < NEED), open = ready.length >= SLOTS, totalWins = rows.reduce((s, r) => s + r.wins, 0);
+    const next = open || hasRank ? [] : wip.slice(0, SLOTS - ready.length), nameOf = (r) => hs.find((x) => x.id === r.hero_id)?.name ?? `#${r.hero_id}`;
+    const more = (r) => { const need = NEED - r.pts, lo = Math.ceil(need / 2); return lo === need ? `${need} more game${need === 1 ? "" : "s"}` : `${lo} to ${need} more games`; };
+    const who = isMe ? "You're" : `${p.name} is`, whose = isMe ? "your" : "their";
+    const headline = !rows.length ? ["No games stored yet", "Hero points start counting with the first uploaded game."]
+      : hasRank ? [`${ready.length} hero${ready.length === 1 ? "" : "es"} Ranked-ready`, `${who} already ranked, so placement matches aren't needed. A hero needs ${NEED} points to be played in Ranked; this only counts the games stored here.`]
+      : open ? ["Placement matches are open", `Three heroes are at ${NEED} points. Eight solo placement games set ${whose} rank.`]
+      : [`${ready.length} of ${SLOTS} heroes ready`, next.length ? `Closest: ${next.map((r) => `${nameOf(r)} (${more(r)})`).join(", ")}.${next.length < SLOTS - ready.length ? " Pick up another hero to fill the last slot." : ""} Wins count double, but losses still count.` : `Play any hero to start: ${NEED} points on three heroes opens placement matches.`];
+    const list = [...ready.slice(0, 5), ...wip.slice(0, Math.max(2, SLOTS - ready.length))].slice(0, 7);
+    const card = h("div", { class: "card", id: "rrCard" }, h("h2", { style: "margin-top:0" }, "Road to Ranked ", h("span", { class: "muted", style: "font:400 13px var(--fb);letter-spacing:0;text-transform:none" }, "· hero points toward placement matches")),
+      h("div", { class: "rr-top" }, h("div", { class: "rr-slots", role: "img", "aria-label": `${Math.min(ready.length, SLOTS)} of ${SLOTS} heroes ready` }, ...Array.from({ length: SLOTS }, (_, i) => { const r = ready[i]; return h("span", { class: "rr-slot" + (r ? " on" : ""), title: r ? `${nameOf(r)}: Ranked-ready` : "Needs a hero at 35 points" }, r ? heroIcon(hs.find((x) => x.id === r.hero_id), 40) : String(i + 1)); })),
+        h("div", { class: "rr-msg" }, h("b", { class: open ? "win" : "" }, headline[0]), h("span", {}, headline[1]))),
+      ...list.map((r) => { const ok = r.pts >= NEED; return h("div", { class: "rr-r" + (ok ? " ok" : "") }, heroIcon(hs.find((x) => x.id === r.hero_id), 34), h("span", { class: "nm" }, h("a", { href: `/hero.html?id=${r.hero_id}` }, nameOf(r)), next.includes(r) ? h("span", { class: "rr-next" }, "Play next") : ""),
+        h("div", { class: "bar", role: "progressbar", "aria-valuemin": "0", "aria-valuemax": String(NEED), "aria-valuenow": String(Math.min(NEED, r.pts)) }, h("i", { style: `width:${Math.min(100, r.pts / NEED * 100)}%` })), h("span", { class: "pts" }, String(Math.min(r.pts, 999)), h("small", {}, ` / ${NEED}`)), h("span", { class: "stt" }, ok ? "✓ Ranked-ready" : more(r))); }),
+      h("p", { class: "rr-fine" }, `Estimate from the ${rows.reduce((s, r) => s + r.games, 0)} games stored here: 2 points for a win, 1 for a loss, so playing counts even when you lose. Games that were never uploaded aren't included, so the in-game number may be higher.`, hasRank ? "" : ` Guides also list 60 Standard wins overall before Ranked unlocks (${totalWins} stored here).`));
+    const panel = document.querySelector('.ppanel[data-tab="overview"]'); if (hasRank) panel.querySelector(".cols").before(card); else panel.prepend(card);
+    if (isMe && open && !hasRank) { let seen = null; try { seen = localStorage.getItem("ss.rr.open"); localStorage.setItem("ss.rr.open", "1"); } catch {} if (!seen) achievementToast({ icon: "★", kicker: "Road to Ranked", name: "Placements unlocked", how: `Three heroes at ${NEED} points. Eight solo placement games set your rank.` }); } }
   const its = await items();
   $("#matches").replaceChildren(h("table", {}, h("thead", {}, h("tr", {}, ...["When", "Hero", "Result", "K / D / A", "KDA", "Souls", "LH/DN", "Lvl", "Length", ""].map((t) => h("th", {}, t)))),
     h("tbody", {}, ...ms.map((m) => { const hx = hs.find((x) => x.id === m.hero_id); return rowLink(h("tr", {}, h("td", { class: "muted" }, ago(m.start_time)), h("td", {}, h("div", { class: "hero" }, heroIcon(hx), h("a", { href: `/hero.html?id=${m.hero_id}` }, hx?.name ?? m.hero_id))), h("td", { class: m.won ? "win" : "loss" }, m.won ? "Win" : "Loss"),
@@ -107,7 +143,7 @@ try {
     c.fillStyle = "#8f93a3"; c.font = `${Math.round(11 * fsM)}px Jost,sans-serif`; c.textAlign = "center"; const span = x1 - x0 || 1, nT = Math.min(cvM.clientWidth < 520 ? 3 : 6, Math.max(2, Math.round(span / 86400))); for (let i = 0; i <= nT; i++) { const ts = x0 + span * i / nT; c.fillText(new Date(ts * 1000).toLocaleDateString(undefined, { month: "short", day: "numeric" }), 40 + 850 * i / nT, 256); }
     const lastPt = pts[pts.length - 1], firstPt = pts[0]; const dlt = lastPt.score - firstPt.score;
     $("#mmrnote").replaceChildren(`${pts.length} snapshots since ${new Date(x0 * 1000).toLocaleDateString()} · `, h("b", { class: dlt >= 0 ? "win" : "loss" }, `${dlt >= 0 ? "+" : ""}${Math.round(dlt)}`), " over the period"); }
-  else $("#mmrnote").textContent = !d.ranked_games ? "No Ranked games yet. This chart only tracks Ranked matches, so it fills in once you play some." : pts.length === 1 ? "One ranked result so far. The line appears after your next Ranked game." : `${d.ranked_games} Ranked game${d.ranked_games === 1 ? "" : "s"} found, waiting on Valve's rank result. Check back after the next sync.`;
+  else $("#mmrnote").textContent = !d.ranked_games ? "No Ranked games yet. This chart only tracks Ranked matches. Placement matches open once three of your heroes have 35 hero points each (2 for a win, 1 for a loss)." : pts.length === 1 ? "One ranked result so far. The line appears after your next Ranked game." : `${d.ranked_games} Ranked game${d.ranked_games === 1 ? "" : "s"} found, waiting on Valve's rank result. Check back after the next sync.`;
   try { const b = await api(`/library?account_id=${id}`); $("#builds").replaceChildren(b.length ? h("div", { class: "grid" }, ...b.map((r) => { const hx = hs.find((x) => x.id === r.hero_id); return h("div", { class: "card", style: "margin:0" }, h("div", { style: "display:flex;gap:8px;align-items:center" }, heroIcon(hx, 32), h("a", { href: `/editor.html?id=${r.id}` }, h("strong", {}, r.title))), h("div", { style: "margin-top:6px" }, ...r.preview.map((i) => itemImg(its.find((x) => x.id === i), 22)))); })) : h("span", {}, "No saved builds yet.")); } catch {}
 } catch (e) { showError($("#head"), e); }
 </script>

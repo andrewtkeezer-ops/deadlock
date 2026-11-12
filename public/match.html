@@ -26,17 +26,58 @@ main{max-width:1300px}
 .sb tr.p:hover td:first-child::before{color:var(--ink)}.sb tr.p[aria-expanded=true] td:first-child::before{transform:rotate(90deg);color:var(--ink)}
 .sb tr.p:focus-visible{outline:2px solid var(--lane-b);outline-offset:-2px}.sb tr.det>td{animation:detIn .3s var(--ease)}@keyframes detIn{from{opacity:0;transform:translateY(-6px)}}
 @media(prefers-reduced-motion:reduce){.sb tr.det>td{animation:none}}
+/* v6.3: match story strip, First Blood, and a scoreboard whose cells can't run into each other */
+.story{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:10px;margin:14px 0}
+.mst{--c:var(--line2);position:relative;min-width:0;padding:12px 14px 12px 16px;border-radius:12px;border:1px solid var(--line);background:var(--panel);overflow:hidden}.mst::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--c)}
+.mst.a{--c:#e4b94f}.mst.s{--c:#4ab3ff}.mst small{display:block;color:var(--muted);font:700 10px/1 var(--fh);letter-spacing:.16em;text-transform:uppercase}
+.mst-b{display:flex;align-items:center;gap:8px;margin:8px 0 4px;min-width:0}.mst-b img{width:26px;height:26px;border-radius:6px;flex:none}.mst-b b{font:600 21px/1.1 var(--fh);color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mst.a .mst-b b{color:#e4b94f}.mst.s .mst-b b{color:#4ab3ff}.mst>span{display:block;color:var(--muted);font-size:12.5px;line-height:1.35}
+.mst.lanes{grid-column:1/-1;display:flex;align-items:center;flex-wrap:wrap;gap:8px 28px}.mst.lanes small{flex:none}.mst.lanes .ln{display:flex;align-items:center;gap:8px;font-size:13px}.mst.lanes .ln i{font:700 10px/1 var(--fh);font-style:normal;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.mst.lanes .who{display:flex;gap:3px}.mst.lanes .who img{width:20px;height:20px;border-radius:5px}.mst.lanes .ln b{font:600 13px/1 var(--fh);font-variant-numeric:tabular-nums}.mst.lanes .ln.a b{color:#e4b94f}.mst.lanes .ln.s b{color:#4ab3ff}
+@media(max-width:560px){.story{grid-template-columns:1fr 1fr}.mst.lanes{grid-column:1/-1}}
+.fbtag{margin-left:auto;padding:3px 6px 2px;border-radius:3px;background:var(--loss);color:#190403;font:700 9px/1 var(--fh);letter-spacing:.14em;text-transform:uppercase;white-space:nowrap}
+.feed{scrollbar-color:var(--line2) transparent}.feed::-webkit-scrollbar{width:8px}.feed::-webkit-scrollbar-thumb{background:var(--line2);border-radius:4px}.feed::-webkit-scrollbar-track{background:transparent}
+.sb tr.p td:first-child{white-space:normal;max-width:290px}.sb .hero{align-items:flex-start}.sb .hero .n{min-width:0}
+.sb .accs{display:flex;flex-wrap:wrap;gap:4px;margin:5px 0 0}.sb .accs .acc{margin:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sb td.items{white-space:normal;min-width:186px;max-width:192px;line-height:0}.sb td.items img{margin:1px}
+.mx .rh div{display:flex;align-items:center;gap:8px;white-space:nowrap}.mx .rh span{font:600 12.5px/1.2 var(--fh);color:var(--text)}.mx .rh small{display:block;color:var(--muted);font:400 11px/1.2 var(--fb);max-width:150px;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:720px){.mx .rh span{display:none}}
+/* v6.4: squad line, player graph, kill map, and one shared "this moment" cursor across them */
+.sqline{display:flex;align-items:center;flex-wrap:wrap;gap:8px 10px;margin:12px 0 0}.sqline small{color:var(--muted);font:700 10px/1 var(--fh);letter-spacing:.16em;text-transform:uppercase;margin-right:4px}
+.sqp{display:inline-flex;align-items:center;gap:8px;padding:5px 12px 5px 5px;border-radius:999px;border:1px solid var(--line2);background:rgba(8,10,11,.6);color:var(--text);font-size:13px;transition:border-color .18s,transform .18s var(--ease)}.sqp:hover{transform:translateY(-1px);border-color:var(--cream);color:var(--text)}
+.sqp img{width:26px;height:26px;border-radius:50%;object-fit:cover}.sqp b{font:600 13.5px/1 var(--fh)}.sqp span{color:var(--muted);font-variant-numeric:tabular-nums}.sqp i{font:700 9px/1 var(--fh);font-style:normal;letter-spacing:.1em;padding:3px 5px 2px;border-radius:3px;background:var(--accent);color:#1a1200}
+.sqp em{font:700 10px/1 var(--fh);font-style:normal;letter-spacing:.14em;text-transform:uppercase}.sqp.w em{color:var(--win)}.sqp.l em{color:var(--loss)}.sqp.w{border-color:rgba(151,218,121,.35)}.sqp.l{border-color:rgba(229,87,79,.3)}.sqsum{color:var(--muted);font-size:13px}
+.gwrap{position:relative}.gwrap canvas{cursor:crosshair}.gcur{position:absolute;width:0;border-left:1.5px solid var(--cream);pointer-events:none;z-index:2}.gcur[hidden]{display:none}
+.gcur span{position:absolute;top:-4px;left:8px;padding:4px 8px 3px;border-radius:6px;background:#060808;border:1px solid var(--line2);color:var(--cream);font:600 11px/1 var(--fh);white-space:nowrap;font-variant-numeric:tabular-nums}.gcur.flip span{left:auto;right:8px}
+.feed{position:relative}.feed .ev{cursor:default;border-radius:5px;transition:background .15s}.feed .ev.hot{background:rgba(247,233,213,.1);box-shadow:inset 3px 0 0 var(--cream)}.feed .ev:focus-visible{outline:2px solid var(--lane-b);outline-offset:-2px}
+.pgctl{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 10px}.pgquick{display:inline-flex;gap:6px;margin-left:auto}.pgquick button{padding:7px 11px;font-size:10px}
+.pg{position:relative}.pgsvg{display:block;width:100%;height:auto;cursor:crosshair;touch-action:pan-y}.pgsvg .gr{stroke:rgba(247,233,213,.08)}.pgsvg .ax{fill:#8f93a3;font:11px Jost,sans-serif}.pgsvg .ln{fill:none;stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1;animation:pgDraw .9s var(--ease) forwards}.pgsvg .hx{stroke:var(--cream);stroke-width:1.2;opacity:.7}.pgsvg .hd{stroke:#0a0d0e;stroke-width:2}
+@keyframes pgDraw{to{stroke-dashoffset:0}}
+.pgtip{position:absolute;top:8px;right:10px;min-width:150px;padding:8px 10px;border-radius:9px;background:rgba(6,8,8,.94);border:1px solid var(--line2);font-size:12.5px;pointer-events:none;opacity:0;transition:opacity .12s}.pgtip.on{opacity:1}.pgtip.left{right:auto;left:54px}
+.pgtip small{display:block;color:var(--muted);font:700 10px/1 var(--fh);letter-spacing:.14em;margin-bottom:5px}.pgtip div{display:flex;align-items:center;gap:7px;line-height:1.5}.pgtip i{width:9px;height:9px;border-radius:50%;flex:none}.pgtip span{flex:1;white-space:nowrap}.pgtip b{font:600 12.5px/1 var(--fh);font-variant-numeric:tabular-nums}
+.pgchips{display:grid;gap:6px;margin-top:10px}.pgteam{display:flex;flex-wrap:wrap;gap:5px;padding-left:9px;border-left:3px solid #e4b94f}.pgteam.s{border-left-color:#4ab3ff}
+.pgchip{display:inline-flex;align-items:center;gap:6px;padding:3px 9px 3px 3px;border-radius:999px;border:1px solid var(--line);background:transparent;box-shadow:none;color:var(--muted);font:600 11.5px/1 var(--fb);letter-spacing:0;text-transform:none;opacity:.6;transition:opacity .15s,border-color .15s,color .15s}.pgchip img{width:20px;height:20px;border-radius:50%}
+.pgchip:hover{opacity:1;background:transparent}.pgchip.on{opacity:1;color:var(--text);border-color:var(--c);box-shadow:inset 0 0 0 1px var(--c)}
+.km{max-width:520px;margin:0 auto}.kmsvg{display:block;width:100%;height:auto;border-radius:50%;background:#0b1012}.kmsvg .bg{opacity:.8}.kmsvg .nobg{fill:#10171a}
+.kmsvg .kl{stroke-width:2.5;opacity:.3}.kmsvg .kl.a{stroke:#e4b94f}.kmsvg .kl.s{stroke:#4ab3ff}.kmsvg .dot{stroke:#060808;stroke-width:3;transition:r .15s}.kmsvg .kd.a .dot{fill:#e4b94f}.kmsvg .kd.s .dot{fill:#4ab3ff}
+.kmsvg .kd{cursor:pointer;outline:0;transition:opacity .15s}.kmsvg .ring{fill:none;stroke:var(--loss);stroke-width:4}.kmsvg.dimmed .kd:not(.hot){opacity:.3}.kmsvg .kd.hot .dot,.kmsvg .kd:hover .dot,.kmsvg .kd:focus .dot{r:22;stroke:var(--cream)}
+.fine{margin:10px 0 0;color:var(--dim);font-size:12px;line-height:1.5}
+@media(prefers-reduced-motion:reduce){.pgsvg .ln{animation:none;stroke-dashoffset:0}}
 </style></head>
 <body><main>
 <div id="crumb"></div>
 <div class="card mhead" id="head">Loading…</div>
+<div id="squadline"></div>
+<div class="story" id="story"></div>
 <div class="two"><div class="card sec"><h2 style="margin-top:0">Soul lead <small>team net worth difference over the match</small></h2><div class="graph"><canvas id="lead" width="1100" height="300"></canvas><div class="cap"><span><i style="background:#e4b94f"></i>Amber ahead</span><span><i style="background:#4ab3ff"></i>Sapphire ahead</span><span><i style="background:var(--loss)"></i>death</span><span><i style="background:var(--cream)"></i>objective</span></div></div></div>
 <div class="card sec"><h2 style="margin-top:0">Timeline <small>kills and objectives</small></h2><div id="feed" class="feed muted">Loading…</div></div></div>
+<div class="two"><div class="card sec"><h2 style="margin-top:0">Player graph <small>pick players to compare over the match</small></h2><div id="pgctl" class="pgctl"></div><div id="pg" class="pg"></div><div id="pgchips" class="pgchips"></div></div>
+<div class="card sec"><h2 style="margin-top:0">Kill map <small>where every death happened</small></h2><div id="kmctl" class="pgctl"></div><div id="km" class="km"></div><p class="fine" id="kmnote"></p></div></div>
 <div id="teams"></div>
 <div class="card sec"><h2 style="margin-top:0">Who hit whom <small>hero damage dealt, rows → columns. Click a player row above for their item timeline and accuracy.</small></h2><div class="two" id="matrix"></div></div>
 <details class="muted" style="margin-top:16px"><summary>Raw data</summary><pre id="raw"></pre></details></main>
 <script type="module">
-import { api, h, $, dur, fmt, heroes, items, itemImg, rankBadge, shell, showError, kda, ratio, kdaOf, KDA, pct, crumb } from "/js/app.js";
+import { api, h, $, dur, fmt, heroes, items, itemImg, rankBadge, shell, showError, kda, ratio, kdaOf, KDA, pct, crumb, segmented } from "/js/app.js";
 shell("/");
 $("#crumb").append(crumb("Leaderboard", "/"));
 const id = new URLSearchParams(location.search).get("id");
@@ -52,14 +93,41 @@ try {
   const kills = (t) => mi.players.filter((p) => p.team === t).reduce((s, p) => s + p.kills, 0);
   const rankName = (b) => { if (!b) return "–"; const r = assets.ranks.find((x) => x.tier === Math.floor(b / 10)); return r ? `${r.name} ${b % 10 || ""}` : b; };
   $("#head").replaceChildren(h("div", { class: "score" }, h("span", { class: "amber" }, String(kills(0))), h("span", { class: "muted", style: "font-size:18px" }, "vs"), h("span", { class: "sapph" }, String(kills(1)))),
-    h("div", {}, h("div", {}, h("strong", {}, mi.winning_team === 0 ? "Amber Hand victory" : "Sapphire Flame victory")), h("div", { class: "sum" }, h("span", {}, new Date(mi.start_time * 1000).toLocaleString()), h("span", {}, `Length ${dur(mi.duration_s)}`), h("span", {}, `Avg rank: ${rankName(mi.average_badge_team0)} vs ${rankName(mi.average_badge_team1)}`), m.banned_hero_ids?.length ? h("span", {}, "Bans: " + m.banned_hero_ids.map((b) => hero(b)?.name ?? b).join(", ")) : "")));
+    h("div", {}, h("div", {}, h("strong", {}, mi.winning_team === 0 ? "Amber Hand victory" : "Sapphire Flame victory")), h("div", { class: "sum" }, h("span", {}, new Date(mi.start_time * 1000).toLocaleString()), h("span", {}, `Length ${dur(mi.duration_s)}`), (mi.average_badge_team0 || mi.average_badge_team1) ? h("span", {}, `Avg rank: ${rankName(mi.average_badge_team0)} vs ${rankName(mi.average_badge_team1)}`) : "", m.banned_hero_ids?.length ? h("span", {}, "Bans: " + m.banned_hero_ids.map((b) => hero(b)?.name ?? b).join(", ")) : "")));
 
   // ---- soul lead graph (team net worth difference from per-player snapshots) + event markers
   const times = [...new Set(mi.players.flatMap((p) => (p.stats || []).map((s) => s.time_stamp_s)))].sort((a, b) => a - b);
   const nwAt = (p, t) => { let v = 0; for (const s of p.stats || []) { if (s.time_stamp_s <= t) v = s.net_worth; else break; } return v; };
   const series = times.map((t) => ({ t, d: mi.players.reduce((s, p) => s + (p.team === 0 ? 1 : -1) * nwAt(p, t), 0) }));
-  const deaths = mi.players.flatMap((p) => (p.death_details || []).map((d) => ({ t: d.game_time_s, victim: p, killer: bySlot.get(d.killer_player_slot) }))).sort((a, b) => a.t - b.t);
+  const deaths = mi.players.flatMap((p) => (p.death_details || []).map((d) => ({ t: d.game_time_s, victim: p, killer: bySlot.get(d.killer_player_slot), pos: d.death_pos, kpos: d.killer_pos }))).sort((a, b) => a.t - b.t);
   const objs = (mi.objectives || []).filter((o) => o.destroyed_time_s).map((o) => ({ t: o.destroyed_time_s, team: o.team, name: OBJ[o.team_objective_id] ?? `Objective ${o.team_objective_id}` })).sort((a, b) => a.t - b.t);
+  const TEAM = ["Amber", "Sapphire"], tcls = (t) => (t === 0 ? "a" : "s");
+  const firstBlood = deaths.find((d) => d.killer && d.killer.team !== d.victim.team) ?? null; // Deadlock's own name for it: "First Blood" (the accolade is "First of Many")
+  const mids = (mi.mid_boss || []).filter((b) => b.destroyed_time_s).map((b) => ({ t: b.destroyed_time_s, team: b.team_claimed ?? b.team_killed, stolen: b.team_claimed != null && b.team_killed != null && b.team_claimed !== b.team_killed }));
+  const cursors = []; const markAll = (t, src = {}) => cursors.forEach((f) => { try { f(t, src); } catch {} });
+  // ---- squad line: who from the squad was in this game and how it went
+  { const sq = mi.players.filter((x) => friends.has(x.account_id)); if (sq.length) { const sides = new Set(sq.map((x) => x.team)), won = mi.winning_team === sq[0].team;
+      $("#squadline").replaceChildren(h("div", { class: "sqline" }, h("small", {}, sq.length === 1 ? "Squad in this game" : `${sq.length} of the squad in this game`),
+        ...sq.map((x) => { const t = tracked.find((y) => y.account_id === x.account_id), w = mi.winning_team === x.team; return h("a", { class: "sqp " + (w ? "w" : "l"), href: `/player.html?id=${x.account_id}` }, t?.avatar_url ? h("img", { src: t.avatar_url, alt: "" }) : "", h("b", {}, t?.name ?? pname(x)), h("span", {}, `${hero(x.hero_id)?.name ?? "?"} · ${x.kills}/${x.deaths}/${x.assists}`), x.mvp_rank === 1 ? h("i", {}, "MVP") : "", h("em", {}, w ? "Won" : "Lost")); }),
+        sq.length > 1 ? h("span", { class: "sqsum" }, sides.size > 1 ? "On opposite sides this time." : `Together on ${TEAM[sq[0].team]}: ${won ? "a win" : "a loss"}.`) : "")); } }
+  // ---- match story: the handful of facts that explain the game
+  { const hi = (cls, label, big, sub, icon) => h("div", { class: "mst " + cls }, h("small", {}, label), h("div", { class: "mst-b" }, icon || "", h("b", {}, big)), h("span", {}, sub));
+    const hicon = (pl) => (hero(pl.hero_id)?.images?.icon ? h("img", { src: hero(pl.hero_id).images.icon, alt: "" }) : "");
+    const tiles = [];
+    if (firstBlood) tiles.push(hi(tcls(firstBlood.killer.team), "First Blood", hero(firstBlood.killer.hero_id)?.name ?? "?", `${pname(firstBlood.killer)} killed ${hero(firstBlood.victim.hero_id)?.name ?? "?"} at ${mm(firstBlood.t)}`, hicon(firstBlood.killer)));
+    if (series.length > 1) { const peak = series.reduce((b, x) => (Math.abs(x.d) > Math.abs(b.d) ? x : b), series[0]); let flips = 0, sign = 0; for (const x of series) { const sg = Math.sign(x.d); if (sg && sign && sg !== sign) flips++; if (sg) sign = sg; }
+      tiles.push(hi(tcls(peak.d >= 0 ? 0 : 1), "Biggest lead", `+${fmt(Math.abs(peak.d))}`, `${TEAM[peak.d >= 0 ? 0 : 1]} at ${mm(peak.t)}`));
+      tiles.push(hi("", "Lead changes", String(flips), flips ? (flips === 1 ? "the lead swapped once" : "times the lead swapped") : `${TEAM[sign > 0 ? 0 : 1]} led from start to finish`)); }
+    const topD = mi.players.reduce((b, x) => ((last(x).player_damage || 0) > (last(b).player_damage || 0) ? x : b), mi.players[0]);
+    if (last(topD).player_damage) tiles.push(hi(tcls(topD.team), "Most hero damage", fmt(last(topD).player_damage), `${pname(topD)} on ${hero(topD.hero_id)?.name ?? "?"}`, hicon(topD)));
+    const cur = new Map(), best = { n: 0, pl: null }; for (const d of deaths) { if (d.killer) { const n = (cur.get(d.killer.player_slot) || 0) + 1; cur.set(d.killer.player_slot, n); if (n > best.n) { best.n = n; best.pl = d.killer; } } cur.set(d.victim.player_slot, 0); }
+    if (best.n >= 3) tiles.push(hi(tcls(best.pl.team), "Longest streak", `${best.n} kills`, `${pname(best.pl)} without dying`, hicon(best.pl)));
+    if (mids.length) tiles.push(hi(tcls(mids[0].team), "Rejuvenator", `${mids.filter((x) => x.team === 0).length} – ${mids.filter((x) => x.team === 1).length}`, `Amber – Sapphire · first at ${mm(mids[0].t)}`));
+    // lanes: who was ahead in each lane at the last snapshot before 10:00
+    const tLane = [...times].reverse().find((t) => t <= 600), lanesNo = [...new Set(mi.players.map((x) => x.assigned_lane).filter((x) => x != null))].sort((a, b) => a - b);
+    if (tLane && lanesNo.length) tiles.push(h("div", { class: "mst lanes" }, h("small", {}, `Lanes at ${mm(tLane)}`), ...lanesNo.map((ln) => { const diff = mi.players.filter((x) => x.assigned_lane === ln).reduce((sum, x) => sum + (x.team === 0 ? 1 : -1) * nwAt(x, tLane), 0); const w = diff >= 0 ? 0 : 1;
+      return h("div", { class: "ln " + tcls(w) }, h("i", {}, `Lane ${ln}`), h("span", { class: "who" }, ...mi.players.filter((x) => x.assigned_lane === ln && x.team === w).map(hicon)), h("b", {}, `${TEAM[w]} +${fmt(Math.abs(diff))}`)); })));
+    $("#story").replaceChildren(...tiles); }
   (() => { const cv = $("#lead"), cw = cv.clientWidth || 1100, dpr = window.devicePixelRatio || 1, W = Math.max(320, Math.round(cw)), H = Math.round(Math.max(220, Math.min(300, W * 0.5))); cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); cv.style.aspectRatio = `${W} / ${H}`; const c = cv.getContext("2d"); c.scale(dpr, dpr); const L = 54, R = 16, T = 18, B = 30; if (series.length < 2) { c.fillStyle = "#8f93a3"; c.font = "14px Jost,sans-serif"; c.fillText("No timeline data in this match's replay.", L, H / 2); return; }
     const T1 = Math.max(mi.duration_s, times[times.length - 1]); const amp = Math.max(2000, ...series.map((s) => Math.abs(s.d))); const X = (t) => L + t / T1 * (W - L - R), Y = (d) => T + (1 - (d + amp) / (2 * amp)) * (H - T - B);
     c.strokeStyle = "rgba(247,233,213,.08)"; c.lineWidth = 1; for (let i = -2; i <= 2; i++) { const y = Y(amp * i / 2); c.beginPath(); c.moveTo(L, y); c.lineTo(W - R, y); c.stroke(); c.fillStyle = "#8f93a3"; c.font = "11px Jost,sans-serif"; c.textAlign = "right"; c.fillText((i > 0 ? "+" : "") + fmt(amp * i / 2), L - 6, y + 4); }
@@ -68,10 +136,75 @@ try {
     c.beginPath(); pts.forEach((p, i) => (i ? c.lineTo(X(p.t), Y(p.d)) : c.moveTo(X(p.t), Y(p.d)))); c.strokeStyle = "#f1e6c4"; c.lineWidth = 2.5; c.lineJoin = "round"; c.stroke();
     for (const d of deaths) { c.fillStyle = d.victim.team === 0 ? "rgba(228,185,79,.9)" : "rgba(74,179,255,.9)"; c.beginPath(); c.arc(X(d.t), H - B + 6, 3, 0, Math.PI * 2); c.fill(); }
     for (const o of objs) { c.strokeStyle = o.team === 0 ? "rgba(228,185,79,.5)" : "rgba(74,179,255,.5)"; c.setLineDash([3, 4]); c.beginPath(); c.moveTo(X(o.t), T); c.lineTo(X(o.t), H - B); c.stroke(); c.setLineDash([]); }
+    // "this moment" cursor, shared with the timeline, the player graph and the kill map
+    const leadAt = (t) => { for (let i = 1; i < pts.length; i++) if (t <= pts[i].t) { const a = pts[i - 1], b = pts[i]; return a.d + (b.d - a.d) * ((t - a.t) / Math.max(1, b.t - a.t)); } return pts[pts.length - 1].d; };
+    const wrap = h("div", { class: "gwrap" }), cur = h("div", { class: "gcur", hidden: "" }, h("span")); cv.replaceWith(wrap); wrap.append(cv, cur);
+    cursors.push((t) => { if (t == null) { cur.hidden = true; return; } const d = leadAt(t); cur.hidden = false; cur.style.left = `${X(t) / W * 100}%`; cur.style.top = `${T / H * 100}%`; cur.style.height = `${(H - T - B) / H * 100}%`; cur.classList.toggle("flip", X(t) > W * 0.6); cur.firstChild.textContent = `${mm(t)} · ${Math.abs(d) < 1 ? "level" : `${TEAM[d >= 0 ? 0 : 1]} +${fmt(Math.abs(d))}`}`; });
+    cv.addEventListener("pointermove", (e) => { const r = cv.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * W; markAll(Math.max(0, Math.min(T1, (x - L) / (W - L - R) * T1)), { from: "lead" }); });
+    cv.addEventListener("pointerleave", () => markAll(null));
   })();
-  const evs = [...deaths.map((d) => ({ t: d.t, el: h("div", { class: "ev" }, h("span", { class: "t" }, mm(d.t)), d.killer ? [h("img", { src: hero(d.killer.hero_id)?.images?.icon, alt: "", title: pname(d.killer) }), h("span", {}, hero(d.killer.hero_id)?.name ?? "?")] : h("span", { class: "muted" }, "Environment"), h("span", { class: "ar" }, "killed"), h("img", { src: hero(d.victim.hero_id)?.images?.icon, alt: "", title: pname(d.victim) }), h("span", {}, hero(d.victim.hero_id)?.name ?? "?")) })),
+  const evs = [...deaths.map((d) => ({ t: d.t, el: h("div", { class: "ev" }, h("span", { class: "t" }, mm(d.t)), d.killer ? [h("img", { src: hero(d.killer.hero_id)?.images?.icon, alt: "", title: pname(d.killer) }), h("span", {}, hero(d.killer.hero_id)?.name ?? "?")] : h("span", { class: "muted" }, "Environment"), h("span", { class: "ar" }, "killed"), h("img", { src: hero(d.victim.hero_id)?.images?.icon, alt: "", title: pname(d.victim) }), h("span", {}, hero(d.victim.hero_id)?.name ?? "?"), d === firstBlood ? h("span", { class: "fbtag" }, "First Blood") : "") })),
+    ...mids.map((b) => ({ t: b.t, el: h("div", { class: "ev obj " + tcls(b.team) }, h("span", { class: "t" }, mm(b.t)), h("span", { class: "ic" }, "✦"), h("span", {}, `${TEAM[b.team] ?? "A team"} ${b.stolen ? "stole" : "claimed"} the Rejuvenator`)) })),
     ...objs.map((o) => ({ t: o.t, el: h("div", { class: "ev obj " + (o.team === 0 ? "a" : "s") }, h("span", { class: "t" }, mm(o.t)), h("span", { class: "ic" }, "⌂"), h("span", {}, `${o.team === 0 ? "Amber" : "Sapphire"} lost ${o.name}`)) }))].sort((a, b) => a.t - b.t);
-  $("#feed").className = "feed"; $("#feed").replaceChildren(evs.length ? evs.map((e) => e.el) : h("span", { class: "muted" }, "No events recorded."));
+  const feed = $("#feed"); feed.className = "feed"; feed.replaceChildren(evs.length ? evs.map((e) => e.el) : h("span", { class: "muted" }, "No events recorded."));
+  for (const e of evs) { e.el.tabIndex = 0; const on = () => markAll(e.t, { from: "feed", el: e.el }); e.el.addEventListener("pointerenter", on); e.el.addEventListener("focus", on); e.el.addEventListener("click", on); }
+  feed.addEventListener("pointerleave", () => markAll(null)); feed.addEventListener("focusout", () => markAll(null));
+  cursors.push((t, src) => { feed.querySelectorAll(".ev.hot").forEach((x) => x.classList.remove("hot")); if (t == null || !evs.length) return;
+    if (src.from === "feed") { src.el.classList.add("hot"); return; }
+    const near = evs.reduce((b, e) => (Math.abs(e.t - t) < Math.abs(b.t - t) ? e : b), evs[0]); near.el.classList.add("hot");
+    const top = near.el.offsetTop - feed.offsetTop; if (top < feed.scrollTop || top > feed.scrollTop + feed.clientHeight - 30) feed.scrollTop = Math.max(0, top - feed.clientHeight / 2); });
+
+  // ---- player graph: any stat's running total for the players you pick
+  { const WARM = ["#ffd36b", "#f59e5b", "#e9785a", "#f3c1a0", "#d9a441", "#ff8fa3"], COOL = ["#60cde3", "#4a8dff", "#97da79", "#c792ea", "#7fe0c3", "#9aa8ff"], col = new Map();
+    for (const tm of [0, 1]) mi.players.filter((x) => x.team === tm).sort((a, b) => a.player_slot - b.player_slot).forEach((x, i) => col.set(x.player_slot, (tm === 0 ? WARM : COOL)[i % 6]));
+    const METR = { souls: ["Souls", (st) => st.net_worth || 0], dmg: ["Hero damage", (st) => st.player_damage || 0], taken: ["Damage taken", (st) => st.player_damage_taken || 0] };
+    const squad = mi.players.filter((x) => friends.has(x.account_id)).map((x) => x.player_slot), tops = [0, 1].map((tm) => mi.players.filter((x) => x.team === tm).sort((a, b) => b.net_worth - a.net_worth)[0]?.player_slot).filter((x) => x != null);
+    let metric = "souls"; const sel = new Set(squad.length ? [...squad, ...(squad.length < 2 ? tops : [])] : tops);
+    const box = $("#pg"), Wd = 640, Ht = 300, pl = 46, pr = 14, pt = 14, pb = 26, T1 = Math.max(mi.duration_s, times[times.length - 1] || 0), kfmt = (v) => (v >= 1000 ? `${Math.round(v / 100) / 10}k`.replace(".0k", "k") : String(Math.round(v)));
+    let lines = [], X = () => 0, Y = () => 0;
+    const valAt = (ln, t) => { const a = ln.pts; for (let i = 1; i < a.length; i++) if (t <= a[i].t) return a[i - 1].v + (a[i].v - a[i - 1].v) * ((t - a[i - 1].t) / Math.max(1, a[i].t - a[i - 1].t)); return a[a.length - 1].v; };
+    function draw() {
+      if (times.length < 2) return box.replaceChildren(h("p", { class: "muted" }, "No timeline data in this match's replay."));
+      const get = METR[metric][1]; lines = mi.players.filter((x) => sel.has(x.player_slot)).map((x) => ({ p: x, c: col.get(x.player_slot), pts: [{ t: 0, v: 0 }, ...(x.stats || []).map((st) => ({ t: st.time_stamp_s, v: get(st) }))] }));
+      const vMax = Math.max(1000, ...lines.flatMap((l) => l.pts.map((q) => q.v))) * 1.06; X = (t) => pl + (t / T1) * (Wd - pl - pr); Y = (v) => pt + (1 - v / vMax) * (Ht - pt - pb);
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg"); svg.setAttribute("viewBox", `0 0 ${Wd} ${Ht}`); svg.setAttribute("class", "pgsvg"); svg.setAttribute("role", "img"); svg.setAttribute("aria-label", `${METR[metric][0]} over time for ${lines.length} players`);
+      const step = T1 > 1500 ? 600 : 300; let g = "";
+      for (let i = 0; i <= 4; i++) { const v = vMax * i / 4; g += `<line x1="${pl}" x2="${Wd - pr}" y1="${Y(v)}" y2="${Y(v)}" class="gr"/><text x="${pl - 7}" y="${Y(v) + 4}" class="ax" text-anchor="end">${kfmt(v)}</text>`; }
+      for (let t = 0; t <= T1; t += step) g += `<text x="${X(t)}" y="${Ht - 7}" class="ax" text-anchor="middle">${mm(t)}</text>`;
+      for (const l of lines) g += `<path d="${l.pts.map((q, i) => `${i ? "L" : "M"}${X(q.t).toFixed(1)},${Y(q.v).toFixed(1)}`).join("")}" class="ln" stroke="${l.c}" pathLength="1"/><circle cx="${X(l.pts[l.pts.length - 1].t)}" cy="${Y(l.pts[l.pts.length - 1].v)}" r="3.5" fill="${l.c}"/>`;
+      g += `<g class="hv" opacity="0"><line class="hx" y1="${pt}" y2="${Ht - pb}"/>${lines.map((l) => `<circle r="4.5" fill="${l.c}" class="hd"/>`).join("")}</g>`; svg.innerHTML = g;
+      const tip = h("div", { class: "pgtip" }); box.replaceChildren(svg, tip);
+      svg.addEventListener("pointermove", (e) => { const r = svg.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * Wd; markAll(Math.max(0, Math.min(T1, (x - pl) / (Wd - pl - pr) * T1)), { from: "pg" }); });
+      svg.addEventListener("pointerleave", () => markAll(null));
+    }
+    cursors.push((t) => { const svg = box.querySelector("svg"), tip = box.querySelector(".pgtip"); if (!svg) return; const hv = svg.querySelector(".hv"); if (t == null) { hv.setAttribute("opacity", "0"); tip.classList.remove("on"); return; }
+      hv.setAttribute("opacity", "1"); const hx = hv.querySelector(".hx"); hx.setAttribute("x1", X(t)); hx.setAttribute("x2", X(t)); const dots = hv.querySelectorAll(".hd"); lines.forEach((l, i) => { dots[i].setAttribute("cx", X(t)); dots[i].setAttribute("cy", Y(valAt(l, t))); });
+      tip.replaceChildren(h("small", {}, mm(t)), ...[...lines].sort((a, b) => valAt(b, t) - valAt(a, t)).map((l) => h("div", {}, h("i", { style: `background:${l.c}` }), h("span", {}, hero(l.p.hero_id)?.name ?? "?"), h("b", {}, fmt(valAt(l, t))))));
+      tip.classList.add("on"); tip.classList.toggle("left", X(t) > Wd * 0.55); });
+    const chips = $("#pgchips"); const paint = () => { chips.replaceChildren(...[0, 1].map((tm) => h("div", { class: "pgteam " + tcls(tm) }, ...mi.players.filter((x) => x.team === tm).sort((a, b) => a.player_slot - b.player_slot).map((x) => { const on = sel.has(x.player_slot);
+        return h("button", { type: "button", class: "pgchip" + (on ? " on" : ""), "aria-pressed": String(on), style: `--c:${col.get(x.player_slot)}`, title: `${pname(x)} (${hero(x.hero_id)?.name ?? "?"})`, onclick: () => { if (on && sel.size === 1) return; on ? sel.delete(x.player_slot) : sel.add(x.player_slot); paint(); draw(); } }, hero(x.hero_id)?.images?.icon ? h("img", { src: hero(x.hero_id).images.icon, alt: "" }) : "", h("span", {}, friends.has(x.account_id) ? pname(x) : hero(x.hero_id)?.name ?? "?")); })))); };
+    const setSel = (slots) => { if (!slots.length) return; sel.clear(); slots.forEach((x) => sel.add(x)); paint(); draw(); };
+    $("#pgctl").replaceChildren(segmented(Object.entries(METR).map(([k, v]) => [k, v[0]]), metric, (v) => { metric = v; draw(); }, "Stat"), h("span", { class: "pgquick" }, squad.length ? h("button", { type: "button", onclick: () => setSel(squad) }, "Squad") : "", h("button", { type: "button", onclick: () => setSel(tops) }, "Top earners"), h("button", { type: "button", onclick: () => setSel(mi.players.map((x) => x.player_slot)) }, "Everyone")));
+    paint(); draw(); }
+
+  // ---- kill map: where each death happened, with a line back to the killer. Same world-to-map scaling as the Map page.
+  { const EXT = 10752, S = 1000, P = (o) => [((o.x + EXT) / (2 * EXT)) * S, S - ((o.y + EXT) / (2 * EXT)) * S]; const located = deaths.filter((d) => d.pos && Number.isFinite(d.pos.x));
+    const box = $("#km"), note = $("#kmnote"); let phase = "all";
+    const PH = { all: ["Whole game", 0, Infinity], early: ["0–10 min", 0, 600], mid: ["10–20", 600, 1200], late: ["20+", 1200, Infinity] }, phases = Object.entries(PH).filter(([k, v]) => k === "all" || mi.duration_s > v[1]);
+    function draw() {
+      if (!located.length) { box.replaceChildren(h("p", { class: "muted" }, "This replay has no positions for its kills.")); note.textContent = ""; return; }
+      const [, lo, hi2] = PH[phase], list = located.filter((d) => d.t >= lo && d.t < hi2); const NS = "http://www.w3.org/2000/svg", svg = document.createElementNS(NS, "svg"); svg.setAttribute("viewBox", `0 0 ${S} ${S}`); svg.setAttribute("class", "kmsvg");
+      const src = assets.map?.images?.minimap; let g = src ? `<image href="${src}" width="${S}" height="${S}" preserveAspectRatio="xMidYMid slice" class="bg"/>` : `<rect width="${S}" height="${S}" class="nobg"/>`;
+      list.forEach((d) => { const [x, y] = P(d.pos); if (d.kpos && Number.isFinite(d.kpos.x)) { const [kx, ky] = P(d.kpos); g += `<line x1="${kx.toFixed(0)}" y1="${ky.toFixed(0)}" x2="${x.toFixed(0)}" y2="${y.toFixed(0)}" class="kl ${tcls(d.victim.team === 0 ? 1 : 0)}"/>`; } });
+      list.forEach((d, i) => { const [x, y] = P(d.pos); g += `<g class="kd ${tcls(d.victim.team)}${d === firstBlood ? " fb" : ""}" data-i="${i}" tabindex="0">${d === firstBlood ? `<circle cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="26" class="ring"/>` : ""}<circle cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="14" class="dot"/><title>${mm(d.t)} · ${(d.killer ? hero(d.killer.hero_id)?.name : "Environment") ?? "?"} killed ${hero(d.victim.hero_id)?.name ?? "?"}${d === firstBlood ? " (First Blood)" : ""}</title></g>`; });
+      svg.innerHTML = g; box.replaceChildren(svg);
+      svg.querySelectorAll(".kd").forEach((el) => { const d = list[+el.dataset.i]; const on = () => markAll(d.t, { from: "map", d }); el.addEventListener("pointerenter", on); el.addEventListener("focus", on); el.addEventListener("click", on); el.addEventListener("pointerleave", () => markAll(null)); el.addEventListener("blur", () => markAll(null)); });
+      const a = list.filter((d) => d.victim.team === 0).length; note.textContent = `${list.length} deaths: ${a} Amber, ${list.length - a} Sapphire. A dot is where a hero died, in their team's colour; the line runs back to whoever killed them.`;
+      box._list = list;
+    }
+    cursors.push((t, src) => { const svg = box.querySelector("svg"); if (!svg) return; svg.querySelectorAll(".kd.hot").forEach((x) => x.classList.remove("hot")); svg.classList.toggle("dimmed", t != null); if (t == null) return; const list = box._list || [];
+      list.forEach((d, i) => { if (src.d ? d === src.d : Math.abs(d.t - t) <= 6) svg.querySelector(`.kd[data-i="${i}"]`)?.classList.add("hot"); }); });
+    $("#kmctl").replaceChildren(phases.length > 2 ? segmented(phases.map(([k, v]) => [k, v[0]]), phase, (v) => { phase = v; draw(); }, "Game phase") : ""); draw(); }
 
   // ---- scoreboards with expandable player detail
   const maxDmg = Math.max(1, ...mi.players.map((p) => last(p).player_damage || 0)), maxNw = Math.max(1, ...mi.players.map((p) => p.net_worth));
@@ -81,15 +214,15 @@ try {
     const bought = (p.items || []).filter((it) => item(it.item_id)).sort((a, b) => a.game_time_s - b.game_time_s);
     return h("tr", { class: "det" }, h("td", { colspan: 9 }, h("div", { class: "det dg" },
       h("div", {}, h("h4", {}, `Item timeline · ${bought.length} bought`), h("div", { class: "tl" }, ...bought.map((it) => h("div", { class: "it" + (it.sold_time_s ? " sold" : ""), title: it.sold_time_s ? `sold at ${mm(it.sold_time_s)}` : "" }, itemImg(item(it.item_id), 34), h("span", { class: "t" }, mm(it.game_time_s)))))),
-      h("div", {}, h("h4", {}, "Combat"), h("div", { class: "kv2" }, h("b", {}, acc == null ? "–" : pct(acc)), h("span", {}, `gun accuracy (${fmt(s.shots_hit)} / ${fmt(shots)})`), h("b", {}, hb ? pct(crit / hb) : "–"), h("span", {}, "headshot rate on heroes"), h("b", {}, fmt(s.player_damage)), h("span", {}, "hero damage"), h("b", {}, fmt(s.player_damage_taken)), h("span", {}, "damage taken"), h("b", {}, fmt(s.damage_mitigated)), h("span", {}, "mitigated"), h("b", {}, fmt((s.player_healing || 0) + (s.self_healing || 0))), h("span", {}, "healing"), h("b", {}, `${s.bullet_kills || 0} / ${s.ability_kills || 0} / ${s.melee_kills || 0}`), h("span", {}, "kills by gun / ability / melee"), h("b", {}, fmt(s.boss_damage)), h("span", {}, "objective damage"))),
+      h("div", {}, h("h4", {}, "Combat"), h("div", { class: "kv2" }, h("b", {}, acc == null ? "–" : pct(acc)), h("span", {}, `gun accuracy (${fmt(s.shots_hit)} / ${fmt(shots)})`), h("b", {}, hb ? pct(crit / hb) : "–"), h("span", {}, "headshot rate on heroes"), h("b", {}, fmt(s.player_damage)), h("span", {}, "hero damage"), ...(split.get(p.player_slot) ? [h("b", {}, ["gun", "ability", "melee"].map((k) => fmt(split.get(p.player_slot)[k])).join(" / ")), h("span", {}, "of it by gun / ability / melee")] : []), h("b", {}, fmt(s.player_damage_taken)), h("span", {}, "damage taken"), h("b", {}, fmt(s.damage_mitigated)), h("span", {}, "mitigated"), h("b", {}, fmt((s.player_healing || 0) + (s.self_healing || 0))), h("span", {}, "healing"), h("b", {}, `${s.bullet_kills || 0} / ${s.ability_kills || 0} / ${s.melee_kills || 0}`), h("span", {}, "kills by gun / ability / melee"), h("b", {}, fmt(s.boss_damage)), h("span", {}, "objective damage"))),
       h("div", {}, h("h4", {}, "Where the souls came from"), h("div", { class: "split" }, ...Object.entries(src).filter(([, v]) => v > 0).map(([k, v]) => h("i", { style: `width:${v / tot * 100}%;background:${SRC[k]?.[1] || "#666"}`, title: `${SRC[k]?.[0] || "Other"}: ${fmt(v)}` }))), h("div", { class: "kv2" }, ...Object.entries(src).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).flatMap(([k, v]) => [h("b", {}, fmt(v)), h("span", {}, h("i", { style: `display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;background:${SRC[k]?.[1] || "#666"}` }), SRC[k]?.[0] || "Other")]), h("b", {}, fmt(p.net_worth * 60 / Math.max(1, mi.duration_s))), h("span", {}, "souls per minute"), h("b", {}, `${p.last_hits} / ${p.denies}`), h("span", {}, "last hits / denies"))))));
   };
   // In-game end-of-match accolades (deadlock-api /v1/assets/accolades): the ones each player actually earned.
   const ACC = new Map((assets.accolades || []).map((a) => [a.id, a]));
   const accoladeChips = (p) => { const got = (p.accolades || []).filter((x) => x.accolade_threshold_achieved && ACC.has(x.accolade_id)); if (!got.length) return "";
-    return h("span", { class: "accs" }, ...got.slice(0, 3).map((x) => { const a = ACC.get(x.accolade_id); return h("span", { class: "acc", title: (a.desc || "").replace("{v}", Number(x.accolade_stat_value).toLocaleString()) || a.name }, "★ ", a.name); }), got.length > 3 ? h("span", { class: "acc more", title: got.slice(3).map((x) => ACC.get(x.accolade_id).name).join(", ") }, `+${got.length - 3}`) : ""); };
+    return h("span", { class: "accs" }, ...got.slice(0, 2).map((x) => { const a = ACC.get(x.accolade_id); return h("span", { class: "acc", title: (a.desc || "").replace("{v}", Number(x.accolade_stat_value).toLocaleString()) || a.name }, "★ ", a.name); }), got.length > 2 ? h("span", { class: "acc more", title: got.slice(2).map((x) => ACC.get(x.accolade_id).name).join(", ") }, `+${got.length - 2}`) : ""); };
   const row = (p) => { const s = last(p), n = names.get(p.account_id), hx = hero(p.hero_id); const tr = h("tr", { class: "p" + (friends.has(p.account_id) ? " me" : ""), title: "Item timeline and combat detail", tabindex: "0", "aria-expanded": "false" },
-    h("td", {}, h("div", { class: "hero" }, hx?.images?.card ? h("img", { src: hx.images.card, alt: "" }) : "", h("div", { class: "n" }, friends.has(p.account_id) ? h("a", { href: `/player.html?id=${p.account_id}`, onclick: (e) => e.stopPropagation() }, n?.name ?? p.account_id) : h("span", {}, n?.name ?? String(p.account_id)), p.mvp_rank === 1 ? h("span", { class: "mvp" }, "MVP") : "", accoladeChips(p), h("small", {}, hx?.name ?? p.hero_id, h("span", { class: "lane" }, `lane ${p.assigned_lane ?? "?"}`), ` · lvl ${p.level}`)))),
+    h("td", {}, h("div", { class: "hero" }, hx?.images?.card ? h("img", { src: hx.images.card, alt: "" }) : "", h("div", { class: "n" }, friends.has(p.account_id) ? h("a", { href: `/player.html?id=${p.account_id}`, onclick: (e) => e.stopPropagation() }, n?.name ?? p.account_id) : h("span", {}, n?.name ?? String(p.account_id)), p.mvp_rank === 1 ? h("span", { class: "mvp" }, "MVP") : "", h("small", {}, hx?.name ?? p.hero_id, h("span", { class: "lane" }, `lane ${p.assigned_lane ?? "?"}`), ` · lvl ${p.level}`), accoladeChips(p)))),
     h("td", {}, kda(p.kills, p.deaths, p.assists, { size: "sm" })), h("td", { class: "num" }, ratio(kdaOf(p.kills, p.deaths, p.assists), KDA)),
     h("td", {}, h("div", { class: "num" }, fmt(p.net_worth)), h("div", { class: "bar" }, h("i", { style: `width:${p.net_worth / maxNw * 100}%;background:var(--accent)` }))),
     h("td", {}, h("div", { class: "num" }, fmt(s.player_damage)), h("div", { class: "bar" }, h("i", { style: `width:${(s.player_damage || 0) / maxDmg * 100}%;background:var(--loss)` }))),
@@ -103,12 +236,16 @@ try {
   $("#teams").replaceChildren(table(0, "amber", "Amber Hand"), table(1, "sapph", "Sapphire Flame"));
 
   // ---- damage matrix (cumulative per sample; take the last value per source → target)
-  const dm = mi.damage_matrix; const dealt = new Map();
-  for (const d of dm?.damage_dealers || []) for (const srcd of d.damage_sources || []) for (const t of srcd.damage_to_players || []) { const k = `${d.dealer_player_slot}:${t.target_player_slot}`; dealt.set(k, (dealt.get(k) || 0) + (t.damage?.[t.damage.length - 1] || 0)); }
+  const dm = mi.damage_matrix; const dealt = new Map(), split = new Map(); const sdet = dm?.source_details, KIND = { Bullet: "gun", Ability: "ability", Melee: "melee" };
+  for (const d of dm?.damage_dealers || []) for (const srcd of d.damage_sources || []) { let kind = null;
+    if (sdet?.stat_type) { const i = srcd.source_details_index; if (sdet.stat_type[i] !== 0) continue; kind = KIND[sdet.source_name?.[i]]; if (!kind) continue; } // category rows of stat type 0 add up exactly to each player's hero damage
+    const from = bySlot.get(d.dealer_player_slot);
+    for (const t of srcd.damage_to_players || []) { const to = bySlot.get(t.target_player_slot); if (!from || !to || from.team === to.team) continue; const v = t.damage?.[t.damage.length - 1] || 0; const k = `${d.dealer_player_slot}:${t.target_player_slot}`; dealt.set(k, (dealt.get(k) || 0) + v);
+      if (kind) { const sp = split.get(d.dealer_player_slot) ?? { gun: 0, ability: 0, melee: 0 }; sp[kind] += v; split.set(d.dealer_player_slot, sp); } } }
   const grid = (from, to) => { const A = mi.players.filter((p) => p.team === from).sort((a, b) => a.player_slot - b.player_slot), Bp = mi.players.filter((p) => p.team === to).sort((a, b) => a.player_slot - b.player_slot); const mx = Math.max(1, ...A.flatMap((a) => Bp.map((b) => dealt.get(`${a.player_slot}:${b.player_slot}`) || 0)));
     const col = from === 0 ? "228,185,79" : "74,179,255";
     return h("div", {}, h("h4", { style: "margin:0 0 6px;font:600 11px/1 var(--fh);letter-spacing:.18em;text-transform:uppercase;color:" + (from === 0 ? "#e4b94f" : "#4ab3ff") }, `${from === 0 ? "Amber" : "Sapphire"} → ${to === 0 ? "Amber" : "Sapphire"}`), h("div", { style: "overflow:auto" }, h("table", { class: "mx" }, h("thead", {}, h("tr", {}, h("th", {}), ...Bp.map((b) => h("th", { title: `${pname(b)} (${hero(b.hero_id)?.name})` }, h("img", { src: hero(b.hero_id)?.images?.icon, alt: "" }))))),
-      h("tbody", {}, ...A.map((a) => h("tr", {}, h("th", { class: "rh", title: `${pname(a)} (${hero(a.hero_id)?.name})` }, h("img", { src: hero(a.hero_id)?.images?.icon, alt: "" })), ...Bp.map((b) => { const v = dealt.get(`${a.player_slot}:${b.player_slot}`) || 0; return h("td", { style: `background:rgba(${col},${(0.08 + 0.75 * v / mx).toFixed(2)})`, title: `${hero(a.hero_id)?.name} dealt ${fmt(v)} to ${hero(b.hero_id)?.name}` }, v ? fmt(v) : ""); }))))))); };
+      h("tbody", {}, ...A.map((a) => h("tr", {}, h("th", { class: "rh", title: `${pname(a)} (${hero(a.hero_id)?.name})` }, h("div", {}, h("img", { src: hero(a.hero_id)?.images?.icon, alt: "" }), h("span", {}, hero(a.hero_id)?.name ?? "?", h("small", {}, pname(a))))), ...Bp.map((b) => { const v = dealt.get(`${a.player_slot}:${b.player_slot}`) || 0; return h("td", { style: `background:rgba(${col},${(0.08 + 0.75 * v / mx).toFixed(2)})`, title: `${hero(a.hero_id)?.name} dealt ${fmt(v)} to ${hero(b.hero_id)?.name}` }, v ? fmt(v) : ""); }))))))); };
   $("#matrix").replaceChildren(dm?.damage_dealers?.length ? [grid(0, 1), grid(1, 0)] : h("span", { class: "muted" }, "No damage breakdown in this replay."));
   $("#raw").textContent = JSON.stringify(m, null, 1).slice(0, 30000);
 } catch (e) { showError($("#head"), e); }

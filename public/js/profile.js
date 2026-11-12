@@ -101,7 +101,7 @@ export async function mountBench(card, id, hs) {
   const box = card.querySelector(".bench"), title = card.querySelector(".btitle");
   try {
     const [b, a] = await Promise.all([api(`/players/${id}/benchmarks`), assets()]);
-    if (!b.rank) { title.textContent = "Compared to your rank"; return box.replaceChildren(h("div", { class: "empty-note" }, h("b", {}, "Needs a rank first"), h("p", { class: "muted" }, "This compares your typical game with everyone else at your rank. A new ranked season started in early November, so ranks reset; play a few Ranked games and it fills in."))); }
+    if (!b.rank) { title.textContent = "Compared to your rank"; return box.replaceChildren(h("div", { class: "empty-note" }, h("b", {}, "Needs a rank first"), h("p", { class: "muted" }, "This compares your typical game with everyone else at your rank. Ranks reset when the new season started in early November. Placement matches open once three of your heroes have 35 hero points each (2 for a win, 1 for a loss); finish your placements and this fills in."))); }
     const r = a.ranks.find((x) => x.tier === b.tier); const rn = r?.name ?? `Tier ${b.tier}`;
     title.replaceChildren("Compared to ", h("span", { class: "hl2" }, rn), " players");
     if (!b.groups.length) return box.replaceChildren(h("p", { class: "muted" }, "Not enough games with full stats in the last 90 days yet. Games appear here once someone's uploader sends them."));
