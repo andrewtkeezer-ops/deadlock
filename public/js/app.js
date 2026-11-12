@@ -227,6 +227,7 @@ export function shell(active) {
     if (m.account_id || m.email || m.signed_in) { const out = h("a", { class: "out", href: "/api/auth/google/logout", title: "Sign out" }); out.innerHTML = `<span class="ic">${ICONS.out}</span><span class="lb">Sign out</span>`; who.after(out); }
   }).catch(() => {});
   if (!reduced) alive();
+  try { window.__vtReady?.(); } catch {} // js/vt.js: the frame is built, open the iris
 }
 
 /** Quick search (Ctrl/⌘ K or "/"): jump to any page, hero, player or item. Loaded on first use. */

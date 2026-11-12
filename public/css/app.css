@@ -871,3 +871,31 @@ html.warm .page{animation:softIn .2s ease-out both}@keyframes softIn{from{opacit
 @media(prefers-reduced-motion:reduce){@view-transition{navigation:none}html.warm .page{animation:none}}
 html.warm .stagger>*{animation:softIn .24s ease-out both;animation-delay:0s!important}
 @media(prefers-reduced-motion:reduce){html.warm .stagger>*{animation:none}}
+/* the blimp flies right-to-left, so its nose has to point left (the art was drawn nose-right, which made it fly tail-first) */
+.city .blimp{scale:-1 1}
+
+/* =====================================================================================
+   v6.2 (2026-11-12): "Iris" page change (js/vt.js). The page closes down to the spot you
+   clicked and the next one opens out of that same spot, like a film iris, with a faint
+   soul-green rim on the way in. Easy on the eyes by construction: the only colour that
+   moves is the page's own near-black, the edge is a 220px feather rather than a line,
+   there is no sideways motion, and it starts where you are already looking.
+   Cross-document view transitions are off on purpose: every page builds its frame in a
+   module script, so the browser's own transition faded to an empty page for up to a second.
+   ===================================================================================== */
+@property --vt-r{syntax:"<length>";inherits:true;initial-value:0px}
+@view-transition{navigation:none}
+html.vt-hold::before,html.vt-open::before,html.vt-close::before{content:"";position:fixed;inset:0;z-index:5000;pointer-events:none;
+  background:radial-gradient(circle at var(--vx,50%) var(--vy,42%),transparent calc(var(--vt-r) - 220px),rgba(10,13,14,.72) calc(var(--vt-r) - 90px),#0a0d0e var(--vt-r))}
+html.vt-hold{--vt-r:0px}html.vt-hold::before{background:#0a0d0e}
+html.vt-close{animation:vtClose .23s cubic-bezier(.5,0,.9,.6) both}
+html.vt-open{animation:vtOpen .62s cubic-bezier(.22,.7,.2,1) both}
+@keyframes vtClose{from{--vt-r:var(--vr,150vmax)}to{--vt-r:0px}}
+@keyframes vtOpen{from{--vt-r:0px}to{--vt-r:var(--vr,150vmax)}}
+/* the rim: a faint halo riding just inside the opening edge, gone before it reaches the corners */
+html.vt-open::after{content:"";position:fixed;inset:0;z-index:5001;pointer-events:none;animation:vtRim .62s ease-out both;
+  background:radial-gradient(circle at var(--vx,50%) var(--vy,42%),transparent calc(var(--vt-r) - 330px),rgba(151,218,121,.20) calc(var(--vt-r) - 235px),rgba(247,233,213,.12) calc(var(--vt-r) - 205px),transparent calc(var(--vt-r) - 150px))}
+@keyframes vtRim{0%{opacity:0}15%{opacity:1}65%{opacity:.75}100%{opacity:0}}
+/* the page inside the iris is already in place: no second entrance on top of it */
+html.vt-hold .page,html.vt-open .page,html.vt-hold .stagger>*,html.vt-open .stagger>*{animation:none}
+@media(prefers-reduced-motion:reduce){html.vt-hold::before,html.vt-open::before,html.vt-close::before,html.vt-open::after{display:none}}
