@@ -8,22 +8,48 @@
 .hrows .r{display:grid;grid-template-columns:36px 1fr 56px 100px 96px 54px;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line)}.hrows .r .bar{height:6px}
 .matches td{vertical-align:middle}.matches .hero{display:flex;align-items:center;gap:8px}
 .banner{border-color:var(--accent)}@media(max-width:720px){.hrows .r{grid-template-columns:32px 1fr 50px 80px}.hrows .r .kda,.hrows .r .ratio{display:none}.phead .av{width:64px;height:64px}}
+/* profile sections: sliding tabs */
+.ptabbar{position:sticky;top:10px;z-index:30;display:flex;justify-content:center;margin:6px 0 16px;pointer-events:none}.ptabbar .seg{pointer-events:auto;max-width:100%;overflow-x:auto;scrollbar-width:none;background:rgba(7,9,9,.88);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 10px 30px -10px rgba(0,0,0,.8),inset 0 1px 3px rgba(0,0,0,.6)}.ptabbar .seg::-webkit-scrollbar{display:none}.ptabbar .seg button{min-width:auto;padding:10px 18px;white-space:nowrap}
+.pview{position:relative;overflow:hidden;transition:height .55s var(--ease);margin:0 -14px;padding:0 14px}
+.ptrack{display:flex;align-items:flex-start;transition:transform .65s cubic-bezier(.65,0,.2,1);will-change:transform}
+.ppanel{flex:0 0 100%;min-width:0;padding:0 14px;box-sizing:border-box;transition:opacity .45s var(--ease),filter .45s var(--ease)}
+.ppanel:not(.on){opacity:.15;filter:blur(3px)}
+.ppanel.on>*{animation:pIn .6s var(--ease) both}.ppanel.on>*:nth-child(2){animation-delay:.07s}.ppanel.on>*:nth-child(3){animation-delay:.14s}
+@keyframes pIn{from{opacity:0;transform:translateY(14px)}}
+.ppanel>.card:first-child,.ppanel>.cols:first-child{margin-top:0}
+@media(max-width:860px){.ptabbar{top:6px}.ptabbar .seg button{padding:9px 12px;font-size:11px}.pview{margin:0 -10px;padding:0 10px}.ppanel{padding:0 10px}}
+@media(prefers-reduced-motion:reduce){.ptrack,.pview,.ppanel{transition:none}.ppanel.on>*{animation:none}}
 </style></head>
 <body><main>
 <div class="card phead" id="head">Loading…</div>
 <div id="banner"></div>
 <div class="tiles" id="tiles"></div>
+<nav class="ptabbar" id="ptabbar" aria-label="Profile sections"></nav>
+<div class="pview" id="pview"><div class="ptrack" id="ptrack">
+<section class="ppanel" data-tab="overview" data-label="Overview" role="tabpanel" aria-label="Overview">
 <div class="card"><h2 style="margin-top:0">Personal records <span class="muted" style="font:400 13px var(--fb);letter-spacing:0;text-transform:none">· from the last 50 games</span></h2><div class="recs" id="recs"></div></div>
-<div class="card" id="achCard"><h2 style="margin-top:0" id="achievements">Achievements <span class="muted achcount"></span></h2><div class="ach">Loading…</div></div>
-<div class="card" id="trendCard"><h2 style="margin-top:0">Trends <span class="muted tsub">· are you getting better?</span></h2><div class="tctl"></div><div class="tsum"></div><div class="trend">Loading…</div></div>
-<div class="card" id="curveCard"><h2 style="margin-top:0">How your games unfold <span class="muted csub"></span></h2><div class="curve">Loading…</div></div>
-<div class="card" id="benchCard"><h2 style="margin-top:0" class="btitle">Compared to your rank</h2><div class="bench">Loading…</div></div>
 <div class="cols">
 <div class="card"><h2 style="margin-top:0">Heroes</h2><div id="heroes" class="hrows">Loading…</div></div>
 <div class="card"><h2 style="margin-top:0"><span id="mmrHead">MMR</span> history</h2><canvas id="mmr" width="900" height="260" style="width:100%"></canvas><p id="mmrnote" class="muted"></p></div>
 </div>
+</section>
+<section class="ppanel" data-tab="matches" data-label="Matches" role="tabpanel" aria-label="Matches">
 <div class="card"><h2 style="margin-top:0">Recent matches</h2><div id="matches" class="matches">Loading…</div></div>
+</section>
+<section class="ppanel" data-tab="progress" data-label="Progress" role="tabpanel" aria-label="Progress">
+<div class="card" id="trendCard"><h2 style="margin-top:0">Trends <span class="muted tsub">· are you getting better?</span></h2><div class="tctl"></div><div class="tsum"></div><div class="trend">Loading…</div></div>
+<div class="card" id="benchCard"><h2 style="margin-top:0" class="btitle">Compared to your rank</h2><div class="bench">Loading…</div></div>
+</section>
+<section class="ppanel" data-tab="gameflow" data-label="Game flow" role="tabpanel" aria-label="Game flow">
+<div class="card" id="curveCard"><h2 style="margin-top:0">How your games unfold <span class="muted csub"></span></h2><div class="curve">Loading…</div></div>
+</section>
+<section class="ppanel" data-tab="achievements" data-label="Achievements" role="tabpanel" aria-label="Achievements">
+<div class="card" id="achCard"><h2 style="margin-top:0" id="achievements">Achievements <span class="muted achcount"></span></h2><div class="ach">Loading…</div></div>
+</section>
+<section class="ppanel" data-tab="builds" data-label="Builds" role="tabpanel" aria-label="Builds">
 <div class="card"><h2 style="margin-top:0">Builds</h2><div id="builds" class="muted">Loading…</div></div>
+</section>
+</div></div>
 </main>
 <script type="module">
 import { api, h, $, pct, ago, dur, fmt, heroes, rankBadge, heroIcon, items, itemImg, shell, showError, kda, ratio, kdOf, kdaOf, KD, KDA, me as whoAmI, term } from "/js/app.js";
@@ -81,4 +107,30 @@ try {
   else $("#mmrnote").textContent = !d.ranked_games ? "No Ranked games yet. This chart only tracks Ranked matches, so it fills in once you play some." : pts.length === 1 ? "One ranked result so far. The line appears after your next Ranked game." : `${d.ranked_games} Ranked game${d.ranked_games === 1 ? "" : "s"} found, waiting on Valve's rank result. Check back after the next sync.`;
   try { const b = await api(`/library?account_id=${id}`); $("#builds").replaceChildren(b.length ? h("div", { class: "grid" }, ...b.map((r) => { const hx = hs.find((x) => x.id === r.hero_id); return h("div", { class: "card", style: "margin:0" }, h("div", { style: "display:flex;gap:8px;align-items:center" }, heroIcon(hx, 32), h("a", { href: `/editor.html?id=${r.id}` }, h("strong", {}, r.title))), h("div", { style: "margin-top:6px" }, ...r.preview.map((i) => itemImg(its.find((x) => x.id === i), 22)))); })) : h("span", {}, "No saved builds yet.")); } catch {}
 } catch (e) { showError($("#head"), e); }
-</script></body></html>
+</script>
+<script type="module">
+// Profile sections as tabs: a sliding switch on top, panels slide sideways, the frame eases to each panel's height.
+import { segmented } from "/js/app.js";
+const view = document.getElementById("pview"), track = document.getElementById("ptrack"), panels = [...track.children];
+const keys = panels.map((p) => p.dataset.tab), alias = { achievements: "achievements", records: "overview", heroes: "overview" };
+const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let cur = Math.max(0, keys.indexOf(alias[location.hash.slice(1)] || location.hash.slice(1) || "overview"));
+const sw = segmented(panels.map((p) => [p.dataset.tab, p.dataset.label]), keys[cur], (k) => go(keys.indexOf(k)), "Profile sections");
+document.getElementById("ptabbar").append(sw);
+function fit() { view.style.height = panels[cur].offsetHeight + "px"; }
+function go(i, instant = false) {
+  if (i < 0 || i >= panels.length) return; const back = i < cur; cur = i; sw.set(keys[i]);
+  track.style.transition = instant || RM ? "none" : ""; track.style.transform = `translateX(${-i * 100}%)`;
+  panels.forEach((p, k) => { const on = k === i; p.toggleAttribute("inert", !on); p.setAttribute("aria-hidden", String(!on)); p.classList.toggle("on", on); p.classList.toggle("from-left", on && back); });
+  fit(); history.replaceState(null, "", i ? `#${keys[i]}` : location.pathname + location.search);
+  if (!instant) { const top = document.getElementById("ptabbar").getBoundingClientRect().top; if (top < 0) scrollBy({ top: top - 12, behavior: RM ? "auto" : "smooth" }); }
+}
+new ResizeObserver(fit).observe(track); panels.forEach((p) => new ResizeObserver(() => panels[cur] === p && fit()).observe(p));
+go(cur, true);
+addEventListener("hashchange", () => { const k = alias[location.hash.slice(1)] || location.hash.slice(1); const i = keys.indexOf(k); if (i >= 0 && i !== cur) go(i); });
+addEventListener("keydown", (e) => { if (e.target.closest("input,select,textarea") || e.altKey || e.ctrlKey || e.metaKey) return; if (e.key === "ArrowRight" && document.activeElement?.closest("#ptabbar")) go(cur + 1); if (e.key === "ArrowLeft" && document.activeElement?.closest("#ptabbar")) go(cur - 1); });
+// swipe between sections on touch screens
+let sx = null, sy = 0; view.addEventListener("touchstart", (e) => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+view.addEventListener("touchend", (e) => { if (sx == null) return; const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy; sx = null; if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.6 && !e.target.closest(".tchart,table,.so-track,.seg")) go(cur + (dx < 0 ? 1 : -1)); }, { passive: true });
+</script>
+</body></html>
