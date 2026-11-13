@@ -1,4 +1,5 @@
 import type { Env } from "./types";
+import { std } from "./modes";
 import { discordPost, discordSettings } from "./notify";
 import { getSetting, setSetting } from "./settings";
 
@@ -26,8 +27,8 @@ export async function weeklyRecap(env: Env, offset = 0) {
   const { start, end } = weekWindow(offset);
   const [players, rows, prev, mmr] = await Promise.all([
     env.DB.prepare("SELECT account_id, name, avatar_url FROM players").all<Who>(),
-    env.DB.prepare("SELECT account_id, match_id, hero_id, start_time, duration_s, won, kills, deaths, assists, net_worth FROM player_matches WHERE start_time>=? AND start_time<? ORDER BY start_time").bind(start, end).all<Row>(),
-    env.DB.prepare("SELECT COUNT(*) games, COALESCE(SUM(won),0) wins FROM player_matches WHERE start_time>=? AND start_time<?").bind(start - WEEK, start).first<{ games: number; wins: number }>(),
+    env.DB.prepare("SELECT account_id, match_id, hero_id, start_time, duration_s, won, kills, deaths, assists, net_worth FROM player_matches WHERE start_time>=? AND start_time<? AND " + std() + " ORDER BY start_time").bind(start, end).all<Row>(),
+    env.DB.prepare("SELECT COUNT(*) games, COALESCE(SUM(won),0) wins FROM player_matches WHERE start_time>=? AND start_time<? AND " + std()).bind(start - WEEK, start).first<{ games: number; wins: number }>(),
     env.DB.prepare("SELECT account_id, ts, score FROM mmr_history WHERE ts>=? AND ts<? AND score IS NOT NULL ORDER BY ts").bind(start - 2 * WEEK, end).all<{ account_id: number; ts: number; score: number }>(),
   ]);
   const games = rows.results, matchIds = new Set(games.map((g) => g.match_id));
@@ -102,10 +103,10 @@ const SINGLE: { key: string; title: string; expr: string; where?: string; asc?: 
 export async function squadRecords(env: Env) {
   const [players, career, streakRows, heroRows, ...single] = await Promise.all([
     env.DB.prepare("SELECT account_id, name, avatar_url FROM players").all<Who>(),
-    env.DB.prepare("SELECT account_id, COUNT(*) games, SUM(won) wins, SUM(kills) kills, SUM(assists) assists, SUM(duration_s) secs, COUNT(DISTINCT hero_id) heroes FROM player_matches GROUP BY account_id").all<{ account_id: number; games: number; wins: number; kills: number; assists: number; secs: number; heroes: number }>(),
-    env.DB.prepare("SELECT account_id, won FROM player_matches ORDER BY account_id, start_time").all<{ account_id: number; won: number }>(),
-    env.DB.prepare("SELECT account_id, hero_id, COUNT(*) n, SUM(won) w FROM player_matches GROUP BY account_id, hero_id ORDER BY n DESC LIMIT 40").all<{ account_id: number; hero_id: number; n: number; w: number }>(),
-    ...SINGLE.map((m) => env.DB.prepare(`SELECT account_id, match_id, hero_id, start_time, ${m.asc ? "MIN" : "MAX"}(${m.expr}) v FROM player_matches ${m.where ? "WHERE " + m.where : ""} GROUP BY account_id ORDER BY v ${m.asc ? "ASC" : "DESC"} LIMIT 3`).all<{ account_id: number; match_id: number; hero_id: number; start_time: number; v: number }>()),
+    env.DB.prepare("SELECT account_id, COUNT(*) games, SUM(won) wins, SUM(kills) kills, SUM(assists) assists, SUM(duration_s) secs, COUNT(DISTINCT hero_id) heroes FROM player_matches WHERE " + std() + " GROUP BY account_id").all<{ account_id: number; games: number; wins: number; kills: number; assists: number; secs: number; heroes: number }>(),
+    env.DB.prepare("SELECT account_id, won FROM player_matches WHERE " + std() + " ORDER BY account_id, start_time").all<{ account_id: number; won: number }>(),
+    env.DB.prepare("SELECT account_id, hero_id, COUNT(*) n, SUM(won) w FROM player_matches WHERE " + std() + " GROUP BY account_id, hero_id ORDER BY n DESC LIMIT 40").all<{ account_id: number; hero_id: number; n: number; w: number }>(),
+    ...SINGLE.map((m) => env.DB.prepare(`SELECT account_id, match_id, hero_id, start_time, ${m.asc ? "MIN" : "MAX"}(${m.expr}) v FROM player_matches WHERE ${std()}${m.where ? " AND " + m.where : ""} GROUP BY account_id ORDER BY v ${m.asc ? "ASC" : "DESC"} LIMIT 3`).all<{ account_id: number; match_id: number; hero_id: number; start_time: number; v: number }>()),
   ]);
   const streak = new Map<number, number>(); { let who = 0, cur = 0; for (const r of streakRows.results) { if (r.account_id !== who) { who = r.account_id; cur = 0; } cur = r.won ? cur + 1 : 0; if (cur > (streak.get(who) ?? 0)) streak.set(who, cur); } }
   const c = career.results, top3 = <T>(list: T[], f: (x: T) => number) => [...list].sort((a, b) => f(b) - f(a)).slice(0, 3);

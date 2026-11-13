@@ -1,41 +1,50 @@
-// Guided tour: a "Take a tour" button on each page (never automatic). Steps spotlight real elements and explain
+// Guided tour (steps last brought up to date 2026-11-12, v8): a "Take a tour" button on each page (never automatic). Steps spotlight real elements and explain
 // what they're for. Steps whose element isn't on the page (or is hidden) are skipped.
 import { h, pageKey } from "/js/app.js";
 
 const RAIL = ".rail nav";
 const TOURS = {
   "/": [
-    [RAIL, "The rail", "Everything lives here: standings, heroes, the draft helper, the map, builds, the shop, setup. The highlighted entry is where you are."],
+    [RAIL, "The rail", "Everything lives here: standings, the squad page, heroes, the draft helper, the map, builds, the shop, patches and setup. The highlighted entry is where you are."],
+    [".rail-find", "Search", "Jump straight to any hero, player, item or page. Ctrl K (or ⌘ K), or just press / from anywhere."],
+    ["#sortSeg", "Sort", "Standings by MMR, KDA or KD. You can also click most column headers in the table to sort by that column."],
     ["#days", "Window", "Every number on this page is for this time window. Switch to 7 days to see who's hot this week, or all time for the long game."],
     ["#wire", "The wire", "The squad's latest results scroll past here. Hover to pause it; click a name to open their profile."],
-    ["#podium", "The podium", "Top three by the standings rule in the caption below: Valve's MMR first, then smoothed win rate, KDA and games. Click a card for the full profile."],
-    ["#out", "Standings", "K / D / A is colour-coded (cream kills, red deaths, blue assists) with a bar showing the mix. KD and KDA are coloured by how good they are. Hover a date for when that player last synced."],
+    ["#podium", "The podium", "Top three by the current sort. Click a card for the full profile."],
+    ["#out", "Standings", "Click a row to open that player. K / D / A is colour-coded (cream kills, red deaths, blue assists) with a bar showing the mix. Your own row is tagged You. Street Brawl games never count here."],
     ["#duos", "Duos", "Who wins together. Two tracked friends on the same team in the same match count as a duo."],
-    ["#recent", "Recent games", "Every tracked match, newest first. 'Scoreboard' opens the full 12-player breakdown with damage, items and a timeline."],
+    ["#recent", "Recent games", "The squad's newest matches. Click a row, or its Scoreboard button, for the full 12-player breakdown. A Brawl tag marks Street Brawl games."],
   ],
   "/heroes.html": [
+    ["#hfind", "Find a hero", "Type to narrow the roster; Enter opens the first match. Press / to jump here."],
     ["#filters", "Filters", "Narrow the roster by role, and pick a rank band to see how a hero performs at your level rather than overall."],
-    ["#grid", "The roster", "All 44 heroes, same as the in-game select screen. Hover to preview, click to lock, double-click (or tap twice on a phone) to open the hero page."],
-    ["#stage", "The stage", "Win rate, pick rate, complexity and abilities for the hero you're hovering. The buttons jump to builds, matchups and the heatmap for that hero."],
+    ["#grid", "The roster", "Every hero, same as the in-game select screen. Hover to preview, click to lock, double-click or Enter to open (tap twice on a phone). Arrow keys walk the grid."],
+    ["#stage", "The stage", "Win rate, pick rate, complexity and abilities for the hero you're previewing. The buttons jump to builds, matchups and the map for that hero."],
     ["#metaBtn", "Meta table", "The whole roster as a sortable table: win rate, pick rate and sample size at a glance."],
   ],
   "/hero.html": [
-    ["#head", "Hero header", "The hero's gun type, role and headline numbers for the last 14 days."],
-    ["#abilities", "Abilities", "The four abilities with their upgrade tiers; hover the icons anywhere on the site for the same tooltip."],
-    ["#counters", "Matchups", "Who this hero struggles against and who they beat, from real match data, plus the teammates they pair best with."],
-    ["#starters", "Starter builds", "The three strongest community builds by lean (gun, spirit, survivability). Import one into your library and tune it."],
+    ["#head", "Hero header", "The hero's role and headline numbers for the last 14 days."],
+    ["#hstep", "Previous and next", "Step through the roster alphabetically. The [ and ] keys do the same."],
+    ["#secnav", "Sections", "This bar follows you down the page and jumps to any section."],
+    ["#abilities", "Abilities", "The four abilities with their upgrade tiers; the same tooltip appears on ability icons across the site."],
+    ["#skillorder", "Skill order", "How players put their ability points in, the most common order and the one that wins most."],
     ["#squad", "Your squad", "How the squad does on this hero, and the builds squad members have saved for it."],
+    ["#buildpath", "Build path", "The items that win in each phase of the game, by win rate or by how often they're bought."],
+    ["#lanep", "Laning", "The lane partners this hero does best with, and the enemy duos that leave it furthest behind."],
+    ["#counters", "Matchups", "Who this hero struggles against and the teammates it pairs best with."],
+    ["#starters", "Starter builds", "The strongest community builds by lean (gun, spirit, survivability). Add one to your builds and tune it."],
   ],
   "/counters.html": [
-    ["#allySlots", "Your team", "Add the heroes already locked on your side. Click a slot or the 'Your team' button, then pick from the roster below."],
+    ["#allySlots", "Your team", "Add the heroes already locked on your side. The ringed team is the one you're filling; click a slot or the buttons below to switch."],
     ["#enemySlots", "Enemy team", "Same for the enemy locks. The more you fill in, the better the suggestions."],
-    ["#picker", "Roster", "Click a hero to add them to whichever side is selected. Greyed heroes are already picked."],
+    ["#picker", "Roster", "Click a hero to add them to the ringed side, or type in the filter and press Enter. Greyed heroes are already picked."],
     ["#out", "Suggestions", "Every remaining hero scored by synergy with your allies and win rate against their picks, with a one-line 'why'. A ★ means you personally win a lot on that hero; your own record nudges the ranking."],
+    ["#shareDraft", "Share it", "The line-up lives in the address bar, so Copy link gives the squad the same draft."],
   ],
   "/heatmap.html": [
-    ["#mapwrap", "The map", "Where kills and deaths actually happen, from every tracked match in the window. Red is deaths, green is kills; 'Net' shows who wins each patch of the map."],
-    ["#hp", "Hero filter", "Pick a hero to see only their deaths and kills. The status pill on the map tells you while data loads; switching modes afterwards is instant."],
-    [".side .card:nth-of-type(2)", "Filters", "Window, squad-only (just tracked friends' matches) and game phase (first 10 or 20 minutes) all change the picture a lot."],
+    ["#mapwrap", "The map", "Where kills and deaths actually happen. Red is deaths, green is kills; 'Net' shows who wins each patch of the map. The default view opens instantly from a copy refreshed every hour."],
+    ["#hp", "Hero filter", "Pick a hero to see only their deaths and kills. Filtered views are counted on demand and take 5 to 15 seconds the first time."],
+    [".side .card:nth-of-type(2)", "Filters", "Window (up to 14 days: longer than that is more than the data source can count in time), squad-only and game phase all change the picture a lot."],
   ],
   "/library.html": [
     ["#tabMine", "My builds / Squad builds", "Your saved builds, or everything the squad has shared. Builds are shared by default; that's the point."],
@@ -59,19 +68,36 @@ const TOURS = {
   "/items.html": [
     ["#qwrap", "Search", "Type an item name or a stat ('spirit', 'fire rate'); suggestions appear as you type."],
     ["#chips", "Stat chips", "Combine chips to filter by what items give you. The bar under each item shows how much."],
-    ["#shop", "The shop", "Laid out like the in-game shop: weapon, vitality, spirit, by tier. Hover for the full tooltip; click to pin it."],
+    ["#shop", "The shop", "Laid out like the in-game shop: weapon, vitality, spirit, by tier. Hover for the tooltip; click an item for its full details."],
   ],
   "/player.html": [
     ["#head", "Profile", "Rank, MMR and when the matches were last synced."],
+    ["#modebar", "Game mode", "Street Brawl games are kept apart from everything else. Switch here to see them on their own."],
     ["#tiles", "Headline stats", "Recent games, win rate, KD, KDA, average K / D / A, souls per minute and current streak."],
+    ["#ptabbar", "Sections", "Overview, Matches, Progress (trends and how you compare at your rank), Game flow (soul curve and the lane report), Achievements and Builds. Swipe between them on a phone."],
+    ["#rrCard", "Road to Ranked", "Hero points toward placement matches: a hero is ready at 35 points (2 for a win, 1 for a loss) and three ready heroes open placements. An estimate from the games stored here."],
     ["#recs", "Records", "Best games on record: most kills, best KDA, richest game, fastest farm, best hero, streaks."],
-    ["#matches", "Matches", "Each row opens the full scoreboard. Light rows are games other people uploaded; your uploader fills in the rest."],
   ],
   "/match.html": [
-    ["#lead", "Soul lead", "Team net-worth difference over the match. Dots along the bottom are deaths; dashed lines are objectives falling."],
-    ["#feed", "Timeline", "Every kill and objective in order."],
-    ["#teams", "Scoreboards", "Click any player row for their item timeline, accuracy, headshot rate and where their souls came from."],
+    ["#squadline", "The squad", "Who from the squad was in this game and how it went. Click a name for their profile."],
+    ["#story", "Match story", "The handful of facts that explain the game: First Blood, biggest lead, lead changes, top damage, longest streak, Rejuvenator claims and who was ahead in each lane."],
+    ["#lead", "Soul lead", "Team net-worth difference over the match. Move over it, the timeline, the player graph or the kill map and the same moment is marked on all four."],
+    ["#feed", "Timeline", "Every kill and objective in order, with First Blood tagged."],
+    ["#pg", "Player graph", "Souls, hero damage or damage taken over time for the players you pick below it."],
+    ["#km", "Kill map", "Where every death happened, in the dead hero's team colour, with a line back to the killer."],
+    ["#teams", "Scoreboards", "Click any player row for their item timeline, accuracy, headshot rate, damage by gun, ability and melee, and where their souls came from."],
     ["#matrix", "Who hit whom", "Hero-vs-hero damage dealt. Rows deal to columns; darker means more."],
+  ],
+  "/squad.html": [
+    ["#tabs", "Two views", "The weekly recap and the all-time records wall."],
+    ["#wknav", "Pick a week", "Step back through earlier weeks, or look at the week in progress. Weeks run Monday to Monday."],
+    ["#recap", "The week", "Squad totals against the week before, the awards (three games needed to qualify), the week's table and the most played heroes. Award cards with a game behind them open that match."],
+    ["#records", "Records wall", "Single-game and career bests, top three each, one entry per player. Click a record to open the match it was set in."],
+  ],
+  "/patches.html": [
+    ["#pfilter", "Filter", "Everything in the notes, or only the heroes your squad plays."],
+    ["#out", "Patches", "Every balance change matched to heroes and items. 'Hits the squad' names who is affected; 'Impact so far' shows the squad's record and everyone's win rate before and after the patch."],
+    ["#news", "Other news", "Posts without balance changes: events, seasons, announcements."],
   ],
   "/setup.html": [
     ["#s1", "Steam", "Sign in through Steam once so the site knows which player you are. It remembers across devices."],

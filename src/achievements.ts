@@ -1,4 +1,5 @@
 import type { Env } from "./types";
+import { std } from "./modes";
 import { discordPost, discordSettings } from "./notify";
 import { setSetting } from "./settings";
 
@@ -54,7 +55,7 @@ export function evaluate(rows: Row[], squadOf: (m: Row) => number): AchResult[] 
 }
 
 async function loadAll(env: Env) {
-  const { results } = await env.DB.prepare("SELECT account_id, match_id, hero_id, start_time, duration_s, won, team, kills, deaths, assists, net_worth, match_mode FROM player_matches").all<Row>();
+  const { results } = await env.DB.prepare("SELECT account_id, match_id, hero_id, start_time, duration_s, won, team, kills, deaths, assists, net_worth, match_mode FROM player_matches WHERE " + std()).all<Row>();
   const byMatch = new Map<number, Row[]>(); for (const r of results) byMatch.set(r.match_id, [...(byMatch.get(r.match_id) ?? []), r]);
   const squadOf = (m: Row) => (byMatch.get(m.match_id) ?? []).filter((o) => o.account_id !== m.account_id && o.team === m.team).length;
   return { results, squadOf };

@@ -34,7 +34,7 @@ export async function notifyMatches(env: Env, player: { account_id: number; name
     const kda = (m.player_kills + m.player_assists) / Math.max(1, m.player_deaths);
     return {
       color: won ? WIN : LOSS,
-      author: { name: `${player.name} · ${won ? "Victory" : "Defeat"} on ${hx?.name ?? "hero " + m.hero_id}`, icon_url: player.avatar_url ?? undefined },
+      author: { name: `${player.name} · ${won ? "Victory" : "Defeat"} on ${hx?.name ?? "hero " + m.hero_id}${m.game_mode === 4 ? " · Street Brawl" : ""}`, icon_url: player.avatar_url ?? undefined },
       thumbnail: hx?.images?.icon ? { url: hx.images.icon } : undefined,
       fields: [
         { name: "K / D / A", value: `**${m.player_kills}** / ${m.player_deaths} / ${m.player_assists}  (KDA ${kda.toFixed(1)})`, inline: true },

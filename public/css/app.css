@@ -937,3 +937,9 @@ tr.rowlink td:last-child .sbbtn .go{color:inherit}
 div.ld,section.ld,p.ld{min-height:136px;border-radius:0;background:linear-gradient(90deg,rgba(247,233,213,.075) 0 30%,transparent 30% 36%,rgba(247,233,213,.05) 36% 72%,transparent 72% 78%,rgba(247,233,213,.05) 78% 100%);
   -webkit-mask:repeating-linear-gradient(180deg,#000 0 13px,transparent 13px 34px);mask:repeating-linear-gradient(180deg,#000 0 13px,transparent 13px 34px);border-color:transparent;box-shadow:none}
 .card.ld{padding-top:0;padding-bottom:0;margin-top:18px}
+
+/* Street Brawl: its own mode, tagged where a game is listed and switched to on a profile; never in the primary stats */
+.brawltag{display:inline-block;margin-left:6px;padding:3px 6px 2px;border-radius:3px;background:#c792ea;color:#1a0f22;font:700 9px/1 var(--fh);letter-spacing:.12em;text-transform:uppercase;vertical-align:middle;white-space:nowrap}
+.modebar{display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap;margin:12px 0 0}.modebar .seg button{padding:8px 14px;min-width:0}.modebar .note{color:var(--muted);font-size:13px}
+.card.brawlnote{border-color:rgba(199,146,234,.5);background:linear-gradient(100deg,rgba(199,146,234,.10),transparent 60%)}
+.modebar:empty{display:none}

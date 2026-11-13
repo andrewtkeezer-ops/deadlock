@@ -12,13 +12,17 @@
 .bc{display:flex;gap:12px;padding:12px;background:var(--panel);border:1px solid var(--line);border-radius:14px;backdrop-filter:blur(10px);transition:transform .18s var(--ease),border-color .18s}.bc:hover{transform:translateY(-3px);border-color:rgba(232,199,106,.35)}
 .bc img.hero{width:64px;height:86px;object-fit:cover;border-radius:8px;flex:none}.bc .b{flex:1;min-width:0}.bc .b b{display:block;font-family:var(--fh);font-size:15px;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bc .b small{color:var(--muted);display:block}.bc .items{margin-top:6px}.bc .items img{width:22px;height:22px}.bc .foot{display:flex;justify-content:space-between;align-items:center;margin-top:6px;font-size:12px}
 .empty{text-align:center;padding:30px}.empty p{color:var(--muted)}
+/* v8: the build list comes first; on phones the hero grid is a compact five-across */
+#listTitle{margin-top:6px}
+@media(max-width:860px){.hgrid{grid-template-columns:repeat(5,1fr);gap:6px}.hgrid .nm{font-size:8px;letter-spacing:.02em}.hgrid .cnt{transform:scale(.85);transform-origin:top right}}
 </style></head>
 <body><main>
 <div class="top"><h1>Builds</h1><div class="tabs"><button id="tabMine" class="on">My builds</button><button id="tabSquad">Squad builds</button></div><span class="sp"></span><span id="authorWrap" hidden>By: <select id="author"><option value="">Anyone</option></select></span><a class="dl" style="padding:9px 16px;font-size:14px" href="/editor.html">+ New build</a><a class="btn" href="/builds.html">Wizard</a></div>
-<p class="lead muted" id="lead">Pick a hero to see builds for them — yours, the squad's, and the top community builds you can copy and adjust.</p>
-<div id="hgrid" class="hgrid"></div>
 <h2 id="listTitle">Your builds</h2>
 <div id="list" class="bgrid"></div>
+<h2>Start from a hero</h2>
+<p class="lead muted" id="lead">Pick a hero to see builds for them: yours, the squad's, and the top community builds you can copy and adjust. A number on a tile is how many builds are in the list above.</p>
+<div id="hgrid" class="hgrid"></div>
 </main>
 <script type="module">
 import { api, h, $, ago, heroes, items, itemImg, me, shell, showError } from "/js/app.js";

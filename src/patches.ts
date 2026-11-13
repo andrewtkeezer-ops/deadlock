@@ -1,4 +1,5 @@
 import { DeadlockApi } from "./deadlock";
+import { std } from "./modes";
 import type { Env } from "./types";
 import { discordPost, discordSettings } from "./notify";
 import { getSetting, setSetting } from "./settings";
@@ -38,7 +39,7 @@ export async function squadInterests(env: Env) {
   const since = Math.floor(Date.now() / 1000) - 60 * 86400;
   const [{ results: players }, { results: games }, { results: builds }] = await Promise.all([
     env.DB.prepare("SELECT account_id, name, avatar_url FROM players").all<{ account_id: number; name: string; avatar_url: string | null }>(),
-    env.DB.prepare("SELECT account_id, hero_id, COUNT(*) n FROM player_matches WHERE start_time>? GROUP BY account_id, hero_id ORDER BY n DESC").bind(since).all<{ account_id: number; hero_id: number; n: number }>(),
+    env.DB.prepare("SELECT account_id, hero_id, COUNT(*) n FROM player_matches WHERE start_time>? AND " + std() + " GROUP BY account_id, hero_id ORDER BY n DESC").bind(since).all<{ account_id: number; hero_id: number; n: number }>(),
     env.DB.prepare("SELECT account_id, details FROM builds WHERE account_id IS NOT NULL").all<{ account_id: number; details: string | null }>(),
   ]);
   return players.map((p) => {
@@ -69,7 +70,7 @@ export async function patchImpact(env: Env, count = 3) {
   for (let i = 0; i < Math.min(count, balance.length); i++) {
     const p = balance[i], since = p.date, until = i > 0 ? balance[i - 1].date : now, from = since - 14 * DAY, ids = p.heroes.map((h) => h.id);
     const { results } = await env.DB.prepare(`SELECT hero_id, SUM(CASE WHEN start_time<? THEN 1 ELSE 0 END) bg, SUM(CASE WHEN start_time<? THEN won ELSE 0 END) bw, SUM(CASE WHEN start_time>=? THEN 1 ELSE 0 END) ag, SUM(CASE WHEN start_time>=? THEN won ELSE 0 END) aw
-        FROM player_matches WHERE start_time>=? AND start_time<? AND hero_id IN (${ids.map(() => "?").join(",")}) GROUP BY hero_id`).bind(since, since, since, since, from, until, ...ids).all<{ hero_id: number; bg: number; bw: number; ag: number; aw: number }>();
+        FROM player_matches WHERE ${std()} AND start_time>=? AND start_time<? AND hero_id IN (${ids.map(() => "?").join(",")}) GROUP BY hero_id`).bind(since, since, since, since, from, until, ...ids).all<{ hero_id: number; bg: number; bw: number; ag: number; aw: number }>();
     // Everyone's win rate either side of the patch. Needs at least a day of games after it to mean anything; upstream trouble just leaves it out.
     const [gb, ga] = until - since >= DAY ? await Promise.all([api.heroStats({ min_unix_timestamp: from, max_unix_timestamp: since }).catch(() => null), api.heroStats({ min_unix_timestamp: since, max_unix_timestamp: until }).catch(() => null)]) : [null, null];
     const wr = (rows: { hero_id: number; wins: number; matches: number }[] | null, id: number) => { const r = rows?.find((x) => x.hero_id === id); return r && r.matches >= 200 ? r.wins / r.matches : null; };

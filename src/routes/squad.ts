@@ -12,7 +12,7 @@ r.get("/recap", async (c) => {
 
 /** All-time records wall. Derived from every stored game, so it is cached at the edge for ten minutes. */
 r.get("/records", async (c) => {
-  const key = new Request("https://cache.soulscribe.internal/squad-records-v1");
+  const key = new Request("https://cache.soulscribe.internal/squad-records-v2");
   const hit = await caches.default.match(key); if (hit) return new Response(hit.body, hit);
   const res = new Response(JSON.stringify(await squadRecords(c.env)), { headers: { "content-type": "application/json", "cache-control": "public, max-age=600" } });
   c.executionCtx.waitUntil(caches.default.put(key, res.clone()));

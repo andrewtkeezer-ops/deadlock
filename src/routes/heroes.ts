@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { std } from "../modes";
 import type { Env } from "../types";
 import { DeadlockApi, type ItemAsset } from "../deadlock";
 import { STAT_MAP } from "./builds";
@@ -78,7 +79,7 @@ r.get("/:id/squad", async (c) => {
   const { results } = await c.env.DB.prepare(
     `SELECT p.account_id, p.name, p.avatar_url, p.mmr_rank, COUNT(*) games, SUM(m.won) wins, AVG(m.kills) k, AVG(m.deaths) d, AVG(m.assists) a,
             AVG(m.net_worth*60.0/NULLIF(m.duration_s,0)) spm, MAX(m.start_time) last_played
-       FROM player_matches m JOIN players p ON p.account_id=m.account_id WHERE m.hero_id=? GROUP BY p.account_id ORDER BY games DESC`).bind(id).all();
+       FROM player_matches m JOIN players p ON p.account_id=m.account_id WHERE m.hero_id=? AND ${std("m")} GROUP BY p.account_id ORDER BY games DESC`).bind(id).all();
   return c.json(results);
 });
 
@@ -90,7 +91,7 @@ r.get("/:id/best-build", async (c) => {
   const id = Number(c.req.param("id"));
   const [{ results: builds }, { results: metas }] = await Promise.all([
     c.env.DB.prepare("SELECT b.id, b.title, b.details, b.account_id, p.name author_name FROM builds b LEFT JOIN players p ON p.account_id=b.account_id WHERE b.hero_id=?").bind(id).all<{ id: number; title: string; details: string; account_id: number; author_name: string | null }>(),
-    c.env.DB.prepare("SELECT mm.json, pm.account_id, pm.won FROM player_matches pm JOIN match_meta mm ON mm.match_id=pm.match_id WHERE pm.hero_id=? ORDER BY pm.start_time DESC LIMIT 60").bind(id).all<{ json: string; account_id: number; won: number }>(),
+    c.env.DB.prepare("SELECT mm.json, pm.account_id, pm.won FROM player_matches pm JOIN match_meta mm ON mm.match_id=pm.match_id WHERE pm.hero_id=? AND " + std("pm") + " ORDER BY pm.start_time DESC LIMIT 60").bind(id).all<{ json: string; account_id: number; won: number }>(),
   ]);
   if (!builds.length) return c.json(null);
   const games = metas.map((m) => { const mi = JSON.parse(m.json).match_info; const me = mi?.players?.find((p: { account_id: number }) => p.account_id === m.account_id); const held = new Set<number>();

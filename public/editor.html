@@ -39,6 +39,7 @@ import { dpsPanel } from "/js/dps.js";
 import { analyse, coachPanel, sellPlan, sellTip } from "/js/coach.js";
 
 shell("/library.html");
+if (matchMedia("(max-width:860px)").matches) for (const id of ["coachCard", "dpsCard"]) document.getElementById(id)?.removeAttribute("open");
 const qs = new URLSearchParams(location.search); const id = qs.get("id");
 const [hs, its, who, cats, groups] = await Promise.all([heroes(), items(), me(), api("/library/categories"), api("/library/stat-groups")]);
 const statSel = new Set();

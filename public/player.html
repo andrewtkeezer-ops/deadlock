@@ -37,6 +37,7 @@
 <body><main>
 <div id="crumb"></div>
 <div class="card phead" id="head">Loading…</div>
+<div class="modebar" id="modebar"></div>
 <div id="banner"></div>
 <div class="tiles" id="tiles"></div>
 <nav class="ptabbar" id="ptabbar" aria-label="Profile sections"></nav>
@@ -68,17 +69,21 @@
 </div></div>
 </main>
 <script type="module">
-import { api, h, $, pct, ago, dur, fmt, heroes, rankBadge, heroIcon, items, itemImg, shell, showError, kda, ratio, kdOf, kdaOf, KD, KDA, me as whoAmI, term, crumb, rowLink } from "/js/app.js";
+import { api, h, $, pct, ago, dur, fmt, heroes, rankBadge, heroIcon, items, itemImg, shell, showError, kda, ratio, kdOf, kdaOf, KD, KDA, me as whoAmI, term, crumb, rowLink, segmented } from "/js/app.js";
 $("#mmrHead")?.replaceWith(term("MMR"));
 import { mountAchievements, mountTrends, mountBench, mountCurve, mountLanes } from "/js/profile.js";
 import { achievementToast } from "/js/game.js";
 shell("/");
 $("#crumb").append(crumb("Leaderboard", "/"));
 const qs = new URLSearchParams(location.search); const id = qs.get("id");
+// Street Brawl is its own mode: the profile shows standard games unless ?mode=brawl, and that view has only what makes sense for it.
+const BRAWL = qs.get("mode") === "brawl";
 try {
-  const [d, hs, assets, me] = await Promise.all([api(`/players/${id}`), heroes(), api("/assets"), whoAmI().catch(() => null)]);
-  const p = d.player; document.title = `${p.name} · Soul Scribe`;
-  mountAchievements($("#achCard"), id, me?.account_id === p.account_id); mountTrends($("#trendCard"), id, hs); mountBench($("#benchCard"), id, hs); mountCurve($("#curveCard"), id, hs); mountLanes($("#laneCard"), id, hs);
+  const [d, hs, assets, me] = await Promise.all([api(`/players/${id}${BRAWL ? "?mode=brawl" : ""}`), heroes(), api("/assets"), whoAmI().catch(() => null)]);
+  const p = d.player; document.title = `${p.name}${BRAWL ? " · Street Brawl" : ""} · Soul Scribe`;
+  if (!BRAWL) { mountAchievements($("#achCard"), id, me?.account_id === p.account_id); mountTrends($("#trendCard"), id, hs); mountBench($("#benchCard"), id, hs); mountCurve($("#curveCard"), id, hs); mountLanes($("#laneCard"), id, hs); }
+  if (d.brawl_games > 0 || BRAWL) { const go = (v) => { const u = new URLSearchParams(location.search); v === "brawl" ? u.set("mode", "brawl") : u.delete("mode"); location.href = `${location.pathname}?${u}`; };
+    $("#modebar").replaceChildren(segmented([["standard", "Standard"], ["brawl", `Street Brawl (${d.brawl_games})`]], BRAWL ? "brawl" : "standard", go, "Game mode"), h("span", { class: "note" }, BRAWL ? "Street Brawl games only." : "Street Brawl games are kept separate and never count in these numbers.")); }
   const tier = p.mmr_rank ? Math.floor(p.mmr_rank / 10) : 0; const rinfo = p.mmr_rank ? assets.ranks.find((r) => r.tier === tier) : null;
   $("#head").replaceChildren(p.avatar_url ? h("div", { class: "avw" }, h("img", { class: "av", src: p.avatar_url, alt: "" })) : "", h("div", { style: "flex:1" }, h("h1", {}, p.name), h("div", { class: "muted" }, `Synced ${ago(p.last_sync_at)}`, d.ingest?.active ? ` · uploader active, last upload ${ago(d.ingest.last_upload_at)}` : "")),
     h("div", { class: "rank" }, await rankBadge(p.mmr_rank, "large"), h("div", {}, h("b", {}, rinfo ? `${rinfo.name} ${p.mmr_rank % 10 || ""}` : "Unranked"), h("span", {}, ...(p.mmr_score != null ? [term("MMR"), ` ${Math.round(p.mmr_score)}`] : ["placements not played yet"])))));
@@ -86,6 +91,8 @@ try {
   if (d.coverage && d.coverage.checked && d.coverage.with_stats < d.coverage.checked && me?.account_id === p.account_id) $("#banner").append(h("div", { class: "card banner" }, h("strong", {}, `${d.coverage.checked - d.coverage.with_stats} of your last ${d.coverage.checked} games have no detailed stats yet. `), "Keep the uploader running after you quit the game, or open those games in Match History → Watch Replay. ", h("a", { href: "/setup.html" }, "Setup")));
   else if (me?.account_id === p.account_id && d.matches[0]?.start_time && Date.now() / 1000 - d.matches[0].start_time > 86400) $("#banner").append(h("div", { class: "card banner" }, h("strong", {}, `Your newest game here is from ${ago(d.matches[0].start_time)}. `), "If you've played since, it hasn't been uploaded yet. Update the uploader to the latest version and run the backfill command on the ", h("a", { href: "/setup.html" }, "Setup page"), "."));
   else if (d.ingest && !d.ingest.active) $("#banner").append(h("div", { class: "card banner" }, h("strong", {}, "Match uploader not detected"), d.ingest.last_upload_at ? ` (last upload ${ago(d.ingest.last_upload_at)})` : " (never run)", ". Only games someone else uploaded show here. ", h("a", { href: "/setup.html" }, "Install it"), " to get all your matches."));
+  if (BRAWL) { $("#banner").replaceChildren(h("div", { class: "card banner brawlnote" }, h("strong", {}, "Street Brawl. "), "A different game mode, so these games stand on their own: they don't count toward the leaderboard, records, weekly recap, achievements or hero points."));
+    $("#mmr").closest(".card").hidden = true; document.querySelector('.ppanel[data-tab="overview"] h2 .muted').textContent = "· Street Brawl games"; }
   const ms = d.matches; const games = ms.length, wins = ms.filter((m) => m.won).length;
   const sum = (k) => ms.reduce((s, m) => s + m[k], 0);
   let streak = 0; for (const m of ms) { if (streak === 0) streak = m.won ? 1 : -1; else if ((streak > 0) === !!m.won) streak += m.won ? 1 : -1; else break; }
@@ -111,7 +118,7 @@ try {
   $("#heroes").replaceChildren(...(d.heroes.length ? d.heroes.map((r) => { const hx = hs.find((x) => x.id === r.hero_id); const wr = r.wins / r.games; return h("div", { class: "r" }, heroIcon(hx, 34), h("a", { href: `/hero.html?id=${r.hero_id}` }, hx?.name ?? r.hero_id), h("span", { class: "num muted" }, `${r.games} g`), h("div", {}, h("span", { class: wr >= .5 ? "win" : "loss" }, pct(wr)), h("div", { class: "bar" }, h("i", { style: `width:${r.games / maxG * 100}%` }))), kda(r.k, r.d, r.a, { dec: 1, size: "sm" }), ratio(kdaOf(r.kills, r.deaths, r.assists), KDA)); }) : [h("span", { class: "muted" }, "No games yet.")]));
   // ---- Road to Ranked: a hero is Ranked-ready at 35 hero points (2 for a win, 1 for a loss); three ready heroes open placement matches.
   // Counted from the games stored here, so it's an estimate: the game's own number is the real one.
-  { const NEED = 35, SLOTS = 3, isMe = me?.account_id === p.account_id, hasRank = !!p.mmr_rank || d.ranked_games > 0;
+  if (!BRAWL) { const NEED = 35, SLOTS = 3, isMe = me?.account_id === p.account_id, hasRank = !!p.mmr_rank || d.ranked_games > 0;
     const rows = d.heroes.map((r) => ({ ...r, pts: 2 * r.wins + (r.games - r.wins) })).sort((a, b) => b.pts - a.pts || b.games - a.games);
     const ready = rows.filter((r) => r.pts >= NEED), wip = rows.filter((r) => r.pts < NEED), open = ready.length >= SLOTS, totalWins = rows.reduce((s, r) => s + r.wins, 0);
     const next = open || hasRank ? [] : wip.slice(0, SLOTS - ready.length), nameOf = (r) => hs.find((x) => x.id === r.hero_id)?.name ?? `#${r.hero_id}`;
@@ -130,9 +137,11 @@ try {
       h("p", { class: "rr-fine" }, `Estimate from the ${rows.reduce((s, r) => s + r.games, 0)} games stored here: 2 points for a win, 1 for a loss, so playing counts even when you lose. Games that were never uploaded aren't included, so the in-game number may be higher.`, hasRank ? "" : ` Guides also list 60 Standard wins overall before Ranked unlocks (${totalWins} stored here).`));
     const panel = document.querySelector('.ppanel[data-tab="overview"]'); if (hasRank) panel.querySelector(".cols").before(card); else panel.prepend(card);
     if (isMe && open && !hasRank) { let seen = null; try { seen = localStorage.getItem("ss.rr.open"); localStorage.setItem("ss.rr.open", "1"); } catch {} if (!seen) achievementToast({ icon: "★", kicker: "Road to Ranked", name: "Placements unlocked", how: `Three heroes at ${NEED} points. Eight solo placement games set your rank.` }); } }
+  // Street Brawl round score for this player's team, from the stored match row
+  const rounds = (m) => { try { const r = typeof m.raw === "string" ? JSON.parse(m.raw) : m.raw || {}; if (r.brawl_score_team0 == null) return "–"; const mine = (m.team ?? r.player_team) === 1 ? [r.brawl_score_team1, r.brawl_score_team0] : [r.brawl_score_team0, r.brawl_score_team1]; return `${mine[0]}–${mine[1]}`; } catch { return "–"; } };
   const its = await items();
-  $("#matches").replaceChildren(h("table", {}, h("thead", {}, h("tr", {}, ...["When", "Hero", "Result", "K / D / A", "KDA", "Souls", "LH/DN", "Lvl", "Length", ""].map((t) => h("th", {}, t)))),
-    h("tbody", {}, ...ms.map((m) => { const hx = hs.find((x) => x.id === m.hero_id); return rowLink(h("tr", {}, h("td", { class: "muted" }, ago(m.start_time)), h("td", {}, h("div", { class: "hero" }, heroIcon(hx), h("a", { href: `/hero.html?id=${m.hero_id}` }, hx?.name ?? m.hero_id))), h("td", { class: m.won ? "win" : "loss" }, m.won ? "Win" : "Loss"),
+  $("#matches").replaceChildren(h("table", {}, h("thead", {}, h("tr", {}, ...["When", "Hero", "Result", ...(BRAWL ? ["Rounds"] : []), "K / D / A", "KDA", "Souls", "LH/DN", "Lvl", "Length", ""].map((t) => h("th", {}, t)))),
+    h("tbody", {}, ...ms.map((m) => { const hx = hs.find((x) => x.id === m.hero_id); return rowLink(h("tr", {}, h("td", { class: "muted" }, ago(m.start_time)), h("td", {}, h("div", { class: "hero" }, heroIcon(hx), h("a", { href: `/hero.html?id=${m.hero_id}` }, hx?.name ?? m.hero_id))), h("td", { class: m.won ? "win" : "loss" }, m.won ? "Win" : "Loss"), BRAWL ? h("td", { class: "num" }, rounds(m)) : "",
       h("td", {}, kda(m.kills, m.deaths, m.assists, { size: "sm" })), h("td", { class: "num" }, ratio(kdaOf(m.kills, m.deaths, m.assists), KDA)), h("td", { class: "num" }, fmt(m.net_worth)), h("td", { class: "num" }, `${m.last_hits}/${m.denies}`), h("td", { class: "num" }, m.hero_level ?? "–"), h("td", {}, dur(m.duration_s)), h("td", {}, h("a", { class: "sbbtn", href: `/match.html?id=${m.match_id}`, title: "Open this match's scoreboard" }, "Scoreboard", h("span", { class: "go", "aria-hidden": "true" }, "→")))), `/match.html?id=${m.match_id}`); }))));
   // MMR chart
   const cvM = $("#mmr"), kM = Math.max(1, ((cvM.clientWidth || 900) * (window.devicePixelRatio || 1)) / 900), fsM = Math.max(1, 900 / (cvM.clientWidth || 900)); cvM.width = Math.round(900 * kM); cvM.height = Math.round(260 * kM);
@@ -151,6 +160,7 @@ try {
 <script type="module">
 // Profile sections as tabs: a sliding switch on top, panels slide sideways, the frame eases to each panel's height.
 import { segmented } from "/js/app.js";
+if (new URLSearchParams(location.search).get("mode") === "brawl") document.querySelectorAll('.ppanel[data-tab="progress"],.ppanel[data-tab="gameflow"],.ppanel[data-tab="achievements"]').forEach((el) => el.remove());
 const view = document.getElementById("pview"), track = document.getElementById("ptrack"), panels = [...track.children];
 const keys = panels.map((p) => p.dataset.tab), alias = { achievements: "achievements", records: "overview", heroes: "overview" };
 const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
