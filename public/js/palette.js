@@ -1,7 +1,7 @@
 // Quick search: Ctrl/⌘ K or "/" from anywhere. Jumps to pages, squad members, heroes and items.
 import { api, h, heroes, items, visit } from "/js/app.js";
 
-const PAGES = [["Leaderboard", "/", "Squad standings"], ["Heroes", "/heroes.html", "Pick a hero"], ["Draft helper", "/counters.html", "Counters and synergies"], ["Map", "/heatmap.html", "Where kills and deaths happen"],
+const PAGES = [["Leaderboard", "/", "Squad standings"], ["Weekly recap", "/squad.html", "Awards and the week's table"], ["Records wall", "/squad.html#records", "All-time bests"], ["Heroes", "/heroes.html", "Pick a hero"], ["Draft helper", "/counters.html", "Counters and synergies"], ["Map", "/heatmap.html", "Where kills and deaths happen"],
   ["Builds", "/library.html", "Yours and the squad's"], ["New build", "/editor.html", "Open the build editor"], ["Build wizard", "/builds.html", "Generate a build from priorities"], ["Items", "/items.html", "The shop"], ["Patch watch", "/patches.html", "Balance changes"], ["Setup", "/setup.html", "Uploader and squad coverage"]];
 const RECENT = "ss.pal.recent";
 const store = { get: () => { try { return JSON.parse(localStorage.getItem(RECENT) || "[]"); } catch { return []; } }, set: (v) => { try { localStorage.setItem(RECENT, JSON.stringify(v.slice(0, 6))); } catch {} } };

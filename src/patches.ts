@@ -59,3 +59,22 @@ export async function patchWatch(env: Env) {
   await discordPost(env, { embeds: [{ color: 0xdd6638, title: `Patch: ${latest.title}`, url: s.origin ? `${s.origin}/patches.html` : latest.link,
     description: `${latest.heroes.length} heroes and ${latest.items.length} items changed.${lines.length ? "\n\n" + lines.join("\n") : ""}`, timestamp: new Date(latest.date * 1000).toISOString() }] }).catch(() => {});
 }
+
+/** Patch impact: for the latest balance patches, how each changed hero did in the 14 days before the patch and since it
+ *  (until the next balance patch), for the squad (stored games) and for everyone (deadlock-api hero stats). */
+export async function patchImpact(env: Env, count = 3) {
+  const DAY = 86400, now = Math.floor(Date.now() / 1000), api = new DeadlockApi(env);
+  const balance = (await parsedPatches(env, 15)).filter((p) => p.heroes.length && p.date > 0).sort((a, b) => b.date - a.date);
+  const out = [];
+  for (let i = 0; i < Math.min(count, balance.length); i++) {
+    const p = balance[i], since = p.date, until = i > 0 ? balance[i - 1].date : now, from = since - 14 * DAY, ids = p.heroes.map((h) => h.id);
+    const { results } = await env.DB.prepare(`SELECT hero_id, SUM(CASE WHEN start_time<? THEN 1 ELSE 0 END) bg, SUM(CASE WHEN start_time<? THEN won ELSE 0 END) bw, SUM(CASE WHEN start_time>=? THEN 1 ELSE 0 END) ag, SUM(CASE WHEN start_time>=? THEN won ELSE 0 END) aw
+        FROM player_matches WHERE start_time>=? AND start_time<? AND hero_id IN (${ids.map(() => "?").join(",")}) GROUP BY hero_id`).bind(since, since, since, since, from, until, ...ids).all<{ hero_id: number; bg: number; bw: number; ag: number; aw: number }>();
+    // Everyone's win rate either side of the patch. Needs at least a day of games after it to mean anything; upstream trouble just leaves it out.
+    const [gb, ga] = until - since >= DAY ? await Promise.all([api.heroStats({ min_unix_timestamp: from, max_unix_timestamp: since }).catch(() => null), api.heroStats({ min_unix_timestamp: since, max_unix_timestamp: until }).catch(() => null)]) : [null, null];
+    const wr = (rows: { hero_id: number; wins: number; matches: number }[] | null, id: number) => { const r = rows?.find((x) => x.hero_id === id); return r && r.matches >= 200 ? r.wins / r.matches : null; };
+    out.push({ id: p.id, since, until, days_after: Math.round(((until - since) / DAY) * 10) / 10,
+      heroes: ids.map((id) => { const s = results.find((r) => r.hero_id === id); return { id, squad: { before: [s?.bg ?? 0, s?.bw ?? 0], after: [s?.ag ?? 0, s?.aw ?? 0] }, global: { before: wr(gb, id), after: wr(ga, id) } }; }) });
+  }
+  return out;
+}

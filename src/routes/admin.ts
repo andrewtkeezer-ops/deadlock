@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { postWeeklyRecap } from "../recap";
 import type { Env } from "../types";
 import { syncAll, syncPlayer } from "../sync";
 import { DeadlockApi, METRICS, type SteamProfile } from "../deadlock";
@@ -28,16 +29,18 @@ admin.get("/usage", async (c) => {
 });
 
 /** Discord notifications: { webhook, matches, ranks }. Webhook is masked on read. */
-admin.get("/discord", async (c) => { const s = await getSetting<DiscordSettings>(c.env, "discord"); return c.json(s ? { configured: true, webhook_hint: s.webhook.replace(/(https:\/\/discord(?:app)?\.com\/api\/webhooks\/\d+\/)(.{4}).*/, "$1$2…"), matches: s.matches !== false, ranks: s.ranks !== false } : { configured: false, matches: true, ranks: true }); });
+admin.get("/discord", async (c) => { const s = await getSetting<DiscordSettings>(c.env, "discord"); return c.json(s ? { configured: true, webhook_hint: s.webhook.replace(/(https:\/\/discord(?:app)?\.com\/api\/webhooks\/\d+\/)(.{4}).*/, "$1$2…"), matches: s.matches !== false, ranks: s.ranks !== false, recap: s.recap !== false } : { configured: false, matches: true, ranks: true, recap: true }); });
 admin.put("/discord", async (c) => {
-  const b = await c.req.json<{ webhook?: string; matches?: boolean; ranks?: boolean }>();
+  const b = await c.req.json<{ webhook?: string; matches?: boolean; ranks?: boolean; recap?: boolean }>();
   const cur = await getSetting<DiscordSettings>(c.env, "discord");
   const webhook = (b.webhook ?? cur?.webhook ?? "").trim();
   if (!webhook) { await setSetting(c.env, "discord", null); return c.json({ ok: true, configured: false }); }
   if (!/^https:\/\/(discord|discordapp)\.com\/api\/webhooks\/\d+\/[\w-]+$/.test(webhook)) return c.json({ error: "That doesn't look like a Discord webhook URL" }, 400);
-  await setSetting(c.env, "discord", { webhook, matches: b.matches ?? cur?.matches ?? true, ranks: b.ranks ?? cur?.ranks ?? true, origin: new URL(c.req.url).origin } satisfies DiscordSettings);
+  await setSetting(c.env, "discord", { webhook, matches: b.matches ?? cur?.matches ?? true, ranks: b.ranks ?? cur?.ranks ?? true, recap: b.recap ?? cur?.recap ?? true, origin: new URL(c.req.url).origin } satisfies DiscordSettings);
   return c.json({ ok: true, configured: true });
 });
+/** Post last week's recap to Discord right now (the cron posts it by itself every Monday). */
+admin.post("/discord/recap", async (c) => c.json(await postWeeklyRecap(c.env, 1)));
 admin.post("/discord/test", async (c) => c.json(await discordPost(c.env, { embeds: [{ color: 0xe8c76a, title: "Soul Scribe is connected", description: "New matches and rank changes from the squad will show up here.", url: new URL(c.req.url).origin }] })));
 
 /** Add a friend: { account_id, name }. Pulls their history immediately. */

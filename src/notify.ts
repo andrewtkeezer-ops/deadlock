@@ -6,7 +6,7 @@ import { DeadlockApi } from "./deadlock";
  * Discord notifications. The admin pastes a channel webhook URL (Server settings → Integrations → Webhooks);
  * nothing else to set up. Posts a rich embed when a tracked friend's new match lands and when a rank changes.
  */
-export type DiscordSettings = { webhook: string; matches: boolean; ranks: boolean; origin?: string };
+export type DiscordSettings = { webhook: string; matches: boolean; ranks: boolean; recap?: boolean; origin?: string };
 const GOLD = 0xe8c76a, WIN = 0x97da79, LOSS = 0xe5574f;
 
 export const discordSettings = (env: Env) => getSetting<DiscordSettings>(env, "discord");

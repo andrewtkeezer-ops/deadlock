@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { Env } from "../types";
 import { DeadlockApi } from "../deadlock";
+import { getSetting, setSetting } from "../settings";
 
 const r = new Hono<{ Bindings: Env }>();
 
@@ -48,6 +49,29 @@ r.get("/items", async (c) => {
       })
       .sort((a, b) => b.matches - a.matches)
   );
+});
+
+/**
+ * Danger zones opens on "everyone, last 7 days". Upstream computes that on demand in about 6 seconds, so the cron keeps
+ * a copy: the response body is piped straight into KV without being parsed (2-3 MB of JSON would not fit in a free
+ * Worker's CPU budget), and this route pipes it back out. One KV write an hour.
+ */
+const MAP_KEY = "map:7d", MAP_TTL = 55 * 60;
+export async function refreshMapSnapshot(env: Env, force = false): Promise<boolean> {
+  const now = Math.floor(Date.now() / 1000), meta = await getSetting<{ at: number }>(env, "map_snapshot");
+  if (!force && meta?.at && now - meta.at < MAP_TTL) return false;
+  const since = Math.floor(now / 3600) * 3600 - 7 * 86400;
+  const headers: Record<string, string> = { accept: "application/json", "user-agent": "deadlock-squad/0.1 (cloudflare worker)" }; if (env.DEADLOCK_API_KEY) headers["X-API-Key"] = env.DEADLOCK_API_KEY;
+  const res = await fetch(new URL(`/v1/analytics/kill-death-stats?min_unix_timestamp=${since}`, env.DEADLOCK_API), { headers });
+  if (!res.ok || !res.body) { await res.body?.cancel(); throw new Error(`map snapshot: upstream ${res.status}`); }
+  await env.CACHE.put(MAP_KEY, res.body, { metadata: { at: now, since } });
+  await setSetting(env, "map_snapshot", { at: now, since });
+  return true;
+}
+r.get("/heatmap-snapshot", async (c) => {
+  const { value, metadata } = await c.env.CACHE.getWithMetadata<{ at: number; since: number }>(MAP_KEY, "stream");
+  if (!value) return c.json({ error: "no snapshot yet" }, 404);
+  return new Response(value, { headers: { "content-type": "application/json", "cache-control": "private, max-age=300", "x-snapshot-at": String(metadata?.at ?? 0) } });
 });
 
 export default r;

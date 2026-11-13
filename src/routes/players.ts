@@ -151,20 +151,27 @@ r.get("/:id{[0-9]+}/curve", async (c) => {
   const tier = p?.mmr_rank ? Math.floor(p.mmr_rank / 10) : null;
   const api = new DeadlockApi(c.env), path = "/v1/analytics/player-performance-curve";
   type Pt = Record<string, number> & { game_time: number };
-  type Lane = { hero_ids: number[]; wins: number; matches_played: number; net_worth_diff: number };
   const band = tier ? { min_average_badge: tier * 10 + 1, max_average_badge: tier * 10 + 6 } : {};
-  const [you, ref, lanes] = await Promise.all([
+  // (The per-player lane numbers that used to come from lane-matchup-stats were wrong: its account filter picks matches, not sides,
+  //  so both duos of every lane were averaged together. The lane report now works from match records; see /lanes-raw.)
+  const [you, ref] = await Promise.all([
     api.get<Pt[]>(path, { account_ids: id, resolution: 0, min_unix_timestamp: now - 90 * 86400 }, 3600),
     api.get<Pt[]>(path, { resolution: 0, ...band }, 12 * 3600),
-    api.get<Lane[]>("/v1/analytics/lane-matchup-stats", { account_ids: id, group_by: "hero_ids", min_unix_timestamp: now - 90 * 86400, sample_time_s: 900 }, 3600).catch(() => [] as Lane[]),
   ]);
   const SRC = ["gold_player", "gold_lane_creep", "gold_neutral_creep", "gold_boss", "gold_treasure", "gold_breakable", "gold_assists", "gold_team_bonus", "gold_denied", "gold_death_loss"];
   const trim = (pts: Pt[]) => pts.filter((x) => x.game_time > 0 && x.game_time <= 2700).map((x) => ({ t: x.game_time, nw: Math.round(x.net_worth_avg), k: +x.kills_avg.toFixed(2), d: +x.deaths_avg.toFixed(2), a: +x.assists_avg.toFixed(2),
     src: Object.fromEntries(SRC.map((k) => [k, Math.round((x[`${k}_avg`] ?? 0) + (x[`${k}_orbs_avg`] ?? x[`${k}_orb_avg`] ?? 0))])) }));
-  const lm = lanes.reduce((n, l) => n + l.matches_played, 0);
-  const lane = lm ? { matches: lm, win_rate: lanes.reduce((n, l) => n + l.wins, 0) / lm, souls_lead_15: Math.round(lanes.reduce((n, l) => n + l.net_worth_diff * l.matches_played, 0) / lm),
-    partners: lanes.filter((l) => l.matches_played >= 2).sort((a, b) => b.matches_played - a.matches_played).slice(0, 4).map((l) => ({ heroes: l.hero_ids, matches: l.matches_played, souls_lead_15: Math.round(l.net_worth_diff), win_rate: l.wins / l.matches_played })) } : null;
+  const lane = null;
   return c.json({ tier, you: trim(you), ref: trim(ref), lane });
+});
+
+/** Lane report source: this player's recent matches with every player's lane and soul curve. The page normally asks
+ *  deadlock-api for this itself (it allows browser calls); this is the fallback when that fails. */
+export const LANE_COLUMNS = "assigned_lane,stats.net_worth,stats.time_stamp_s,stats.kills,stats.deaths";
+r.get("/:id{[0-9]+}/lanes-raw", async (c) => {
+  const id = Number(c.req.param("id")), days = Math.max(7, Math.min(120, Number(c.req.query("days")) || 60));
+  return c.json(await new DeadlockApi(c.env).get<unknown[]>("/v1/matches/metadata", { account_ids: id, limit: 200, order_by: "match_id", order_direction: "desc", min_unix_timestamp: Math.floor(Date.now() / 1000) - days * 86400,
+    include_info: "true", game_mode: "normal", extra_player_columns: LANE_COLUMNS }, 1800));
 });
 
 /** One friend's profile: recent matches + per-hero breakdown + MMR history. */

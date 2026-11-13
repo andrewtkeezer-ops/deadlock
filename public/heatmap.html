@@ -64,6 +64,8 @@ async function load() { const my = ++seq; let days = state.days, stepped = null;
   for (;;) {
     const q = new URLSearchParams(); if (state.hero) q.set("hero_ids", state.hero); q.set("min_unix_timestamp", Math.floor(Date.now() / 3600000) * 3600 - days * 86400); if (state.max) q.set("max_game_time_s", state.max); if (state.who === "squad") q.set("squad", "1");
     const key = q.toString(); let d = dataCache.get(key);
+    // The default view (everyone, 7 days, whole game) is kept ready by the site and refreshed hourly: no 5-15 second wait.
+    if (!d && !state.hero && days === 7 && !state.max && state.who !== "squad" && !stepped) { try { const r = await fetch("/api/analytics/heatmap-snapshot"); if (r.ok) { const at = +r.headers.get("x-snapshot-at") || 0; d = merge(await r.json()); d.snapAt = at; if (my !== seq) return; dataCache.set(key, d); } } catch {} }
     if (!d) { current = null; paint(); const what = state.hero ? `every ${hs.find((y) => y.id === state.hero)?.name} kill and death` : "every kill and death";
       status(stepped ? `${dayLabel(stepped)} was too much for deadlock-api. Trying the last ${dayLabel(days)}…` : `Counting ${what} from the last ${dayLabel(days)}. This takes 5–15 seconds the first time.`);
       try { d = await cells(q); if (my !== seq) return; dataCache.set(key, d); }
@@ -71,6 +73,7 @@ async function load() { const my = ++seq; let days = state.days, stepped = null;
         if (e.heavy && next) { stepped ??= days; days = next; continue; }
         status("Couldn't load map data: " + e.message, true); $("#note").textContent = e.heavy ? "deadlock-api.com couldn't finish even the shortest window. It's probably busy; try again in a minute." : "deadlock-api.com didn't answer. Try again in a moment."; return; } }
     state.days = days; markDays(); current = d; status(""); paint();
+    if (d.snapAt) $("#note").textContent += ` · updated ${Math.max(1, Math.round((Date.now() / 1000 - d.snapAt) / 60))} min ago`;
     if (stepped) $("#note").textContent += ` · ${dayLabel(stepped)} was too much data for deadlock-api to crunch in time, so this is the last ${dayLabel(days)}.`;
     return; } }
 function paint() { const c = $("#map").getContext("2d"), S = 1024; c.clearRect(0, 0, S, S); if (bg.complete && bg.naturalWidth) c.drawImage(bg, 0, 0, S, S);

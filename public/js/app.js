@@ -152,6 +152,7 @@ const ICONS = {
   bag: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1 12H6L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>',
   gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
   out: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/></svg>',
+  crew: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.2c3 .2 5 2.5 5 5.8"/></svg>',
   find: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>',
   more: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>',
   shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg>',
@@ -165,7 +166,7 @@ export function shell(active) {
     const page = h("div", { class: "page" }); const mains = [...document.body.querySelectorAll(":scope > main")]; mains.forEach((m) => { if (active !== "/heroes.html") m.classList.add("stagger"); page.append(m); }); document.body.append(page);
   }
   try { gameStart(); } catch (e) { console.warn("game layer skipped", e); document.documentElement.classList.remove("booting"); }
-  const links = [["/", "Leaderboard", "trophy"], ["/heroes.html", "Heroes", "hero"], ["/counters.html", "Draft", "swords"], ["/heatmap.html", "Map", "map"], ["/library.html", "Builds", "book"], ["/items.html", "Items", "bag"], ["/patches.html", "Patches", "news"], ["/setup.html", "Setup", "gear"]];
+  const links = [["/", "Leaderboard", "trophy"], ["/squad.html", "Squad", "crew"], ["/heroes.html", "Heroes", "hero"], ["/counters.html", "Draft", "swords"], ["/heatmap.html", "Map", "map"], ["/library.html", "Builds", "book"], ["/items.html", "Items", "bag"], ["/patches.html", "Patches", "news"], ["/setup.html", "Setup", "gear"]];
   let ix = 0;
   // Phones show four destinations in the bottom bar and the rest in a "More" sheet; a nine-icon strip isn't navigation.
   const PRI = new Set(["/", "/heroes.html", "/counters.html", "/library.html"]);
@@ -268,7 +269,7 @@ export function segmented(opts, value, onChange, label = "Choose") {
 /** Eyebrow sticker above the page title, in the Deadlock site's postcard voice. Pages with their own hero header (hero.html) opt out with data-ph="off". */
 /** Canonical page key: Cloudflare serves /heroes.html as /heroes, so look up by the .html form either way. */
 export function pageKey() { const p = location.pathname.replace(/\/+$/, "") || "/"; if (p === "/" || p === "/index" || p === "/index.html") return "/"; return p.endsWith(".html") ? p : p + ".html"; }
-const EYEBROWS = { "/": "The squad standings", "/index.html": "The squad standings", "/heroes.html": "Meet the locals", "/counters.html": "Know your enemy", "/heatmap.html": "Where it happens", "/library.html": "The playbook", "/patches.html": "Hot off the press", "/items.html": "The corner shop", "/setup.html": "Get connected", "/admin.html": "Back office", "/player.html": "Squad member", "/match.html": "Match report", "/editor.html": "Build editor", "/builds.html": "Build wizard" };
+const EYEBROWS = { "/": "The squad standings", "/index.html": "The squad standings", "/heroes.html": "Meet the locals", "/counters.html": "Know your enemy", "/heatmap.html": "Where it happens", "/library.html": "The playbook", "/patches.html": "Hot off the press", "/squad.html": "The crew", "/items.html": "The corner shop", "/setup.html": "Get connected", "/admin.html": "Back office", "/player.html": "Squad member", "/match.html": "Match report", "/editor.html": "Build editor", "/builds.html": "Build wizard" };
 function pageHeader() {
   const main = document.querySelector("main"); if (!main || main.dataset.ph === "off") return;
   const eyebrow = main.dataset.eyebrow || EYEBROWS[pageKey()]; if (!eyebrow) return;
@@ -296,8 +297,11 @@ function alive() {
   // scroll reveal for nested cards (top-level sections already stagger in)
   const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { rootMargin: "0px 0px -8% 0px", threshold: .08 });
   const watch = (root) => root.querySelectorAll?.(".ab,.st,.tile,.hcard,.card .card").forEach((el, i) => { if (el.classList.contains("rv")) return; el.classList.add("rv"); el.style.transitionDelay = `${Math.min(i, 8) * 45}ms`; io.observe(el); });
-  const shimmer = (root) => root.querySelectorAll?.("*").forEach((el) => { if (el.childElementCount === 0 && el.textContent.trim() === "Loading…") el.classList.add("ld"); });
-  const mo = new MutationObserver((ms) => ms.forEach((m) => { m.addedNodes.forEach((n) => { if (n.nodeType === 1) { watch(n); shimmer(n); if (n.classList?.contains("ld")) n.classList.remove("ld"); } }); if (m.type === "childList" && m.target.classList?.contains("ld") && m.target.textContent.trim() !== "Loading…") m.target.classList.remove("ld"); }));
+  // Loading skeletons: any element whose whole content is the text "Loading…" gets .ld (placeholder rows, see app.css) until real content replaces it.
+  const mark = (el) => { if (el.nodeType === 1 && el.childElementCount === 0 && el.textContent.trim() === "Loading…") el.classList.add("ld"); };
+  const shimmer = (root) => { mark(root); root.querySelectorAll?.("*").forEach(mark); };
+  const mo = new MutationObserver((ms) => ms.forEach((m) => { m.addedNodes.forEach((n) => { if (n.nodeType === 1) { watch(n); shimmer(n); } });
+    if (m.type === "childList") { const t = m.target; if (t.classList?.contains("ld")) { if (t.textContent.trim() !== "Loading…") t.classList.remove("ld"); } else mark(t); } }));
   const page = document.querySelector(".page"); watch(page); shimmer(page); mo.observe(page, { childList: true, subtree: true });
   document.body.append(h("div", { class: "progress" }));
   // numbers tick up the first time they appear (stat tiles, podium, hero header)

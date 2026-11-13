@@ -4,7 +4,10 @@ import type { Env } from "./types";
 import { syncAll, syncPlayer } from "./sync";
 import { ApiError, DeadlockApi } from "./deadlock";
 import players from "./routes/players";
-import { parsedPatches, squadInterests } from "./patches";
+import { parsedPatches, squadInterests, patchImpact } from "./patches";
+import squad from "./routes/squad";
+import { recapWatch } from "./recap";
+import { refreshMapSnapshot } from "./routes/analytics";
 import heroes from "./routes/heroes";
 import builds from "./routes/builds";
 import library from "./routes/builds-library";
@@ -83,6 +86,8 @@ app.get("/api/me", async (c) => {
 });
 
 app.get("/api/patches", async (c) => { const [patches, squad] = await Promise.all([parsedPatches(c.env, 15), squadInterests(c.env)]); return c.json({ patches, squad }); });
+app.get("/api/patches/impact", async (c) => c.json(await patchImpact(c.env)));
+app.route("/api/squad", squad);
 app.route("/api/players", players);
 app.route("/api/heroes", heroes);
 app.route("/api/library", library);
@@ -122,5 +127,8 @@ export default {
   fetch: app.fetch,
   async scheduled(_event: ScheduledController, env: Env, ctx: ExecutionContext) {
     ctx.waitUntil(syncAll(env).then((r) => console.log("sync", JSON.stringify(r))));
+    // Independent of the sync so a slow upstream can't hold them up: the Monday recap post and the hourly Danger zones snapshot.
+    ctx.waitUntil(recapWatch(env).catch((e) => console.error("recap watch", e)));
+    ctx.waitUntil(refreshMapSnapshot(env).then((did) => did && console.log("map snapshot refreshed")).catch((e) => console.error(String(e))));
   },
 } satisfies ExportedHandler<Env>;

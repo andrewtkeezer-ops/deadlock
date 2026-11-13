@@ -1,0 +1,92 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><script>try{if(!sessionStorage.getItem("ss.booted")&&!matchMedia("(prefers-reduced-motion: reduce)").matches)document.documentElement.classList.add("booting")}catch(e){}</script><meta name="viewport" content="width=device-width,initial-scale=1"><title>The squad · Soul Scribe</title><link rel="icon" type="image/png" href="/img/favicon.png"><link rel="stylesheet" href="/css/app.css"><script src="/js/vt.js"></script><link rel="modulepreload" href="/js/app.js"><link rel="modulepreload" href="/js/game.js">
+<style>
+.pfilter{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:0 0 18px}
+.wknav{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 16px}.wknav b{font:600 22px/1.1 var(--fh);color:var(--cream)}.wknav .tagw{padding:4px 8px 3px;border-radius:4px;background:var(--lane-y);color:#141000;font:700 10px/1 var(--fh);letter-spacing:.14em;text-transform:uppercase}
+.wknav button{min-width:40px;padding:8px 12px}.wknav button[disabled]{opacity:.3;pointer-events:none}.wknav .sp{flex:1}
+.tot{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:0 0 18px}.tot>div{padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--panel)}
+.tot b{display:block;font:600 26px/1.1 var(--fh);color:var(--cream);font-variant-numeric:tabular-nums}.tot span{display:block;margin-top:4px;color:var(--muted);font:700 10px/1 var(--fh);letter-spacing:.16em;text-transform:uppercase}.tot small{display:block;margin-top:5px;font-size:12px}
+.aw{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:12px;margin:0 0 6px}
+.awc{--c:var(--lane-b);position:relative;display:flex;flex-direction:column;gap:8px;min-width:0;padding:16px 16px 14px;border-radius:16px;border:1px solid color-mix(in srgb,var(--c) 35%,transparent);background:linear-gradient(180deg,color-mix(in srgb,var(--c) 9%,#0d1112),#0d1112 70%);color:var(--text);transition:transform .25s var(--snap),box-shadow .25s}
+a.awc:hover{transform:translateY(-3px);box-shadow:0 18px 34px -18px rgba(0,0,0,.9),0 0 0 1px color-mix(in srgb,var(--c) 55%,transparent);color:var(--text)}
+.awc.mvp{--c:var(--lane-y);grid-column:span 2}.awc.kda,.awc.game{--c:var(--lane-g)}.awc.rough{--c:var(--loss)}.awc.farm,.awc.climb{--c:var(--lane-y)}.awc.streak,.awc.kills{--c:var(--ink)}
+.awc .t{align-self:flex-start;padding:5px 9px 4px;border-radius:3px;background:var(--c);color:#0b0d0e;font:700 10px/1 var(--fh);letter-spacing:.16em;text-transform:uppercase;transform:rotate(-1.5deg);box-shadow:2px 3px 0 #050606}
+.awc .w{display:flex;align-items:center;gap:10px;min-width:0}.awc .w img.av{width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid var(--c);flex:none}.awc.mvp .w img.av{width:64px;height:64px}
+.awc .w b{font:600 19px/1.1 var(--fh);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.awc.mvp .w b{font:400 34px/1 var(--fd)}
+.awc .v{font:600 25px/1 var(--fh);color:var(--c);font-variant-numeric:tabular-nums}.awc.mvp .v{font-size:34px}.awc .bl{color:var(--muted);font-size:13px;line-height:1.35}
+.awc .hx{position:absolute;right:12px;top:12px;width:30px;height:30px;border-radius:8px}.awc .go{margin-top:auto;color:var(--dim);font:700 10px/1 var(--fh);letter-spacing:.14em;text-transform:uppercase}
+@media(max-width:560px){.awc.mvp{grid-column:auto}.awc.mvp .w b{font-size:26px}}
+.wk td{vertical-align:middle}.wk .p{display:flex;align-items:center;gap:10px}.wk .p img{width:30px;height:30px;border-radius:50%}.wk .wr{min-width:110px}.wk .wr .bar{margin-top:4px}
+.heroes5{display:flex;gap:8px;flex-wrap:wrap}.heroes5 a{display:inline-flex;align-items:center;gap:8px;padding:5px 12px 5px 5px;border-radius:999px;border:1px solid var(--line2);color:var(--text);font-size:13px}.heroes5 span{color:var(--muted)}
+.recs{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+.rc{min-width:0;padding:14px 16px;border-radius:16px;border:1px solid var(--line);background:var(--panel)}.rc h3{margin:0 0 10px;color:var(--muted);font:700 10.5px/1.2 var(--fh);letter-spacing:.16em;text-transform:uppercase}
+.rc .r1{display:flex;align-items:center;gap:12px;color:var(--text);min-width:0}.rc .r1 img.av{width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid var(--lane-y);flex:none}.rc .r1 .nm{flex:1;min-width:0}.rc .r1 .nm b{display:block;font:600 17px/1.15 var(--fh);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rc .r1 .nm small{display:block;color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rc .r1 .v{font:600 26px/1 var(--fh);color:var(--lane-y);font-variant-numeric:tabular-nums;white-space:nowrap}a.r1:hover .nm b{color:var(--ink)}
+.rc .rn{display:flex;align-items:center;gap:8px;margin-top:8px;padding-top:8px;border-top:1px dotted var(--line2);color:var(--muted);font-size:13px}.rc .rn i{font:700 11px/1 var(--fh);font-style:normal;color:var(--dim);width:14px}.rc .rn img{width:22px;height:22px;border-radius:50%}.rc .rn span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}.rc .rn b{font:600 13px/1 var(--fh);font-variant-numeric:tabular-nums}
+[hidden]{display:none!important}
+</style></head>
+<body><main>
+<h1>The squad</h1>
+<p class="lead">The week in review and the all-time records, across everyone tracked.</p>
+<div class="pfilter" id="tabs"></div>
+<section id="recapView"><div class="wknav" id="wknav"></div><div id="recap">Loading…</div></section>
+<section id="recordsView" hidden><div id="records">Loading…</div></section>
+</main>
+<script type="module">
+import { api, h, $, pct, fmt, dur, heroes, heroIcon, shell, showError, segmented, kda, ratio, KDA, me } from "/js/app.js";
+shell("/squad.html");
+const hs = await heroes().catch(() => []); const hero = (id) => hs.find((x) => x.id === id);
+const dateS = (t) => new Date(t * 1000).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+const av = (p) => (p?.avatar_url ? h("img", { class: "av", src: p.avatar_url, alt: "" }) : h("span", { class: "av" }));
+let myId = null; me().then((m) => (myId = m.account_id ?? null)).catch(() => {});
+
+// ---------------- tabs ----------------
+let tab = location.hash === "#records" ? "records" : "recap", recordsLoaded = false;
+const show = () => { $("#recapView").hidden = tab !== "recap"; $("#recordsView").hidden = tab !== "records"; history.replaceState(null, "", tab === "records" ? "#records" : location.pathname + location.search); if (tab === "records" && !recordsLoaded) { recordsLoaded = true; loadRecords(); } };
+$("#tabs").append(segmented([["recap", "Weekly recap"], ["records", "Records wall"]], tab, (v) => { tab = v; show(); }, "Squad view"));
+
+// ---------------- weekly recap ----------------
+let offset = Math.max(0, Math.min(52, +new URLSearchParams(location.search).get("week") || 1));
+async function loadRecap() {
+  const box = $("#recap"); box.textContent = "Loading…";
+  try {
+    const r = await api(`/squad/recap?offset=${offset}`); const P = new Map(r.players.map((p) => [p.account_id, p]));
+    $("#wknav").replaceChildren(h("button", { type: "button", title: "Earlier week", "aria-label": "Earlier week", onclick: () => { offset++; loadRecap(); } }, "‹"),
+      h("b", {}, `${dateS(r.start)} to ${dateS(r.end - 86400)}`), offset === 0 ? h("span", { class: "tagw" }, "In progress") : offset === 1 ? h("span", { class: "tagw" }, "Last week") : "",
+      h("button", { type: "button", title: "Later week", "aria-label": "Later week", disabled: offset === 0 ? "" : undefined, onclick: () => { offset = Math.max(0, offset - 1); loadRecap(); } }, "›"),
+      h("span", { class: "sp" }), offset !== 0 ? h("button", { type: "button", onclick: () => { offset = 0; loadRecap(); } }, "This week so far") : h("button", { type: "button", onclick: () => { offset = 1; loadRecap(); } }, "Last full week"));
+    if (!r.totals.games) return box.replaceChildren(h("div", { class: "empty-note" }, h("b", {}, offset === 0 ? "No games yet this week" : "Nobody played that week"), h("p", { class: "muted" }, "Weeks run Monday to Monday. Use the arrows to look at another one.")));
+    const d = r.totals.win_rate != null && r.prev.win_rate != null ? Math.round((r.totals.win_rate - r.prev.win_rate) * 100) : null;
+    const tot = h("div", { class: "tot" }, h("div", {}, h("b", {}, String(r.totals.matches)), h("span", {}, "matches"), h("small", { class: "muted" }, `${r.totals.games} player-games`)),
+      h("div", {}, h("b", { class: r.totals.win_rate >= .5 ? "win" : "loss" }, pct(r.totals.win_rate)), h("span", {}, "squad win rate"), d != null ? h("small", { class: d >= 0 ? "win" : "loss" }, `${d >= 0 ? "▲" : "▼"} ${Math.abs(d)} pts on the week before`) : h("small", { class: "muted" }, "no games the week before")),
+      h("div", {}, h("b", {}, r.totals.hours.toFixed(1)), h("span", {}, "hours in matches")), h("div", {}, h("b", {}, fmt(r.totals.kills)), h("span", {}, "kills")));
+    const awards = h("div", { class: "aw" }, ...r.awards.map((a, i) => { const p = P.get(a.account_id), hx = a.hero_id ? hero(a.hero_id) : null;
+      return h(a.match_id ? "a" : "div", { class: `awc ${a.key}`, href: a.match_id ? `/match.html?id=${a.match_id}` : undefined, style: `--k:${i}` }, h("span", { class: "t" }, a.title), hx?.images?.icon ? h("img", { class: "hx", src: hx.images.icon, alt: hx.name, title: hx.name }) : "",
+        h("div", { class: "w" }, av(p), h("b", {}, p?.name ?? "?")), h("div", { class: "v" }, a.value), h("div", { class: "bl" }, a.blurb, hx ? ` on ${hx.name}` : ""), a.match_id ? h("span", { class: "go" }, "Open the match →") : ""); }));
+    const table = h("div", { class: "card" }, h("table", { class: "wk" }, h("thead", {}, h("tr", {}, ...["Player", "Record", "Win rate", "K / D / A", "KDA", "Souls/min", "Best streak", "MMR"].map((t) => h("th", {}, t)))),
+      h("tbody", {}, ...r.players.map((p) => { const wr = p.wins / p.games; return h("tr", { class: p.account_id === myId ? "you" : "" }, h("td", {}, h("div", { class: "p" }, p.avatar_url ? h("img", { src: p.avatar_url, alt: "" }) : "", h("a", { href: `/player.html?id=${p.account_id}` }, p.name))),
+        h("td", { class: "num" }, `${p.wins}–${p.losses}`), h("td", { class: "wr" }, h("span", { class: wr >= .5 ? "win" : "loss" }, pct(wr)), h("div", { class: "bar" }, h("i", { style: `width:${wr * 100}%;background:${wr >= .5 ? "var(--win)" : "var(--loss)"}` }))),
+        h("td", {}, kda(p.kills / p.games, p.deaths / p.games, p.assists / p.games, { dec: 1, size: "sm" })), h("td", { class: "num" }, ratio(p.kda, KDA)), h("td", { class: "num" }, fmt(p.spm)), h("td", { class: "num" }, p.streak > 1 ? `${p.streak}W` : "–"),
+        h("td", { class: "num " + (p.mmr_delta > 0 ? "win" : p.mmr_delta < 0 ? "loss" : "muted") }, p.mmr_delta == null ? "–" : `${p.mmr_delta > 0 ? "+" : p.mmr_delta < 0 ? "−" : ""}${Math.abs(p.mmr_delta)}`)); }))));
+    const top = r.heroes.length ? h("div", { class: "heroes5" }, ...r.heroes.map((x) => h("a", { href: `/hero.html?id=${x.hero_id}` }, heroIcon(hero(x.hero_id), 26), hero(x.hero_id)?.name ?? `#${x.hero_id}`, h("span", {}, `${x.games} games · ${pct(x.wins / x.games)}`)))) : "";
+    box.replaceChildren(tot, r.awards.length ? h("h2", {}, "Awards") : "", awards, h("h2", {}, "The week's table"), table, top ? h("h2", {}, "Most played heroes") : "", top,
+      h("p", { class: "fine" }, `Weeks run Monday to Monday (the cut-off is early Monday morning Atlantic time, so a late Sunday session counts). Awards need at least three games that week. Built from the ${r.totals.games} games stored for this week.`));
+  } catch (e) { showError(box, e); }
+}
+
+// ---------------- records wall ----------------
+const F = { int: (v) => fmt(v), kda: (v) => v.toFixed(1), time: (v) => dur(Math.round(v)), pct: (v) => pct(v), hours: (v) => `${Math.round(v)} h` };
+async function loadRecords() {
+  const box = $("#records");
+  try {
+    const d = await api("/squad/records"); const P = new Map(d.players.map((p) => [p.account_id, p]));
+    const card = (rec) => { const [first, ...rest] = rec.top, f = F[rec.fmt] || F.int; const p = P.get(first.account_id), hx = first.hero_id ? hero(first.hero_id) : null;
+      const sub = [hx?.name, first.start_time ? dateS(first.start_time) + (new Date(first.start_time * 1000).getFullYear() !== new Date().getFullYear() ? ` ${new Date(first.start_time * 1000).getFullYear()}` : "") : null, first.note].filter(Boolean).join(" · ");
+      return h("div", { class: "rc" }, h("h3", {}, rec.title),
+        h(first.match_id ? "a" : "div", { class: "r1", href: first.match_id ? `/match.html?id=${first.match_id}` : undefined, title: first.match_id ? "Open the match" : undefined }, av(p), h("div", { class: "nm" }, h("b", {}, p?.name ?? "?"), sub ? h("small", {}, sub) : ""), h("span", { class: "v" }, f(first.v))),
+        ...rest.map((x, i) => { const q = P.get(x.account_id); return h(x.match_id ? "a" : "div", { class: "rn", href: x.match_id ? `/match.html?id=${x.match_id}` : undefined }, h("i", {}, String(i + 2)), q?.avatar_url ? h("img", { src: q.avatar_url, alt: "" }) : "", h("span", {}, q?.name ?? "?"), h("b", {}, f(x.v))); })); };
+    box.replaceChildren(h("h2", {}, "Single-game records"), h("div", { class: "recs" }, ...d.game.map(card)), h("h2", {}, "Career"), h("div", { class: "recs" }, ...d.career.map(card)),
+      h("p", { class: "fine" }, `Across ${fmt(d.total_games)} stored games. One entry per player on each record; click a record to open that match. Games that were never uploaded can't count.`));
+  } catch (e) { showError(box, e); }
+}
+show(); loadRecap();
+</script></body></html>

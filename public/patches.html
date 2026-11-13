@@ -1,5 +1,8 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><script>try{if(!sessionStorage.getItem("ss.booted")&&!matchMedia("(prefers-reduced-motion: reduce)").matches)document.documentElement.classList.add("booting")}catch(e){}</script><meta name="viewport" content="width=device-width,initial-scale=1"><title>Patch watch · Soul Scribe</title><link rel="icon" type="image/png" href="/img/favicon.png"><link rel="stylesheet" href="/css/app.css"><script src="/js/vt.js"></script><link rel="modulepreload" href="/js/app.js"><link rel="modulepreload" href="/js/game.js">
 <style>
+/* patch impact */
+.imp{display:grid;gap:3px;margin:8px 0 0;padding-top:8px;border-top:1px dotted var(--line2);font-size:12.5px;font-variant-numeric:tabular-nums}.imp i{display:inline-block;width:68px;color:var(--dim);font:700 9.5px/1 var(--fh);font-style:normal;letter-spacing:.14em;text-transform:uppercase}.imp b{font-weight:600}.imp em{font-style:normal}
+.impsum{margin:12px 0 0;padding:12px 14px;border-radius:12px;border:1px solid rgba(96,205,227,.3);background:rgba(96,205,227,.06)}.impsum h4{margin:0 0 6px;color:var(--lane-b);font:700 10.5px/1 var(--fh);letter-spacing:.16em;text-transform:uppercase}.impsum p{margin:0;font-size:13.5px;line-height:1.5}
 .pfilter{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:0 0 18px}
 .news{display:grid;gap:6px;margin-top:8px}.news a{display:flex;gap:12px;align-items:baseline;padding:8px 12px;border-radius:10px;background:rgba(0,0,0,.2);border:1px solid var(--line);color:var(--text);font-size:13.5px}.news a:hover{border-color:var(--line2)}.news a span{margin-left:auto;font:700 10px var(--fh);letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
 </style></head>
@@ -17,6 +20,17 @@ shell("/patches.html");
 const when = (t) => { const d = (Date.now() / 1000 - t) / 86400; return d < 1 ? "Today" : d < 2 ? "Yesterday" : d < 14 ? `${Math.floor(d)} days ago` : new Date(t * 1000).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }); };
 try {
   const [{ patches, squad }, hs, its, who] = await Promise.all([api("/patches"), heroes(), items(), me().catch(() => ({}))]);
+  // Patch impact: how each changed hero did before and after the patch, for the squad and for everyone. Arrives after the notes.
+  let impact = new Map(); const rec = (x) => `${x[1]}–${x[0] - x[1]}`, ppt = (v) => `${(v * 100).toFixed(1)}%`;
+  const impactLine = (pid, hid) => { const im = impact.get(pid)?.heroes.find((x) => x.id === hid); if (!im) return ""; const sq = im.squad, g = im.global, parts = [];
+    if (sq.before[0] || sq.after[0]) parts.push(h("span", {}, h("i", {}, "Squad"), sq.before[0] ? rec(sq.before) : "no games", " → ", h("b", { class: sq.after[0] ? (sq.after[1] / sq.after[0] >= .5 ? "win" : "loss") : "" }, sq.after[0] ? rec(sq.after) : "not played since")));
+    if (g.before != null && g.after != null) { const dlt = (g.after - g.before) * 100; parts.push(h("span", {}, h("i", {}, "Everyone"), `${ppt(g.before)} → `, h("b", {}, ppt(g.after)), h("em", { class: Math.abs(dlt) < 0.3 ? "muted" : dlt > 0 ? "win" : "loss" }, ` ${dlt >= 0 ? "+" : "−"}${Math.abs(dlt).toFixed(1)}`))); }
+    return parts.length ? h("div", { class: "imp" }, ...parts) : ""; };
+  const impactSummary = (pid) => { const im = impact.get(pid); if (!im) return ""; const b = im.heroes.reduce((s, x) => [s[0] + x.squad.before[0], s[1] + x.squad.before[1]], [0, 0]), a = im.heroes.reduce((s, x) => [s[0] + x.squad.after[0], s[1] + x.squad.after[1]], [0, 0]);
+    const moved = im.heroes.filter((x) => x.global.before != null && x.global.after != null).map((x) => ({ x, d: x.global.after - x.global.before })).sort((p, q) => Math.abs(q.d) - Math.abs(p.d)).slice(0, 3).filter((m) => Math.abs(m.d) >= 0.005);
+    if (!a[0] && !b[0] && !moved.length) return "";
+    return h("div", { class: "impsum" }, h("h4", {}, "Impact so far"), h("p", {}, a[0] || b[0] ? [`On the changed heroes the squad went `, h("b", {}, b[0] ? rec(b) : "unplayed"), ` in the two weeks before and `, h("b", { class: a[0] ? (a[1] / a[0] >= .5 ? "win" : "loss") : "" }, a[0] ? rec(a) : "hasn't played them"), ` in the ${im.days_after < 1.5 ? "day" : Math.round(im.days_after) + " days"} since. `] : "",
+      moved.length ? ["Biggest moves for everyone: ", ...moved.flatMap((m, i) => [i ? ", " : "", h("b", {}, hs.find((y) => y.id === m.x.id)?.name ?? m.x.id), h("span", { class: m.d > 0 ? "win" : "loss" }, ` ${m.d > 0 ? "+" : "−"}${Math.abs(m.d * 100).toFixed(1)} pts`)]), "."] : "")); };
   const mine = squad.find((s) => s.account_id === who.account_id);
   const myHeroes = new Set((mine?.heroes ?? []).map((x) => x.hero_id)), myItems = new Set(mine?.items ?? []);
   const changes = patches.filter((p) => p.heroes.length || p.items.length), news = patches.filter((p) => !p.heroes.length && !p.items.length);
@@ -31,15 +45,17 @@ try {
       const card = (c, kind) => { const hx = kind === "h" ? hs.find((x) => x.id === c.id) : null, it = kind === "i" ? its.find((x) => x.id === c.id) : null; const isMine = kind === "h" ? myHeroes.has(c.id) : myItems.has(c.id);
         const fans = kind === "h" ? squad.filter((s) => s.heroes.some((x) => x.hero_id === c.id)).map((s) => s.name) : [];
         return h("div", { class: "cg" + (isMine ? " mine" : "") }, h("div", { class: "hd" }, kind === "h" ? heroIcon(hx, 26) : itemImg(it, 26), h("b", {}, c.name), isMine ? h("span", { class: "tag" }, kind === "h" ? "Your hero" : "In your builds") : fans.length ? h("span", { class: "tag", style: "color:var(--muted)" }, fans.slice(0, 2).join(", ") + (fans.length > 2 ? ` +${fans.length - 2}` : "")) : ""),
-          h("ul", {}, ...c.lines.map((l) => h("li", {}, l)))); };
+          h("ul", {}, ...c.lines.map((l) => h("li", {}, l))), kind === "h" ? impactLine(p.id, c.id) : ""); };
       const body = [hz.length ? h("div", { class: "chg" }, ...hz.map((c) => card(c, "h"))) : "", ix.length ? [h("h2", { style: "margin:18px 0 0" }, "Items"), h("div", { class: "chg" }, ...ix.map((c) => card(c, "i")))] : "", p.general.length && only === "all" ? [h("h2", { style: "margin:18px 0 0" }, "General"), h("div", { class: "cg", style: "margin-top:12px" }, h("ul", {}, ...p.general.slice(0, 40).map((l) => h("li", {}, l))))] : ""];
       return h("article", { class: "pt" + (i === 0 ? " latest" : "") },
         h("div", { class: "top" }, i === 0 ? h("span", { class: "sticker" }, "Latest") : "", h("h3", {}, p.title), h("span", { class: "src" }, p.source === "forum" ? "Forum" : "Steam"), h("span", { class: "when", style: "margin-left:auto" }, when(p.date))),
         h("div", { class: "meta" }, h("span", {}, h("b", {}, String(p.heroes.length)), " heroes"), h("span", {}, h("b", {}, String(p.items.length)), " items"), h("span", {}, h("b", {}, String(p.total)), " changes"), h("a", { href: p.link, target: "_blank", rel: "noopener" }, "Full notes ↗")),
         touched.length ? h("div", { class: "yours" }, h("h4", {}, "Hits the squad"), h("div", { class: "who" }, ...touched.map(({ s, hz }) => h("span", { class: "p" }, s.avatar_url ? h("img", { src: s.avatar_url, alt: "" }) : "", s.name, h("span", { class: "hz" }, ...hz.slice(0, 5).map((c) => heroIcon(hs.find((x) => x.id === c.id), 20))))))) : "",
+        impactSummary(p.id),
         h("details", { open: i === 0 ? "" : undefined }, h("summary", {}, i === 0 ? "Changes" : "Show changes"), ...body.flat()));
     }));
   };
+  api("/patches/impact").then((rows) => { impact = new Map(rows.map((x) => [x.id, x])); render(); }).catch(() => {});
   $("#pfilter").append(segmented([["all", "Everything"], ["squad", "Squad heroes only"]], only, (v) => { only = v; render(); }, "Show"));
   render();
   $("#news").replaceChildren(...(news.length ? news.map((n) => h("a", { href: n.link, target: "_blank", rel: "noopener" }, n.title, h("span", {}, when(n.date)))) : [h("p", { class: "muted" }, "Nothing else lately.")]));

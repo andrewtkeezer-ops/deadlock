@@ -160,3 +160,67 @@ export async function mountCurve(card, id, hs) {
       h("p", { class: "fine" }, `Your average over the last 90 days of games with full stats, against ${rn ? `${rn} games` : "all games"} from the last 30 days (deadlock-api).`));
   } catch (e) { showError(box, e); }
 }
+
+/* ---------------- lane report ---------------- */
+// Built from this player's own match records: every player's lane and soul curve for each recent match, asked for straight
+// from deadlock-api (it allows browser calls; ~300 KB for 60 days) with our Worker as the fallback. "Lead" is your lane's
+// combined souls minus the enemy lane's at the 9:00 snapshot.
+const LANE_API = "https://api.deadlock-api.com/v1/matches/metadata", LANE_COLS = "assigned_lane,stats.net_worth,stats.time_stamp_s,stats.kills,stats.deaths", LANE_T = 540;
+const LANES = { 1: ["York", "#f1cc30"], 4: ["Broadway", "#29b1cc"], 6: ["Greenwich", "#59b247"] };
+const sgn = (n) => `${n > 0 ? "+" : n < 0 ? "−" : ""}${Math.abs(Math.round(n)).toLocaleString()}`;
+async function laneMatches(id, days) {
+  const q = new URLSearchParams({ account_ids: id, limit: 200, order_by: "match_id", order_direction: "desc", min_unix_timestamp: Math.floor(Date.now() / 3600000) * 3600 - days * 86400, include_info: "true", game_mode: "normal", extra_player_columns: LANE_COLS });
+  try { const r = await fetch(`${LANE_API}?${q}`, { signal: AbortSignal.timeout(20000) }); if (!r.ok) throw new Error(`upstream ${r.status}`); return await r.json(); }
+  catch (e) { console.warn("direct lane fetch failed, using proxy:", e.message); return api(`/players/${id}/lanes-raw?days=${days}`); }
+}
+export async function mountLanes(card, id, hs) {
+  const box = card.querySelector(".lanes"), ctl = card.querySelector(".lctl"), sub = card.querySelector(".lsub"); id = +id;
+  const hero = (i) => hs.find((x) => x.id === i), cache = new Map(); let days = 60, by = "squad", squad = new Map();
+  api("/players").then((list) => { squad = new Map(list.map((p) => [p.account_id, p])); if (cache.has(days)) draw(cache.get(days)); }).catch(() => {});
+  ctl.replaceChildren(segmented([[30, "30 days"], [60, "60 days"], [90, "90 days"]], days, (v) => { days = +v; load(); }, "Window"));
+  const at = (p, key) => { const ts = p.stats_time_stamp_s || [], vs = p[key] || []; let v = null; for (let i = 0; i < ts.length; i++) { if (ts[i] <= LANE_T) v = vs[i]; else break; } return v; };
+  const tm = (t) => (typeof t === "number" ? t : t === "Team1" ? 1 : 0), when = (t) => (typeof t === "number" ? t : Math.floor(Date.parse(String(t).replace(" ", "T") + "Z") / 1000));
+  function digest(matches) { const out = [];
+    for (const m of matches) { const me = (m.players || []).find((p) => p.account_id === id); if (!me || !me.assigned_lane || m.duration_s < LANE_T) continue;
+      const mine = m.players.filter((p) => p.assigned_lane === me.assigned_lane && tm(p.team) === tm(me.team)), opp = m.players.filter((p) => p.assigned_lane === me.assigned_lane && tm(p.team) !== tm(me.team)); if (!opp.length) continue;
+      const a = mine.map((p) => at(p, "stats_net_worth")), b = opp.map((p) => at(p, "stats_net_worth")); if ([...a, ...b].some((v) => v == null)) continue;
+      const partner = mine.find((p) => p !== me) || null;
+      out.push({ match_id: m.match_id, start: when(m.start_time), lane: me.assigned_lane, hero: me.hero_id, partner: partner ? { account_id: partner.account_id, hero_id: partner.hero_id } : null, enemies: opp.map((p) => p.hero_id),
+        lead: a.reduce((x, y) => x + y, 0) - b.reduce((x, y) => x + y, 0), k: mine.reduce((x, p) => x + (at(p, "stats_kills") || 0), 0), d: mine.reduce((x, p) => x + (at(p, "stats_deaths") || 0), 0), won: tm(m.winning_team) === tm(me.team) }); }
+    return out; }
+  const agg = (rows) => { const n = rows.length; return { n, lead: n ? rows.reduce((s, r) => s + r.lead, 0) / n : 0, ahead: n ? rows.filter((r) => r.lead > 0).length / n : 0, won: n ? rows.filter((r) => r.won).length / n : 0 }; };
+  const group = (rows, keyOf) => { const g = new Map(); for (const r of rows) for (const k of [].concat(keyOf(r))) { if (k == null) continue; (g.get(k) ?? g.set(k, []).get(k)).push(r); } return [...g].map(([k, list]) => ({ k, ...agg(list) })); };
+  async function load() { box.textContent = "Loading…"; try { if (!cache.has(days)) cache.set(days, digest(await laneMatches(id, days))); draw(cache.get(days)); } catch (e) { showError(box, e); } }
+  function draw(rows) {
+    sub.textContent = `· ${rows.length} lanes in the last ${days} days`;
+    if (rows.length < 3) return box.replaceChildren(h("div", { class: "empty-note" }, h("b", {}, rows.length ? "Not enough lanes yet" : "No lanes with full stats in this window"), h("p", { class: "muted" }, "This needs games someone uploaded (so the match has a soul curve). Try a longer window.")));
+    const all = agg(rows), ah = agg(rows.filter((r) => r.lead > 0)), bh = agg(rows.filter((r) => r.lead <= 0)), max = Math.max(1500, ...rows.map((r) => Math.abs(r.lead)));
+    const tiles = h("div", { class: "cos" }, h("div", { class: "co" }, h("small", {}, "Average lane lead at 9:00"), h("b", { class: all.lead >= 0 ? "win" : "loss" }, `${sgn(all.lead)} souls`), h("span", { class: "muted" }, "your lane vs theirs")),
+      h("div", { class: "co" }, h("small", {}, "Lanes ahead at 9:00"), h("b", {}, pct(all.ahead)), h("span", { class: "muted" }, `${rows.filter((r) => r.lead > 0).length} of ${rows.length}`)),
+      h("div", { class: "co" }, h("small", {}, "Game won after winning lane"), h("b", { class: ah.won >= .5 ? "win" : "loss" }, ah.n ? pct(ah.won) : "–"), h("span", { class: "muted" }, `${ah.n} lanes ahead`)),
+      h("div", { class: "co" }, h("small", {}, "Game won after losing lane"), h("b", { class: bh.won >= .5 ? "win" : "loss" }, bh.n ? pct(bh.won) : "–"), h("span", { class: "muted" }, `${bh.n} lanes behind`)));
+    const scale = (list) => Math.max(500, ...list.map((x) => Math.abs(x.lead)));
+    const row = (icons, name, x, mx) => h("div", { class: "ln-r" }, h("span", { class: "duo" }, ...icons), h("span", { class: "nm" }, name, h("small", {}, `${x.n} lane${x.n === 1 ? "" : "s"} · ahead ${pct(x.ahead)} · won ${pct(x.won)}`)), h("div", { class: "lead" }, h("i", { class: x.lead >= 0 ? "pos" : "neg", style: `width:${Math.abs(x.lead) / mx * 50}%` })), h("b", { class: x.lead >= 0 ? "win" : "loss" }, sgn(x.lead)));
+    const section = (title, list, mk, empty) => h("div", { class: "lgrp" }, h("h4", {}, title), ...(list.length ? list.map(mk) : [h("p", { class: "muted", style: "margin:0;font-size:13px" }, empty)]));
+    const dot = (c) => h("span", { class: "lanedot", style: `background:${c}` });
+    const lanes = group(rows, (r) => r.lane).sort((a, b) => a.k - b.k), lmx = scale(lanes);
+    const mates = group(rows.filter((r) => r.partner && squad.has(r.partner.account_id)), (r) => r.partner.account_id).sort((a, b) => b.n - a.n), randoms = agg(rows.filter((r) => r.partner && !squad.has(r.partner.account_id)));
+    const phero = group(rows.filter((r) => r.partner), (r) => r.partner.hero_id).filter((x) => x.n >= 2).sort((a, b) => b.lead - a.lead).slice(0, 6);
+    const foes = group(rows, (r) => r.enemies).filter((x) => x.n >= 2), tough = [...foes].sort((a, b) => a.lead - b.lead).slice(0, 5), easy = [...foes].sort((a, b) => b.lead - a.lead).filter((x) => !tough.includes(x)).slice(0, 5);
+    const mine = group(rows, (r) => r.hero).sort((a, b) => b.n - a.n).slice(0, 6);
+    const pmx = scale([...mates, randoms, ...phero]), fmx = scale(foes), hmx = scale(mine);
+    const partnerList = by === "squad" ? [...mates.map((x) => { const p = squad.get(x.k); return row([p.avatar_url ? h("img", { src: p.avatar_url, alt: "", width: 30, height: 30, style: "border-radius:50%" }) : heroIcon(null, 30)], `With ${p.name}`, x, pmx); }), ...(randoms.n ? [row([h("span", { class: "hicon ini", style: "width:30px;height:30px;font-size:12px" }, "?")], "With players outside the squad", randoms, pmx)] : [])]
+      : phero.map((x) => row([heroIcon(hero(x.k), 30)], `With ${hero(x.k)?.name ?? x.k}`, x, pmx));
+    const recent = rows.slice(0, 8).map((r) => h("a", { class: "lrec " + (r.lead > 0 ? "w" : "l"), href: `/match.html?id=${r.match_id}`, title: "Open the match" }, dot(LANES[r.lane]?.[1] ?? "#888"), h("span", { class: "duo" }, heroIcon(hero(r.hero), 24), r.partner ? heroIcon(hero(r.partner.hero_id), 24) : ""), h("i", {}, "vs"), h("span", { class: "duo" }, ...r.enemies.map((e) => heroIcon(hero(e), 24))),
+      h("b", { class: r.lead > 0 ? "win" : "loss" }, sgn(r.lead)), h("span", { class: "muted" }, `${r.k}–${r.d} in lane`), h("em", { class: r.won ? "win" : "loss" }, r.won ? "Won" : "Lost"), h("small", {}, dateS(r.start))));
+    box.replaceChildren(tiles, h("div", { class: "lgrid" },
+      h("div", {}, section("By lane", lanes, (x) => row([dot(LANES[x.k]?.[1] ?? "#888")], LANES[x.k]?.[0] ?? `Lane ${x.k}`, x, lmx), ""),
+        h("div", { class: "lgrp" }, h("div", { class: "lgh" }, h("h4", {}, "Lane partners"), segmented([["squad", "Squad"], ["hero", "By hero"]], by, (v) => { by = v; draw(rows); }, "Group partners by")), ...(partnerList.length ? partnerList : [h("p", { class: "muted", style: "margin:0;font-size:13px" }, by === "squad" ? "No duo lanes in this window." : "No partner hero seen twice yet.")])),
+        section("Your heroes in lane", mine, (x) => row([heroIcon(hero(x.k), 30)], hero(x.k)?.name ?? x.k, x, hmx), "")),
+      h("div", {}, section("Toughest lane opponents", tough, (x) => row([heroIcon(hero(x.k), 30)], `Against ${hero(x.k)?.name ?? x.k}`, x, fmx), "No enemy hero faced twice yet."),
+        section("Easiest lane opponents", easy, (x) => row([heroIcon(hero(x.k), 30)], `Against ${hero(x.k)?.name ?? x.k}`, x, fmx), "No enemy hero faced twice yet."),
+        h("div", { class: "lgrp" }, h("h4", {}, "Recent lanes"), ...recent))),
+      h("p", { class: "fine" }, `Lead = your lane's combined souls minus the enemy lane's at the 9:00 snapshot, from your own matches (deadlock-api). Opponents and partner heroes need at least two lanes to be listed. Biggest single lead in this window: ${sgn(max)}.`));
+  }
+  load();
+}

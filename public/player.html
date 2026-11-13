@@ -57,6 +57,7 @@
 </section>
 <section class="ppanel" data-tab="gameflow" data-label="Game flow" role="tabpanel" aria-label="Game flow">
 <div class="card" id="curveCard"><h2 style="margin-top:0">How your games unfold <span class="muted csub"></span></h2><div class="curve">Loading…</div></div>
+<div class="card" id="laneCard"><h2 style="margin-top:0">Lane report <span class="muted lsub" style="font:400 13px var(--fb);letter-spacing:0;text-transform:none"></span></h2><div class="lctl" style="margin:0 0 12px"></div><div class="lanes">Loading…</div></div>
 </section>
 <section class="ppanel" data-tab="achievements" data-label="Achievements" role="tabpanel" aria-label="Achievements">
 <div class="card" id="achCard"><h2 style="margin-top:0" id="achievements">Achievements <span class="muted achcount"></span></h2><div class="ach">Loading…</div></div>
@@ -69,7 +70,7 @@
 <script type="module">
 import { api, h, $, pct, ago, dur, fmt, heroes, rankBadge, heroIcon, items, itemImg, shell, showError, kda, ratio, kdOf, kdaOf, KD, KDA, me as whoAmI, term, crumb, rowLink } from "/js/app.js";
 $("#mmrHead")?.replaceWith(term("MMR"));
-import { mountAchievements, mountTrends, mountBench, mountCurve } from "/js/profile.js";
+import { mountAchievements, mountTrends, mountBench, mountCurve, mountLanes } from "/js/profile.js";
 import { achievementToast } from "/js/game.js";
 shell("/");
 $("#crumb").append(crumb("Leaderboard", "/"));
@@ -77,7 +78,7 @@ const qs = new URLSearchParams(location.search); const id = qs.get("id");
 try {
   const [d, hs, assets, me] = await Promise.all([api(`/players/${id}`), heroes(), api("/assets"), whoAmI().catch(() => null)]);
   const p = d.player; document.title = `${p.name} · Soul Scribe`;
-  mountAchievements($("#achCard"), id, me?.account_id === p.account_id); mountTrends($("#trendCard"), id, hs); mountBench($("#benchCard"), id, hs); mountCurve($("#curveCard"), id, hs);
+  mountAchievements($("#achCard"), id, me?.account_id === p.account_id); mountTrends($("#trendCard"), id, hs); mountBench($("#benchCard"), id, hs); mountCurve($("#curveCard"), id, hs); mountLanes($("#laneCard"), id, hs);
   const tier = p.mmr_rank ? Math.floor(p.mmr_rank / 10) : 0; const rinfo = p.mmr_rank ? assets.ranks.find((r) => r.tier === tier) : null;
   $("#head").replaceChildren(p.avatar_url ? h("div", { class: "avw" }, h("img", { class: "av", src: p.avatar_url, alt: "" })) : "", h("div", { style: "flex:1" }, h("h1", {}, p.name), h("div", { class: "muted" }, `Synced ${ago(p.last_sync_at)}`, d.ingest?.active ? ` · uploader active, last upload ${ago(d.ingest.last_upload_at)}` : "")),
     h("div", { class: "rank" }, await rankBadge(p.mmr_rank, "large"), h("div", {}, h("b", {}, rinfo ? `${rinfo.name} ${p.mmr_rank % 10 || ""}` : "Unranked"), h("span", {}, ...(p.mmr_score != null ? [term("MMR"), ` ${Math.round(p.mmr_score)}`] : ["placements not played yet"])))));
@@ -132,7 +133,7 @@ try {
   const its = await items();
   $("#matches").replaceChildren(h("table", {}, h("thead", {}, h("tr", {}, ...["When", "Hero", "Result", "K / D / A", "KDA", "Souls", "LH/DN", "Lvl", "Length", ""].map((t) => h("th", {}, t)))),
     h("tbody", {}, ...ms.map((m) => { const hx = hs.find((x) => x.id === m.hero_id); return rowLink(h("tr", {}, h("td", { class: "muted" }, ago(m.start_time)), h("td", {}, h("div", { class: "hero" }, heroIcon(hx), h("a", { href: `/hero.html?id=${m.hero_id}` }, hx?.name ?? m.hero_id))), h("td", { class: m.won ? "win" : "loss" }, m.won ? "Win" : "Loss"),
-      h("td", {}, kda(m.kills, m.deaths, m.assists, { size: "sm" })), h("td", { class: "num" }, ratio(kdaOf(m.kills, m.deaths, m.assists), KDA)), h("td", { class: "num" }, fmt(m.net_worth)), h("td", { class: "num" }, `${m.last_hits}/${m.denies}`), h("td", { class: "num" }, m.hero_level ?? "–"), h("td", {}, dur(m.duration_s)), h("td", {}, h("a", { href: `/match.html?id=${m.match_id}`, "aria-label": "Open scoreboard", title: "Open scoreboard" }, h("span", { class: "go", "aria-hidden": "true" }, "→")))), `/match.html?id=${m.match_id}`); }))));
+      h("td", {}, kda(m.kills, m.deaths, m.assists, { size: "sm" })), h("td", { class: "num" }, ratio(kdaOf(m.kills, m.deaths, m.assists), KDA)), h("td", { class: "num" }, fmt(m.net_worth)), h("td", { class: "num" }, `${m.last_hits}/${m.denies}`), h("td", { class: "num" }, m.hero_level ?? "–"), h("td", {}, dur(m.duration_s)), h("td", {}, h("a", { class: "sbbtn", href: `/match.html?id=${m.match_id}`, title: "Open this match's scoreboard" }, "Scoreboard", h("span", { class: "go", "aria-hidden": "true" }, "→")))), `/match.html?id=${m.match_id}`); }))));
   // MMR chart
   const cvM = $("#mmr"), kM = Math.max(1, ((cvM.clientWidth || 900) * (window.devicePixelRatio || 1)) / 900), fsM = Math.max(1, 900 / (cvM.clientWidth || 900)); cvM.width = Math.round(900 * kM); cvM.height = Math.round(260 * kM);
   const c = cvM.getContext("2d"), pts = d.mmr.filter((x) => x.score != null); c.scale(kM, kM);

@@ -899,3 +899,41 @@ html.vt-open::after{content:"";position:fixed;inset:0;z-index:5001;pointer-event
 /* the page inside the iris is already in place: no second entrance on top of it */
 html.vt-hold .page,html.vt-open .page,html.vt-hold .stagger>*,html.vt-open .stagger>*{animation:none}
 @media(prefers-reduced-motion:reduce){html.vt-hold::before,html.vt-open::before,html.vt-close::before,html.vt-open::after{display:none}}
+
+/* scoreboard button at the end of a match row (was a bare arrow) */
+.sbbtn{display:inline-flex;align-items:center;gap:7px;padding:7px 12px 6px;border-radius:999px;border:1px solid var(--line2);background:rgba(255,255,255,.03);color:var(--text);font:700 10px/1 var(--fh);letter-spacing:.12em;text-transform:uppercase;white-space:nowrap;transition:background .18s,border-color .18s,color .18s}
+.sbbtn:hover,tr.rowlink:hover .sbbtn{background:var(--ink);border-color:var(--ink);color:#170a04}
+tr.rowlink td:last-child .sbbtn .go{color:inherit}
+@media(max-width:860px){.sbbtn{padding:6px 10px 5px}}
+
+/* =====================================================================================
+   v7 (2026-11-12): squad page, lane report, patch impact, phone leaderboard cards,
+   loading skeletons.
+   ===================================================================================== */
+/* lane report (profile, Game flow tab) */
+.lgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px 22px;margin-top:14px}@media(max-width:1000px){.lgrid{grid-template-columns:1fr}}
+.lgrp{display:grid;gap:6px;margin:0 0 18px}.lgrp h4,.lgh h4{margin:0 0 2px;color:var(--muted);font:700 10.5px/1 var(--fh);letter-spacing:.16em;text-transform:uppercase}.lgh{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.lgh .seg button{padding:6px 11px;min-width:0;font-size:10px}
+.lanedot{display:inline-block;width:12px;height:12px;border-radius:50%;flex:none;box-shadow:0 0 0 3px rgba(0,0,0,.4)}.ln-r .duo .lanedot{margin:0 9px}
+.co small{display:block;color:var(--muted);font:700 10px/1.2 var(--fh);letter-spacing:.14em;text-transform:uppercase}.co>b{display:block;margin:6px 0 2px;font:600 22px/1.1 var(--fh);color:var(--cream);font-variant-numeric:tabular-nums}.co>span{font-size:12px}
+.lrec{display:flex;align-items:center;gap:9px;padding:6px 10px;border-radius:10px;border:1px solid var(--line);background:rgba(0,0,0,.2);color:var(--text);font-size:12.5px;white-space:nowrap;overflow:hidden;transition:border-color .18s}.lrec:hover{border-color:var(--cream);color:var(--text)}
+.lrec .duo{display:flex}.lrec .duo>*+*{margin-left:-6px}.lrec i{font-style:normal;color:var(--dim);font-size:11px}.lrec b{font:600 13px/1 var(--fh);font-variant-numeric:tabular-nums;min-width:54px}.lrec em{font:700 10px/1 var(--fh);font-style:normal;letter-spacing:.12em;text-transform:uppercase;margin-left:auto}.lrec small{color:var(--dim)}
+@media(max-width:560px){.lrec span.muted,.lrec small{display:none}}
+/* weekly-recap banner on the leaderboard */
+.patchbanner.recap{background:linear-gradient(100deg,rgba(255,225,77,.12),rgba(255,225,77,.02));border-color:rgba(255,225,77,.3)}.patchbanner.recap:hover{border-color:rgba(255,225,77,.6)}.patchbanner.recap .sticker{background:var(--lane-y);color:#141000}
+/* phone leaderboard: cards instead of a table that scrolls sideways */
+.lbcards{display:none}
+@media(max-width:860px){
+  #out table.lb,#out .lg-key{display:none}#out.card{padding:0;border:0;background:none;box-shadow:none;backdrop-filter:none}
+  .lbcards{display:grid;gap:8px}
+  .lbc{display:grid;grid-template-columns:26px 42px minmax(0,1fr);gap:4px 10px;align-items:center;padding:12px;border-radius:14px;border:1px solid var(--line);background:var(--panel)}
+  .lbc .pos{font:600 20px/1 var(--fh);color:var(--muted);text-align:center}.lbc.top1 .pos{color:var(--lane-y)}.lbc.top2 .pos{color:var(--lane-b)}.lbc.top3 .pos{color:var(--lane-g)}.lbc.top1{border-color:rgba(255,225,77,.35)}
+  .lbc .av{width:42px;height:42px;border-radius:50%;object-fit:cover;background:#1a2022}.lbc .who{min-width:0}.lbc .who b{display:block;font:600 16px/1.2 var(--fh);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lbc .stand{display:flex;align-items:center;gap:6px;margin-top:2px;color:var(--muted);font-size:12px}.lbc .stand img.rank{height:20px}.lbc .stand .mmr{font:600 13px var(--fh);color:var(--text)}
+  .lbc .nums{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px;padding-top:9px;border-top:1px dashed var(--line2)}.lbc .nums>div{display:flex;flex-direction:column;gap:4px;min-width:0}
+  .lbc .nums b{font:600 15px/1 var(--fh);font-variant-numeric:tabular-nums}.lbc .nums i{color:var(--dim);font:700 8.5px/1 var(--fh);font-style:normal;letter-spacing:.12em;text-transform:uppercase}
+  .lbc.you{box-shadow:inset 3px 0 0 var(--lane-b)}
+}
+/* loading skeletons: a block that only says "Loading…" becomes shimmering placeholder rows (app.js adds/removes .ld) */
+div.ld,section.ld,p.ld{min-height:136px;border-radius:0;background:linear-gradient(90deg,rgba(247,233,213,.075) 0 30%,transparent 30% 36%,rgba(247,233,213,.05) 36% 72%,transparent 72% 78%,rgba(247,233,213,.05) 78% 100%);
+  -webkit-mask:repeating-linear-gradient(180deg,#000 0 13px,transparent 13px 34px);mask:repeating-linear-gradient(180deg,#000 0 13px,transparent 13px 34px);border-color:transparent;box-shadow:none}
+.card.ld{padding-top:0;padding-bottom:0;margin-top:18px}

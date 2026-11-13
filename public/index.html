@@ -64,10 +64,14 @@
 .pd .stop b{animation:stopPulse 3s ease-in-out infinite}.pd.first .stop b{box-shadow:0 0 18px rgba(255,225,77,.6)}
 @keyframes stopPulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--lane) 60%,transparent)}50%{box-shadow:0 0 0 6px transparent}}
 @media(prefers-reduced-motion:reduce){.pd.first::before,.podium .dust,.pd .stop b,.pd.first .print::after{animation:none}}
+/* recent games must never widen the page: the column can shrink, the table scrolls inside its card if it has to, and on mid-size windows the scoreboard button drops its label */
+.two{grid-template-columns:minmax(280px,1fr) minmax(0,2.4fr)}.two>*{min-width:0}.recent th,.recent td{padding-left:8px;padding-right:8px}.recent td:nth-child(2){max-width:150px;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:1340px){.two{grid-template-columns:1fr}}
+@media(min-width:1341px) and (max-width:1580px){.recent .sbbtn{font-size:0;gap:0;padding:7px 11px}.recent .sbbtn .go{font-size:13px}}
 </style></head>
 <body><main>
 <div class="hdr"><h1>Leaderboard</h1><span class="muted" id="count" style="align-self:flex-end;margin-bottom:28px"></span><div class="seg" id="sortSeg" role="radiogroup" aria-label="Sort standings by" style="align-self:flex-end;margin-bottom:26px;margin-left:auto"><span class="thumb" aria-hidden="true"></span><button type="button" role="radio" data-k="mmr">MMR</button><button type="button" role="radio" data-k="kda">KDA</button><button type="button" role="radio" data-k="kd">KD</button></div><select id="days" style="align-self:flex-end;margin-bottom:26px"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option><option value="3650">All time</option></select></div>
-<div id="patchBanner"></div><div class="wire" id="wire" hidden><div class="track" id="wireTrack"></div></div>
+<div id="patchBanner"></div><div id="recapBanner"></div><div class="wire" id="wire" hidden><div class="track" id="wireTrack"></div></div>
 <div id="podium" class="podium"></div>
 <p class="muted" id="rankNote" style="text-align:center;font-size:12px;margin:-6px 0 14px">Standings: <span class="term" id="rankNoteMmr" tabindex="0">MMR</span> (your rank as a number) first; players without an MMR yet are ordered by win rate (smoothed so one game can't carry you), then KDA, then games played. Win rate, KDA and souls/min use the selected window.</p>
 <div id="out" class="card">Loading…</div>
@@ -160,6 +164,10 @@ async function render(fresh = false) {
   const heads = ["#", "Player", "Rank / MMR", "Games", "Win rate", "Avg K / D / A", "KD", "KDA", "Souls/min", "Last played"];
   const HEAD_SORT = { 2: "mmr", 3: "games", 4: "wr", 6: "kd", 7: "kda", 8: "spm", 9: "last" };
   out.replaceChildren(h("table", { class: "lb" }, h("thead", {}, h("tr", {}, ...heads.map((t, i) => { const k = HEAD_SORT[i]; const th = h("th", { class: (i === col ? "on" : "") + (k ? " sortable" : ""), tabindex: k ? "0" : undefined, title: k ? `Sort by ${SORTS[k].label}` : undefined, "aria-sort": i === col ? "descending" : undefined }, t === "Rank / MMR" ? ["Rank / ", term("MMR")] : t); if (k) { th.addEventListener("click", (e) => { if (!e.target.closest(".term")) setSort(k); }); th.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setSort(k); } }); } return th; }))), h("tbody", {}, ...rows)),
+      h("div", { class: "lbcards" }, ...await Promise.all(players.map(async (p, i) => { const wr = p.games ? p.wins / p.games : null;
+        return rowLink(h("div", { class: "lbc" + (p.account_id === myId ? " you" : "") + (i < 3 ? " top" + (i + 1) : "") }, h("span", { class: "pos" }, String(i + 1)), p.avatar_url ? h("img", { class: "av", src: p.avatar_url, alt: "" }) : h("span", { class: "av" }),
+          h("div", { class: "who" }, h("b", {}, p.name, p.account_id === myId ? h("span", { class: "youtag" }, "You") : ""), h("span", { class: "stand" }, await standing(p, false))),
+          h("div", { class: "nums" }, h("div", {}, h("b", { class: wr == null ? "" : wr >= .5 ? "win" : "loss" }, wr == null ? "–" : pct(wr)), h("i", {}, "win rate")), h("div", {}, p.games ? ratio(kdaOf(p.kills, p.deaths, p.assists), KDA) : h("b", {}, "–"), h("i", {}, "KDA")), h("div", {}, h("b", {}, String(p.games)), h("i", {}, "games")), h("div", {}, h("b", {}, fmt(p.souls_per_min)), h("i", {}, "souls/min")))), `/player.html?id=${p.account_id}`); }))),
       h("div", { class: "lg-key" }, h("span", {}, h("i", { style: "background:var(--accent)" }), "kills"), h("span", {}, h("i", { style: "background:var(--loss)" }), "deaths"), h("span", {}, h("i", { style: "background:var(--sapph)" }), "assists"), h("span", { style: "margin-left:auto" }, "KD = kills ÷ deaths · KDA = (kills + assists) ÷ deaths")));
   if (fresh || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   for (const tr of out.querySelectorAll("tbody tr[data-id]")) { const was = before.get(tr.dataset.id); if (was == null) continue; const dy = was - tr.getBoundingClientRect().top; if (!dy) continue;
@@ -168,6 +176,9 @@ async function render(fresh = false) {
 }
 $("#days").addEventListener("change", load); load();
 
+// Weekly recap: for the first three days of a new week, point at last week's awards.
+(async () => { try { const r = await api("/squad/recap?offset=1"); if (!r.totals.games || Date.now() / 1000 - r.end > 3 * 86400) return; const mvp = r.awards.find((a) => a.key === "mvp"), who = mvp && r.players.find((p) => p.account_id === mvp.account_id);
+  $("#recapBanner").replaceChildren(h("a", { class: "patchbanner recap", href: "/squad.html" }, h("span", { class: "sticker" }, "Weekly recap"), h("span", {}, who ? [h("b", {}, `${who.name} is player of the week`), ` (${mvp.value}). `] : "", `${r.totals.matches} matches, ${pct(r.totals.win_rate)} squad win rate.`), h("span", { class: "go" }, "See the awards →"))); } catch {} })();
 // Patch watch: a banner for a balance patch from the last 5 days, naming the squad's heroes it touches.
 (async () => { try { const [{ patches, squad }, hs] = await Promise.all([api("/patches"), heroes()]); const p = patches.find((x) => x.heroes.length || x.items.length); if (!p || Date.now() / 1000 - p.date > 5 * 86400) return;
   const sq = new Map(); for (const s of squad) for (const x of s.heroes) if (p.heroes.some((c) => c.id === x.hero_id)) sq.set(x.hero_id, (sq.get(x.hero_id) || 0) + 1);
@@ -191,7 +202,7 @@ $("#days").addEventListener("change", load); load();
       h("tbody", {}, ...all.map((m, i) => { const hx = hs.find((x) => x.id === m.hero_id); return rowLink(h("tr", { class: i >= FIRST ? "extra" : "", hidden: i >= FIRST ? "" : undefined }, h("td", { class: "muted" }, ago(m.start_time)), h("td", {}, h("a", { href: `/player.html?id=${m.player.account_id}` }, m.player.name)),
         h("td", {}, h("div", { class: "hero" }, heroIcon(hx), h("a", { href: `/hero.html?id=${m.hero_id}` }, hx?.name ?? m.hero_id))),
         h("td", { class: m.won ? "win" : "loss" }, m.won ? "Win" : "Loss"), h("td", {}, kda(m.kills, m.deaths, m.assists, { size: "sm" })), h("td", { class: "num" }, ratio(kdaOf(m.kills, m.deaths, m.assists), KDA)),
-        h("td", { class: "num" }, fmt(m.net_worth)), h("td", {}, dur(m.duration_s)), h("td", {}, h("a", { href: `/match.html?id=${m.match_id}`, "aria-label": "Open scoreboard", title: "Open scoreboard" }, h("span", { class: "go", "aria-hidden": "true" }, "→")))), `/match.html?id=${m.match_id}`); }))),
+        h("td", { class: "num" }, fmt(m.net_worth)), h("td", {}, dur(m.duration_s)), h("td", {}, h("a", { class: "sbbtn", href: `/match.html?id=${m.match_id}`, title: "Open this match's scoreboard" }, "Scoreboard", h("span", { class: "go", "aria-hidden": "true" }, "→")))), `/match.html?id=${m.match_id}`); }))),
       all.length > FIRST ? h("button", { class: "morebtn ghost", type: "button", onclick: (e) => { el.querySelectorAll("tr.extra").forEach((tr) => (tr.hidden = false)); e.currentTarget.remove(); } }, `Show ${all.length - FIRST} more games`) : "");
   } catch (e) { showError(el, e); }
 })();
