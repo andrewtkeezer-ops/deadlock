@@ -17,7 +17,7 @@ export function weekWindow(offset = 0, now = Math.floor(Date.now() / 1000)) {
   return { start, end: start + WEEK };
 }
 
-type Row = { account_id: number; match_id: number; hero_id: number; start_time: number; duration_s: number; won: number; kills: number; deaths: number; assists: number; net_worth: number };
+type Row = { account_id: number; match_id: number; hero_id: number; start_time: number; duration_s: number; won: number; kills: number; deaths: number; assists: number; net_worth: number; hero_damage: number | null };
 type Who = { account_id: number; name: string; avatar_url: string | null };
 export type Award = { key: string; title: string; account_id: number; value: string; blurb: string; match_id?: number; hero_id?: number };
 
@@ -27,7 +27,7 @@ export async function weeklyRecap(env: Env, offset = 0) {
   const { start, end } = weekWindow(offset);
   const [players, rows, prev, mmr] = await Promise.all([
     env.DB.prepare("SELECT account_id, name, avatar_url FROM players").all<Who>(),
-    env.DB.prepare("SELECT account_id, match_id, hero_id, start_time, duration_s, won, kills, deaths, assists, net_worth FROM player_matches WHERE start_time>=? AND start_time<? AND " + std() + " ORDER BY start_time").bind(start, end).all<Row>(),
+    env.DB.prepare("SELECT account_id, match_id, hero_id, start_time, duration_s, won, kills, deaths, assists, net_worth, hero_damage FROM player_matches WHERE start_time>=? AND start_time<? AND " + std() + " ORDER BY start_time").bind(start, end).all<Row>(),
     env.DB.prepare("SELECT COUNT(*) games, COALESCE(SUM(won),0) wins FROM player_matches WHERE start_time>=? AND start_time<? AND " + std()).bind(start - WEEK, start).first<{ games: number; wins: number }>(),
     env.DB.prepare("SELECT account_id, ts, score FROM mmr_history WHERE ts>=? AND ts<? AND score IS NOT NULL ORDER BY ts").bind(start - 2 * WEEK, end).all<{ account_id: number; ts: number; score: number }>(),
   ]);
@@ -39,7 +39,8 @@ export async function weeklyRecap(env: Env, offset = 0) {
     const k = mine.reduce((s, g) => s + g.kills, 0), d = mine.reduce((s, g) => s + g.deaths, 0), a = mine.reduce((s, g) => s + g.assists, 0);
     let streak = 0, cur = 0; for (const g of mine) { cur = g.won ? cur + 1 : 0; streak = Math.max(streak, cur); }
     const hist = mmr.results.filter((m) => m.account_id === p.account_id), before = hist.filter((m) => m.ts < start).at(-1) ?? hist.find((m) => m.ts >= start), after = hist.filter((m) => m.ts >= start).at(-1);
-    return { ...p, games: n, wins, losses: n - wins, kills: k, deaths: d, assists: a, kda: n ? kdaOf(k, d, a) : 0, spm: n ? mine.reduce((s, g) => s + (g.net_worth * 60) / Math.max(60, g.duration_s), 0) / n : 0,
+    const dg = mine.filter((g) => g.hero_damage != null);
+    return { ...p, games: n, wins, losses: n - wins, kills: k, deaths: d, assists: a, damage: dg.length ? dg.reduce((s, g) => s + (g.hero_damage ?? 0), 0) / dg.length : null, damage_games: dg.length, kda: n ? kdaOf(k, d, a) : 0, spm: n ? mine.reduce((s, g) => s + (g.net_worth * 60) / Math.max(60, g.duration_s), 0) / n : 0,
       streak, hours: mine.reduce((s, g) => s + g.duration_s, 0) / 3600, mmr_delta: before && after ? Math.round((after.score - before.score) * 10) / 10 : null };
   }).filter((p) => p.games > 0).sort((x, y) => y.wins - y.losses - (x.wins - x.losses) || y.kda - x.kda);
 
@@ -48,6 +49,7 @@ export async function weeklyRecap(env: Env, offset = 0) {
   if (mvp) awards.push({ key: "mvp", title: "Player of the week", account_id: mvp.account_id, value: `${mvp.wins}–${mvp.losses}`, blurb: `KDA ${mvp.kda.toFixed(2)} across ${mvp.games} games` });
   const sharp = best(reg, (p) => p.kda); if (sharp) awards.push({ key: "kda", title: "Sharpest", account_id: sharp.account_id, value: `KDA ${sharp.kda.toFixed(2)}`, blurb: `${sharp.kills}/${sharp.deaths}/${sharp.assists} over the week` });
   const farm = best(reg, (p) => p.spm); if (farm) awards.push({ key: "farm", title: "Soul hoarder", account_id: farm.account_id, value: `${Math.round(farm.spm).toLocaleString("en-US")}/min`, blurb: "best average souls per minute" });
+  const hitter = best(reg.filter((p) => p.damage != null && p.damage_games >= 3), (p) => p.damage ?? 0); if (hitter) awards.push({ key: "dmg", title: "Heavy hitter", account_id: hitter.account_id, value: `${Math.round(hitter.damage ?? 0).toLocaleString("en-US")}`, blurb: "hero damage a game, on average" });
   const grind = best(table, (p) => p.games); if (grind && grind.games >= 3) awards.push({ key: "grind", title: "Night shift", account_id: grind.account_id, value: `${grind.games} games`, blurb: `${grind.hours.toFixed(1)} hours in the city` });
   const roll = best(table, (p) => p.streak); if (roll && roll.streak >= 3) awards.push({ key: "streak", title: "On a roll", account_id: roll.account_id, value: `${roll.streak} wins`, blurb: "in a row" });
   const climb = best(table.filter((p) => (p.mmr_delta ?? 0) > 0), (p) => p.mmr_delta ?? 0); if (climb) awards.push({ key: "climb", title: "Biggest climb", account_id: climb.account_id, value: `+${climb.mmr_delta} MMR`, blurb: "rank gained this week" });
@@ -92,6 +94,7 @@ const SINGLE: { key: string; title: string; expr: string; where?: string; asc?: 
   { key: "kills", title: "Most kills in a game", expr: "kills", fmt: "int" },
   { key: "assists", title: "Most assists in a game", expr: "assists", fmt: "int" },
   { key: "kda", title: "Best KDA in a game", expr: "(kills+assists)*1.0/MAX(1,deaths)", where: "duration_s>=600", fmt: "kda" },
+  { key: "damage", title: "Most hero damage in a game", expr: "hero_damage", where: "hero_damage IS NOT NULL", fmt: "int" },
   { key: "souls", title: "Richest game", expr: "net_worth", fmt: "int" },
   { key: "spm", title: "Fastest farm (souls per minute)", expr: "net_worth*60.0/duration_s", where: "duration_s>=900", fmt: "int" },
   { key: "last_hits", title: "Most last hits", expr: "last_hits", fmt: "int" },
@@ -103,7 +106,7 @@ const SINGLE: { key: string; title: string; expr: string; where?: string; asc?: 
 export async function squadRecords(env: Env) {
   const [players, career, streakRows, heroRows, ...single] = await Promise.all([
     env.DB.prepare("SELECT account_id, name, avatar_url FROM players").all<Who>(),
-    env.DB.prepare("SELECT account_id, COUNT(*) games, SUM(won) wins, SUM(kills) kills, SUM(assists) assists, SUM(duration_s) secs, COUNT(DISTINCT hero_id) heroes FROM player_matches WHERE " + std() + " GROUP BY account_id").all<{ account_id: number; games: number; wins: number; kills: number; assists: number; secs: number; heroes: number }>(),
+    env.DB.prepare("SELECT account_id, COUNT(*) games, SUM(won) wins, SUM(kills) kills, SUM(assists) assists, SUM(duration_s) secs, COUNT(DISTINCT hero_id) heroes, AVG(hero_damage) dmg, COUNT(hero_damage) dmg_games FROM player_matches WHERE " + std() + " GROUP BY account_id").all<{ account_id: number; games: number; wins: number; kills: number; assists: number; secs: number; heroes: number; dmg: number | null; dmg_games: number }>(),
     env.DB.prepare("SELECT account_id, won FROM player_matches WHERE " + std() + " ORDER BY account_id, start_time").all<{ account_id: number; won: number }>(),
     env.DB.prepare("SELECT account_id, hero_id, COUNT(*) n, SUM(won) w FROM player_matches WHERE " + std() + " GROUP BY account_id, hero_id ORDER BY n DESC LIMIT 40").all<{ account_id: number; hero_id: number; n: number; w: number }>(),
     ...SINGLE.map((m) => env.DB.prepare(`SELECT account_id, match_id, hero_id, start_time, ${m.asc ? "MIN" : "MAX"}(${m.expr}) v FROM player_matches WHERE ${std()}${m.where ? " AND " + m.where : ""} GROUP BY account_id ORDER BY v ${m.asc ? "ASC" : "DESC"} LIMIT 3`).all<{ account_id: number; match_id: number; hero_id: number; start_time: number; v: number }>()),
@@ -114,6 +117,7 @@ export async function squadRecords(env: Env) {
     { key: "games", title: "Most games played", fmt: "int", top: top3(c, (x) => x.games).map((x) => ({ account_id: x.account_id, v: x.games })) },
     { key: "wins", title: "Most wins", fmt: "int", top: top3(c, (x) => x.wins).map((x) => ({ account_id: x.account_id, v: x.wins })) },
     { key: "winrate", title: "Best win rate (20+ games)", fmt: "pct", top: top3(c.filter((x) => x.games >= 20), (x) => x.wins / x.games).map((x) => ({ account_id: x.account_id, v: x.wins / x.games, note: `${x.games} games` })) },
+    { key: "avgdmg", title: "Highest average hero damage (20+ games)", fmt: "int", top: top3(c.filter((x) => x.dmg != null && x.dmg_games >= 20), (x) => x.dmg ?? 0).map((x) => ({ account_id: x.account_id, v: x.dmg ?? 0, note: `${x.dmg_games} games` })) },
     { key: "streak", title: "Longest win streak", fmt: "int", top: top3([...streak].map(([account_id, v]) => ({ account_id, v })), (x) => x.v).filter((x) => x.v > 1) },
     { key: "hours", title: "Most hours in matches", fmt: "hours", top: top3(c, (x) => x.secs).map((x) => ({ account_id: x.account_id, v: x.secs / 3600 })) },
     { key: "pool", title: "Widest hero pool", fmt: "int", top: top3(c, (x) => x.heroes).map((x) => ({ account_id: x.account_id, v: x.heroes, note: "heroes played" })) },

@@ -78,7 +78,7 @@ r.get("/:id/squad", async (c) => {
   const id = Number(c.req.param("id"));
   const { results } = await c.env.DB.prepare(
     `SELECT p.account_id, p.name, p.avatar_url, p.mmr_rank, COUNT(*) games, SUM(m.won) wins, AVG(m.kills) k, AVG(m.deaths) d, AVG(m.assists) a,
-            AVG(m.net_worth*60.0/NULLIF(m.duration_s,0)) spm, MAX(m.start_time) last_played
+            AVG(m.net_worth*60.0/NULLIF(m.duration_s,0)) spm, AVG(m.hero_damage) dmg, MAX(m.start_time) last_played
        FROM player_matches m JOIN players p ON p.account_id=m.account_id WHERE m.hero_id=? AND ${std("m")} GROUP BY p.account_id ORDER BY games DESC`).bind(id).all();
   return c.json(results);
 });

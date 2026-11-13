@@ -23,6 +23,8 @@ r.get("/leaderboard", async (c) => {
             COALESCE(SUM(m.deaths),0)               AS deaths,
             COALESCE(SUM(m.assists),0)              AS assists,
             COALESCE(AVG(m.net_worth*60.0/NULLIF(m.duration_s,0)),0) AS souls_per_min,
+            AVG(m.hero_damage)                      AS avg_damage,   -- NULL until a game with a full match record is stored
+            COUNT(m.hero_damage)                    AS damage_games,
             MAX(m.start_time)                       AS last_played
        FROM players p
        LEFT JOIN player_matches m ON m.account_id=p.account_id AND m.start_time>=? AND ${std("m")}
@@ -52,7 +54,7 @@ r.get("/duos", async (c) => {
 r.get("/recent", async (c) => {
   const limit = Math.max(1, Math.min(60, Number(c.req.query("limit")) || 25));
   const { results } = await c.env.DB.prepare(
-    `SELECT m.account_id, p.name, m.match_id, m.hero_id, m.start_time, m.duration_s, m.won, m.kills, m.deaths, m.assists, m.net_worth, COALESCE(m.game_mode,1) game_mode
+    `SELECT m.account_id, p.name, m.match_id, m.hero_id, m.start_time, m.duration_s, m.won, m.kills, m.deaths, m.assists, m.net_worth, m.hero_damage, COALESCE(m.game_mode,1) game_mode
        FROM player_matches m JOIN players p ON p.account_id=m.account_id ORDER BY m.start_time DESC LIMIT ?`).bind(limit).all();
   return c.json(results);
 });
@@ -105,7 +107,7 @@ r.get("/coverage", async (c) => {
 r.get("/:id{[0-9]+}/trends", async (c) => {
   const id = Number(c.req.param("id")), days = Math.min(3650, Math.max(7, Number(c.req.query("days")) || 90));
   const since = Math.floor(Date.now() / 1000) - days * 86400;
-  const { results } = await c.env.DB.prepare("SELECT match_id, start_time, hero_id, won, kills, deaths, assists, net_worth, duration_s FROM player_matches WHERE account_id=? AND start_time>? AND " + std() + " ORDER BY start_time ASC LIMIT 1500").bind(id, since).all();
+  const { results } = await c.env.DB.prepare("SELECT match_id, start_time, hero_id, won, kills, deaths, assists, net_worth, duration_s, hero_damage FROM player_matches WHERE account_id=? AND start_time>? AND " + std() + " ORDER BY start_time ASC LIMIT 1500").bind(id, since).all();
   return c.json({ days, games: results });
 });
 
@@ -193,7 +195,7 @@ r.get("/:id{[0-9]+}", async (c) => {
   const [matches, heroes, mmr, ingest] = await Promise.all([
     c.env.DB.prepare(`SELECT * FROM player_matches WHERE account_id=? AND ${only} ORDER BY start_time DESC LIMIT 50`).bind(id).all(),
     c.env.DB.prepare(
-      `SELECT hero_id, COUNT(*) games, SUM(won) wins, AVG(kills) k, AVG(deaths) d, AVG(assists) a, SUM(kills) kills, SUM(deaths) deaths, SUM(assists) assists
+      `SELECT hero_id, COUNT(*) games, SUM(won) wins, AVG(kills) k, AVG(deaths) d, AVG(assists) a, SUM(kills) kills, SUM(deaths) deaths, SUM(assists) assists, AVG(hero_damage) dmg
          FROM player_matches WHERE account_id=? AND ${only} GROUP BY hero_id ORDER BY games DESC`
     ).bind(id).all(),
     // Rank history straight from Valve's after-match badge on each Ranked game (match_mode 4).

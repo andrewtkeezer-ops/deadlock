@@ -922,7 +922,8 @@ tr.rowlink td:last-child .sbbtn .go{color:inherit}
 .patchbanner.recap{background:linear-gradient(100deg,rgba(255,225,77,.12),rgba(255,225,77,.02));border-color:rgba(255,225,77,.3)}.patchbanner.recap:hover{border-color:rgba(255,225,77,.6)}.patchbanner.recap .sticker{background:var(--lane-y);color:#141000}
 /* phone leaderboard: cards instead of a table that scrolls sideways */
 .lbcards{display:none}
-@media(max-width:860px){
+@media(min-width:700px) and (max-width:1220px){.lbcards{grid-template-columns:1fr 1fr!important}}
+@media(max-width:1220px){
   #out table.lb,#out .lg-key{display:none}#out.card{padding:0;border:0;background:none;box-shadow:none;backdrop-filter:none}
   .lbcards{display:grid;gap:8px}
   .lbc{display:grid;grid-template-columns:26px 42px minmax(0,1fr);gap:4px 10px;align-items:center;padding:12px;border-radius:14px;border:1px solid var(--line);background:var(--panel)}

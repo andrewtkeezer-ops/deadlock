@@ -46,6 +46,7 @@ const METRICS = {
   wr: { label: "Win rate", win: 10, val: (g) => g.won, fmt: (v) => pct(v), axis: (v) => `${Math.round(v * 100)}%`, fixed: [0, 1] },
   kda: { label: "KDA", win: 7, val: (g) => (g.kills + g.assists) / Math.max(1, g.deaths), fmt: (v) => v.toFixed(2), axis: (v) => v.toFixed(1) },
   spm: { label: "Souls / min", win: 7, val: (g) => (g.net_worth * 60) / Math.max(60, g.duration_s), fmt: (v) => Math.round(v).toLocaleString(), axis: (v) => Math.round(v).toLocaleString() },
+  dmg: { label: "Hero damage", win: 7, has: (g) => g.hero_damage != null, val: (g) => g.hero_damage, fmt: (v) => Math.round(v).toLocaleString(), axis: (v) => (v >= 1000 ? `${Math.round(v / 1000)}k` : String(Math.round(v))) },
 };
 export async function mountTrends(card, id, hs) {
   const box = card.querySelector(".trend"), ctl = card.querySelector(".tctl"), sum = card.querySelector(".tsum");
@@ -61,7 +62,7 @@ export async function mountTrends(card, id, hs) {
     draw();
   }
   function draw() {
-    const M = METRICS[metric], list = games.filter((g) => !heroF || g.hero_id === +heroF);
+    const M = METRICS[metric], list = games.filter((g) => (!heroF || g.hero_id === +heroF) && (!M.has || M.has(g))); // damage exists only for games with a full match record
     if (list.length < 3) { sum.replaceChildren(); return box.replaceChildren(h("p", { class: "muted", style: "margin:30px 0;text-align:center" }, list.length ? "Play a few more games to see a trend." : "No games in this window.")); }
     const vals = list.map(M.val), W = Math.min(M.win, Math.max(3, Math.floor(list.length / 3)));
     const roll = vals.map((_, i) => { const s = vals.slice(Math.max(0, i - W + 1), i + 1); return s.reduce((a, b) => a + b, 0) / s.length; });
