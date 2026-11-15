@@ -2,7 +2,7 @@
 // build + shop data; the editor renders the result. Numbers come from the player's own farm rate when known.
 import { h, fmt } from "/js/app.js";
 
-const SLOTS_PER_CATEGORY = 4; // weapon / vitality / spirit base slots; more come from flex slots earned by objectives
+const BASE_SLOTS = 9, MAX_SLOTS = 12; // any item in any slot; one extra slot per enemy Walker your team destroys
 const TYPICAL_GAME_MIN = 34;   // most games are decided by ~30–38 min
 
 export function analyse(build, items, { spm = 1150, games = 0, heroName = "this hero" } = {}) {
@@ -22,10 +22,9 @@ export function analyse(build, items, { spm = 1150, games = 0, heroName = "this 
       for (const c of comps) { const k = held.findIndex((x) => x.id === c.id); if (k >= 0) { held.splice(k, 1); running -= c.cost || 0; } }
       held.push(it);
     }
-    const perSlot = { weapon: 0, vitality: 0, spirit: 0 }; for (const it of held) perSlot[it.slot] = (perSlot[it.slot] || 0) + 1;
-    const over = Object.entries(perSlot).filter(([, n]) => n > SLOTS_PER_CATEGORY).map(([k, n]) => `${n} ${k}`);
+    const over = held.length > MAX_SLOTS ? [`${held.length} items`] : [];
     phases.push({ name: cat.name, cost, start, end: running, minute: running / spm, mods, over, actives: held.filter((x) => x.active).length });
-    if (over.length) tip("warn", `${cat.name}: more items than slots`, `By the end of this phase you're holding ${over.join(" and ")} — only ${SLOTS_PER_CATEGORY} per category fit until you earn flex slots from objectives. Plan what to sell (lane items first) or move something later.`, ci);
+    if (over.length) tip("warn", `${cat.name}: more items than slots`, `By the end of this phase you'd be holding ${over.join(" and ")}. You have ${BASE_SLOTS} slots, ${MAX_SLOTS} once your team has destroyed all three enemy Walkers. The Buy order card above shows what to sell for what.`, ci);
     for (const it of mods) {
       if (it.tier >= 4 && start < 12000) tip("tip", `${it.name} comes early`, `A 6,400-soul item before ~${Math.round(12000 / spm)} min means skipping the cheap stats that win lane. Most builds hold T4s until the mid game unless it's the hero's core item.`, ci);
       const comps = (it.components || []).map((c) => byClass.get(c)).filter(Boolean);
@@ -46,7 +45,7 @@ export function analyse(build, items, { spm = 1150, games = 0, heroName = "this 
   const reach = phases.findIndex((p) => p.minute > TYPICAL_GAME_MIN);
   if (reach > 0 && reach < phases.length) tip("tip", `Realistically you'll reach phase ${reach}`, `The full build costs ${fmt(total)} souls, which at ${fmt(spm)}/min is a ${Math.round(endMin)}-minute game. Most games are decided around ${TYPICAL_GAME_MIN} min, so treat "${phases[reach].name}" onward as the plan for a long game, and make sure the phases before it stand on their own.`, reach);
   const actives = Math.max(0, ...phases.map((p) => p.actives));
-  if (actives >= 5) tip("tip", `${actives} active items`, "That's a lot of buttons in a fight. Two to four actives is what most people can actually use; passives give the same stats with no clicks.");
+  if (actives >= 5) tip("warn", `${actives} active items`, "Only four active items can be owned at once, so one of these has to go before the next comes in. The Buy order card above shows which.");
   // ---- lean
   const spend = { weapon: 0, vitality: 0, spirit: 0 }; for (const p of phases) for (const it of p.mods) spend[it.slot] = (spend[it.slot] || 0) + (it.cost || 0);
   const tot = Object.values(spend).reduce((a, b) => a + b, 0) || 1; const lean = Object.entries(spend).sort((a, b) => b[1] - a[1])[0];
@@ -62,40 +61,4 @@ export function coachPanel(result) {
   const bar = h("div", { class: "tl" }, ...result.phases.map((p) => h("div", { class: "seg", style: `flex:${Math.max(1, p.cost)}`, title: `${p.name}: ${fmt(p.cost)} souls · about ${Math.round(p.minute)} min` }, h("b", {}, p.name), h("span", {}, `~${Math.round(p.minute)} min`))));
   return h("div", { class: "coach" }, h("div", { class: "sum" }, h("b", {}, fmt(result.total)), " souls total · ", h("b", {}, `${Math.round(result.endMin)} min`), ` to complete at ${fmt(result.spm)} souls/min`), bar,
     tips.length ? h("div", { class: "tips" }, ...tips.map((t) => h("div", { class: "t " + t.level }, h("span", { class: "i" }, icon[t.level]), h("div", {}, h("b", {}, t.title), h("p", {}, t.body))))) : h("p", { class: "muted" }, "Add items to phases and the coach will comment on pacing, slots and upgrade order."));
-}
-
-/**
- * Sell plan: early items (T1/T2 bought in the first phases) that aren't upgraded later and could be swapped for a
- * stronger late item of the same flavour. Returns Map<ability_id, { sellAtMin, reason, replacements: [{item, why, gain}] }>.
- */
-export function sellPlan(build, items, { spm = 1150 } = {}) {
-  const byId = new Map(items.map((i) => [i.id, i])), byClass = new Map(items.map((i) => [i.class_name, i]));
-  const cats = build.details?.mod_categories ?? [];
-  const inBuild = new Set(cats.flatMap((c) => c.mods.map((m) => m.ability_id)));
-  const upgradedLater = new Set(); for (const c of cats) for (const m of c.mods) for (const comp of byId.get(m.ability_id)?.components || []) { const ci = byClass.get(comp); if (ci) upgradedLater.add(ci.id); }
-  let running = 0; const out = new Map();
-  cats.forEach((cat, ci) => {
-    for (const m of cat.mods) {
-      const it = byId.get(m.ability_id); if (!it) continue;
-      const boughtAt = running; running += it.cost || 0;
-      if (it.tier > 2 || boughtAt > 10000 || upgradedLater.has(it.id)) continue;
-      const leans = Object.entries(it.leans || {}).sort((a, b) => b[1] - a[1]); if (!leans.length) continue;
-      const top = leans.slice(0, 2).map(([k]) => k);
-      // direct upgrades first (pay the difference), then same-slot T3/T4 items that lean the same way
-      const direct = items.filter((x) => (x.components || []).includes(it.class_name) && !inBuild.has(x.id)).map((x) => ({ item: x, score: 10 + x.tier, why: `upgrades from ${it.name} — pay the difference (${fmt(x.cost - it.cost)})` }));
-      const similar = items.filter((x) => x.slot === it.slot && x.tier >= 3 && !inBuild.has(x.id) && x.id !== it.id && (!x.heroes?.length || x.heroes.includes(build.hero_id)))
-        .map((x) => { const sim = top.reduce((s, k) => s + (x.leans?.[k] || 0), 0); return { item: x, score: sim * x.tier, why: `${top.map((k) => k.replace(/_/g, " ")).join(" + ")} like ${it.name}, but T${x.tier}` }; })
-        .filter((r) => r.score > 0.3);
-      const picks = [...direct, ...similar].sort((a, b) => b.score - a.score).filter((r, i, a) => a.findIndex((q) => q.item.id === r.item.id) === i).slice(0, 3);
-      if (!picks.length) continue;
-      const gain = (x) => (x.stats || []).slice(0, 3).map((st) => `${st.value} ${st.label}`).join(" · ");
-      out.set(it.id, { sellAtMin: Math.round(Math.max(18, 20000 / spm)), phase: ci, reason: `${it.name} is a T${it.tier} lane item; once slots fill (~${Math.round(Math.max(18, 20000 / spm))} min) it's the first thing to sell.`, replacements: picks.map((r) => ({ item: r.item, why: r.why, gain: gain(r.item) })) });
-    }
-  });
-  return out;
-}
-
-/** Tooltip body for a sell suggestion. `onAdd(item)` adds the replacement to the build. */
-export function sellTip(plan, onAdd) {
-  return h("div", { class: "itip selltip" }, h("div", { class: "t" }, "↻ Sell this later"), h("p", { class: "desc" }, plan.reason), h("div", { class: "reps" }, ...plan.replacements.map((r) => h("div", { class: "rep", onclick: () => onAdd?.(r.item) }, r.item.image ? h("img", { src: r.item.image, alt: "" }) : "", h("div", {}, h("b", {}, r.item.name, " ", h("span", { class: "muted" }, `T${r.item.tier} · ${fmt(r.item.cost)}`)), h("small", {}, r.why), r.gain ? h("small", { class: "gain" }, r.gain) : "")))), onAdd ? h("p", { class: "muted hint" }, "Click a replacement to add it to the last phase.") : "");
 }

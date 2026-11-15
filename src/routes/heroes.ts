@@ -145,7 +145,9 @@ async function communityBuilds(env: Env, id: number) {
   for (const it of its) for (const [st, def] of Object.entries(STAT_MAP)) maxPerStat[st] = Math.max(maxPerStat[st] ?? 0, def.keys.reduce((a, k) => a + (it.properties[k] ?? 0), 0));
   const out = rows.filter((b) => looksEnglish(b.hero_build.name) && (b.hero_build.details?.mod_categories?.length ?? 0) > 0).map((b) => { const p = profileBuild(b, byId, maxPerStat);
     return { id: b.hero_build.hero_build_id, name: b.hero_build.name, author: b.hero_build.author_account_id, favorites: b.num_favorites ?? 0, updated: b.hero_build.last_updated_timestamp, lean: p.lean, lean_label: LEAN_LABEL[p.lean], share: p.share, item_count: p.ids.length,
-      categories: (b.hero_build.details?.mod_categories ?? []).map((cat) => ({ name: cat.name, items: cat.mods.map((m) => m.ability_id).filter((i) => byId.has(i)) })) }; });
+      // description + per-item notes feed the hero page's "Buy order" (the author's own sell hints live there)
+      categories: (b.hero_build.details?.mod_categories ?? []).map((cat) => ({ name: cat.name, description: cat.description ? String(cat.description).slice(0, 300) : undefined, items: cat.mods.map((m) => m.ability_id).filter((i) => byId.has(i)),
+        notes: Object.fromEntries(cat.mods.filter((m) => m.annotation && byId.has(m.ability_id)).map((m) => [m.ability_id, String(m.annotation).slice(0, 200)])) })) }; });
   return out;
 }
 

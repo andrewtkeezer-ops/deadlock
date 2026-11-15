@@ -103,7 +103,8 @@ main [data-nav]{scroll-margin-top:70px}
 <details class="sec"><summary>Lore</summary><div class="inner"><p id="lore" class="muted" style="max-width:none;font-size:15px;line-height:1.7"></p></div></details>
 </main>
 <script type="module">
-import { api, h, $, pct, ago, heroes, itemImg, abilityTooltip, withTipBuilder, shell, showError, visit } from "/js/app.js";
+import { api, h, $, pct, ago, heroes, itemImg, abilityTooltip, withTipBuilder, shell, showError, visit, modal } from "/js/app.js";
+import { buildPath, pathPanel } from "/js/path.js";
 import { mountSkillOrder, mountBuildPath, mountLaning } from "/js/hero-extras.js";
 shell("/heroes.html");
 const id = +new URLSearchParams(location.search).get("id");
@@ -176,11 +177,13 @@ const murow = (hid, wr) => { const hh = hs.find((y) => y.id === hid); return [hh
 // ---- builds ----
 const mixBar = (share) => h("div", { class: "mix" }, h("i", { style: `width:${share.weapon * 100}%;background:var(--weapon)` }), h("i", { style: `width:${share.spirit * 100}%;background:var(--spirit)` }), h("i", { style: `width:${share.vitality * 100}%;background:var(--vitality)` }));
 async function importBuild(b, btn) { btn.disabled = true; btn.textContent = "Copying…"; try { const r = await api("/library/import", { method: "POST", body: { hero_id: id, ingame_build_id: b.id } }); location.href = `/editor.html?id=${r.id}`; } catch (e) { btn.disabled = false; btn.textContent = e.message.includes("Sign in") ? "Sign in through Steam first" : "Add to my builds"; } }
+function showOrder(b) { let slots = "auto"; const box = h("div", {}); const src = { hero_id: id, details: { mod_categories: b.categories.map((c) => ({ name: c.name, description: c.description, mods: c.items.map((i) => ({ ability_id: i, annotation: c.notes?.[i] ?? null })) })) } };
+  const draw = () => { try { box.replaceChildren(pathPanel(buildPath(src, items, { slots }), { onSlots: (v) => { slots = v; draw(); } })); } catch (e) { showError(box, e); } }; draw(); modal(`Buy order: ${b.name}`, box); }
 const LEAN = { weapon: "Weapon / Gun", spirit: "Spirit", vitality: "Survivability", balanced: "Balanced" };
 const buildCard = (lean, b) => h("div", { class: "bc " + lean }, h("div", { class: "lean" }, b?.lean_label ?? LEAN[lean] ?? lean),
   b ? [h("b", { class: "title" }, b.name), h("div", { class: "fav" }, `+${b.favorites.toLocaleString()} favourites · ${b.item_count} items · updated ${ago(b.updated)}`), mixBar(b.share),
     h("div", { class: "cats" }, ...b.categories.slice(0, 4).flatMap((cat) => [h("span", { class: "lb", title: cat.name }, cat.name), h("div", { class: "items" }, ...cat.items.slice(0, 12).map((i) => itemImg(item(i), 26)))])),
-    h("div", { class: "act" }, h("button", { class: "add", onclick: (e) => importBuild(b, e.currentTarget) }, h("span", { class: "pl" }, "+"), "Add to my builds"))]
+    h("div", { class: "act" }, h("button", { class: "ord", type: "button", title: "Core build, then what to sell for what", onclick: () => showOrder(b) }, "Buy order"), h("button", { class: "add", onclick: (e) => importBuild(b, e.currentTarget) }, h("span", { class: "pl" }, "+"), "Add to my builds"))]
     : h("span", { class: "empty" }, "No clear build of this type in the top 40."));
 (async () => { try { const st = await api(`/heroes/${id}/starter-builds`); $("#starters").replaceChildren(...["weapon", "spirit", "vitality", "balanced"].map((k) => buildCard(k, st[k]))); } catch (e) { showError($("#starters"), e); } })();
 (async () => { try { const b = await api(`/heroes/${id}/builds`);
