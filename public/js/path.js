@@ -143,16 +143,17 @@ export function buildPath(build, items, { spm = 1150, slots = "auto" } = {}) {
 const img = (it, size = 34) => withTip(h("img", { class: "iimg " + (it.slot || ""), src: it.image || "", alt: "", width: size, height: size }), it);
 const tier = (it) => h("span", { class: "pth-t " + (it.slot || "") }, `T${it.tier}`);
 const mins = (paid, spm) => { const m = Math.round(paid / spm); return m < 1 ? "start" : `~${m} min`; };
-const piece = (kind, it, money) => h("div", { class: "pth-pc " + kind }, h("span", { class: "pth-k" }, kind === "sell" ? "Sell" : kind === "from" ? "Have" : "Buy"), img(it), h("div", { class: "pth-n" }, h("b", {}, it.name, " ", tier(it)), h("small", {}, money)));
+const piece = (kind, it, money) => h("div", { class: "pth-pc " + kind }, h("span", { class: "pth-k" }, kind === "sell" ? "Sell" : kind === "from" ? "Have" : "Buy"), img(it, 28), h("b", {}, it.name), tier(it), money ? h("small", {}, money) : "");
 
+// One line per step. The plain-language reason sits in the hover title; only the author's own words get a visible line.
 function stepRow(s, n, spm) {
-  const right = h("div", { class: "pth-r" }, h("b", {}, s.type === "buy" ? fmt(s.pay) : `${fmt(s.pay)} net`), h("small", {}, mins(s.paid, spm)));
-  const num = h("span", { class: "pth-i" }, String(n));
-  const note = s.type === "swap" ? s.why : s.type === "upgrade" ? `Upgrade: ${s.from.map((x) => x.name).join(" + ")} ${s.from.length > 1 ? "are" : "is"} used up, so no slot is needed and you only pay the difference.` : s.extra ? `Goes in extra slot ${s.extra} (Walker ${s.extra} down). No free slot yet? Hold the souls or skip to the next swap.` : "Free slot, nothing to sell.";
-  const body = s.type === "swap" ? [piece("sell", s.sell, `+${fmt(s.refund)} back`), h("span", { class: "pth-a", "aria-label": "then" }, "→"), piece("buy", s.buy, fmt(s.buy.cost))]
-    : s.type === "upgrade" ? [...s.from.map((x) => piece("from", x, "used up")), h("span", { class: "pth-a", "aria-label": "becomes" }, "⇧"), piece("buy", s.buy, fmt(s.buy.cost))]
-    : [piece("buy", s.buy, fmt(s.buy.cost))];
-  return h("div", { class: "pth-row " + s.type + (s.said ? " said" : ""), "data-sell": s.sell ? String(s.sell.id) : null }, num, h("div", { class: "pth-m" }, h("div", { class: "pth-x" }, ...body), h("p", { class: "pth-w" }, note, s.note && s.type !== "swap" ? h("i", {}, ` Author’s note: “${clip(s.note, 80)}”`) : "")), right);
+  const why = s.type === "swap" ? s.why : s.type === "upgrade" ? `Upgrade: ${s.from.map((x) => x.name).join(" + ")} ${s.from.length > 1 ? "are" : "is"} used up, so no slot is needed and you only pay the difference.` : s.extra ? `Goes in extra slot ${s.extra}, which opens when your team destroys enemy Walker ${s.extra}. No free slot yet? Hold the souls or skip to the next swap.` : "Free slot, nothing to sell.";
+  const right = h("div", { class: "pth-r", title: why }, h("b", {}, s.type === "buy" ? fmt(s.pay) : `${fmt(s.pay)} net`), h("small", {}, mins(s.paid, spm)));
+  const arrow = (ch, label) => h("span", { class: "pth-a", "aria-label": label, title: why }, ch);
+  const body = s.type === "swap" ? [piece("sell", s.sell, `+${fmt(s.refund)}`), arrow("→", "then"), piece("buy", s.buy)]
+    : s.type === "upgrade" ? [...s.from.map((x) => piece("from", x)), arrow("⇧", "upgrades into"), piece("buy", s.buy)]
+    : [piece("buy", s.buy), s.extra ? h("span", { class: "pth-tag", title: why }, `extra slot ${s.extra}`) : ""];
+  return h("div", { class: "pth-row " + s.type + (s.said ? " said" : ""), "data-sell": s.sell ? String(s.sell.id) : null }, h("span", { class: "pth-i" }, String(n)), h("div", { class: "pth-m" }, h("div", { class: "pth-x" }, ...body), s.said ? h("p", { class: "pth-w" }, s.why) : ""), right);
 }
 
 /** @param opts { onSlots(value) → redraw with another slot setting } */
@@ -163,17 +164,17 @@ export function pathPanel(plan, { onSlots } = {}) {
   const corePaid = plan.core ? plan.core.paid : plan.mainPaid, coreItems = plan.core ? plan.core.items : plan.final;
   const seg = h("div", { class: "pth-seg", role: "group", "aria-label": "Item slots" }, h("span", {}, "Slots"), ...[["auto", "Auto"], [9, "9"], [12, "12"]].map(([v, l]) => h("button", { type: "button", class: String(plan.slots) === String(v) ? "on" : "", "aria-pressed": String(String(plan.slots) === String(v)), onclick: () => onSlots?.(v) }, l)));
   const hintLine = plan.slots === "auto" ? `Auto: 9 slots, plus one each around ${WALKER_MIN.join(", ")} min as enemy Walkers fall.` : plan.slots === 9 ? "No Walkers down: 9 slots all game." : "All three Walkers down: 12 slots from the start.";
-  const strip = (list) => h("ol", { class: "pth-strip" }, ...list.map((s, i) => h("li", { class: s.type }, h("span", { class: "pth-i" }, String(i + 1)), img(s.buy, 40), h("b", {}, s.buy.name), h("small", {}, s.type === "upgrade" ? `⇧ from ${s.from.map((x) => x.name).join(" + ")} · ${fmt(s.pay)}` : fmt(s.pay)))));
+  const strip = (list) => h("ol", { class: "pth-strip" }, ...list.map((s, i) => h("li", { class: s.type }, h("span", { class: "pth-i" }, String(i + 1)), img(s.buy, 30), h("b", {}, s.buy.name), h("small", {}, s.type === "upgrade" ? `⇧ ${s.from.map((x) => x.name).join(" + ")} · ${fmt(s.pay)}` : fmt(s.pay)))));
   const icons = (list, size = 30) => h("div", { class: "pth-icons" }, ...list.map((it) => img(it, size)));
   let n = upto, lastCat = null; const rows = [];
   for (const s of later) { if (s.cat !== lastCat) { rows.push(h("div", { class: "pth-cat" }, s.cat)); lastCat = s.cat; } rows.push(stepRow(s, ++n, spm)); }
   const big = plan.leftovers.filter((e) => e.it.tier >= 3).map((e) => e.it), small = plan.leftovers.filter((e) => e.it.tier < 3).map((e) => e.it);
   const swaps = later.filter((s) => s.type === "swap").length;
   return h("div", { class: "pth" },
-    h("div", { class: "pth-bar" }, seg, h("span", { class: "muted" }, hintLine, " Selling gives back half the price.")),
+    h("div", { class: "pth-bar" }, seg, h("span", { class: "muted" }, hintLine, " Selling returns half. Hover a price for the reason.")),
     h("section", { class: "pth-sec" },
-      h("h4", {}, "Core build ", h("span", {}, `${coreItems.length} items · ${fmt(corePaid)} souls · ${mins(corePaid, spm)}`)),
-      h("p", { class: "pth-lead" }, plan.core ? "Buy these in order. When they are all in, your slots are full and every later item means selling one of these." : "Buy these in order. Everything fits in your slots, so there is nothing to sell."),
+      h("h4", {}, "Core build ", h("span", {}, `${first.length === coreItems.length ? "" : `${first.length} buys · `}${coreItems.length} slots filled · ${fmt(corePaid)} souls · ${mins(corePaid, spm)}`)),
+      h("p", { class: "pth-lead" }, plan.core ? "Buy in order. After these your slots are full, so each new item replaces one." : "Buy in order. Everything fits, so there is nothing to sell."),
       strip(first)),
     later.length ? h("section", { class: "pth-sec" },
       h("h4", {}, "Then scale ", h("span", {}, swaps ? `${swaps} swap${swaps === 1 ? "" : "s"}${plan.saidCount ? ` · ${plan.saidCount} from the author’s own notes` : ""}` : "no selling needed")),

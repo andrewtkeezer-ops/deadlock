@@ -140,7 +140,11 @@ const looksEnglish = (name: string) => !/[\u3040-\u30ff\u3400-\u9fff\u0400-\u04f
 
 async function communityBuilds(env: Env, id: number) {
   const api = new DeadlockApi(env);
-  const [rows, its] = await Promise.all([api.get<InGameBuild[]>(`/v1/builds`, { hero_id: id, limit: 40, sort_by: "favorites", sort_direction: "desc", only_latest: "true" }, 6 * 3600), api.items()]);
+  // Most-favourited of all time is mostly builds from before the shop rework; ask for ones updated in the last year first.
+  const q = { hero_id: id, limit: 40, sort_by: "favorites", sort_direction: "desc", only_latest: "true" };
+  const since = Math.floor(Date.now() / 86400000) * 86400 - 365 * 86400;
+  const [recent, its] = await Promise.all([api.get<InGameBuild[]>(`/v1/builds`, { ...q, min_unix_timestamp: since }, 6 * 3600), api.items()]);
+  const rows = recent.length >= 8 ? recent : await api.get<InGameBuild[]>(`/v1/builds`, q, 6 * 3600);
   const byId = new Map(its.map((i) => [i.id, i])); const maxPerStat: Record<string, number> = {};
   for (const it of its) for (const [st, def] of Object.entries(STAT_MAP)) maxPerStat[st] = Math.max(maxPerStat[st] ?? 0, def.keys.reduce((a, k) => a + (it.properties[k] ?? 0), 0));
   const out = rows.filter((b) => looksEnglish(b.hero_build.name) && (b.hero_build.details?.mod_categories?.length ?? 0) > 0).map((b) => { const p = profileBuild(b, byId, maxPerStat);

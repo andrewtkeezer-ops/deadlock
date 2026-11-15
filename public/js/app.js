@@ -17,7 +17,7 @@ export const h = (tag, attrs = {}, ...kids) => {
   return el;
 };
 export const pct = (x) => (x == null || Number.isNaN(x) ? "–" : (x * 100).toFixed(1) + "%");
-export const ago = (ts) => { if (!ts) return "never"; const s = Date.now() / 1000 - ts; return s < 3600 ? `${Math.round(s / 60)}m ago` : s < 86400 ? `${Math.round(s / 3600)}h ago` : `${Math.round(s / 86400)}d ago`; };
+export const ago = (ts) => { if (!ts) return "never"; const s = Date.now() / 1000 - ts; return s < 3600 ? `${Math.round(s / 60)}m ago` : s < 86400 ? `${Math.round(s / 3600)}h ago` : ((d) => (d < 60 ? `${d}d ago` : d < 365 ? `${Math.round(d / 30)}mo ago` : `${Math.floor(d / 365)}y ago`))(Math.round(s / 86400)); };
 export const dur = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 export const fmt = (n) => (n == null ? "–" : Math.round(n).toLocaleString());
 
