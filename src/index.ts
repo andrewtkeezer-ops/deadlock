@@ -109,19 +109,26 @@ app.onError((err, c) => {
  */
 const PUBLIC_PAGES = new Set(["/welcome.html", "/terms.html", "/privacy.html", "/404.html", "/invite.html", "/invite"]);
 const welcome = (c: Context<{ Bindings: Env; Variables: { user?: Identity } }>, qs = "") => c.env.ASSETS.fetch(new Request(new URL("/welcome.html" + qs, c.req.url), { headers: c.req.raw.headers }));
+// Pages are served at their real file name (wrangler.jsonc: html_handling "none"). The default handling answered every
+// "/x.html" link with a redirect to "/x" (an extra round trip on each click) and then served "/x" without this gate.
+const asset = (c: Context<{ Bindings: Env; Variables: { user?: Identity } }>, path: string) => c.env.ASSETS.fetch(new Request(new URL(path + new URL(c.req.url).search, c.req.url), { headers: c.req.raw.headers }));
+const missing = async (c: Context<{ Bindings: Env; Variables: { user?: Identity } }>) => { const page = await asset(c, "/404.html"); return new Response(page.body, { status: 404, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } }); };
 app.get("*", async (c) => {
-  const path = new URL(c.req.url).pathname;
-  if (path === "/invite") return c.env.ASSETS.fetch(new Request(new URL("/invite.html" + new URL(c.req.url).search, c.req.url), { headers: c.req.raw.headers }));
-  const isPage = path === "/" || path.endsWith(".html");
-  if (!isPage || PUBLIC_PAGES.has(path) || !authConfigured(c.env)) return c.env.ASSETS.fetch(c.req.raw);
+  const url = new URL(c.req.url), path = url.pathname;
+  if (path === "/invite") return asset(c, "/invite.html");
+  // old extensionless links (/hero?id=13) keep working: send them to the real page
+  if (path !== "/" && !/\.[a-z0-9]+$/i.test(path)) { const there = await c.env.ASSETS.fetch(new Request(new URL(path + ".html", c.req.url), { method: "HEAD" })); return there.status === 200 ? c.redirect(path + ".html" + url.search, 301) : missing(c); }
+  const isPage = path === "/" || path.endsWith(".html"), file = path === "/" ? "/index.html" : path;
+  const serve = async () => { const res = await asset(c, file); return res.status === 404 ? missing(c) : res; };
+  if (!isPage || PUBLIC_PAGES.has(path) || !authConfigured(c.env)) return serve();
   const id = await identify(c);
-  if (id && id !== "unconfigured") return c.env.ASSETS.fetch(c.req.raw);
+  if (id && id !== "unconfigured") return serve();
   if (path !== "/") return c.redirect("/");
   const who = await whoIs(c);
   const page = await welcome(c, who ? `?denied=${encodeURIComponent(who.email)}` : "");
   return new Response(page.body, { status: 200, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
 });
-app.notFound((c) => c.env.ASSETS.fetch(c.req.raw));
+app.notFound((c) => missing(c));
 
 export default {
   fetch: app.fetch,
