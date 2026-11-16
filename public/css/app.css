@@ -977,3 +977,11 @@ div.ld,section.ld,p.ld{min-height:136px;border-radius:0;background:linear-gradie
 .modal:has(.pth){width:min(840px,100%)}
 .mod .sellb{max-width:190px;overflow:hidden;text-overflow:ellipsis}
 @media(max-width:700px){.pth-row{grid-template-columns:18px minmax(0,1fr)}.pth-r{grid-column:2}.pth-r small{min-width:0}.pth-strip{grid-template-columns:repeat(auto-fill,minmax(124px,1fr))}}
+
+/* v10.3: game sync status pill (Builds list + editor) */
+.gpill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font:600 11px/1.4 var(--fh);letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--line2);color:var(--muted);white-space:nowrap}
+.gpill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
+.gpill.ok,.gpill.linked{color:var(--win);border-color:currentColor}.gpill.linked::before{background:transparent;box-shadow:inset 0 0 0 2px currentColor}
+.gpill.wait{color:var(--accent);border-color:currentColor}.gpill.nouploader{color:var(--ink);border-color:currentColor}.gpill.err{color:var(--loss);border-color:currentColor}
+@media(prefers-reduced-motion:no-preference){.gpill.wait::before{animation:gpulse 1.4s ease-in-out infinite}}@keyframes gpulse{50%{opacity:.25}}
+.gpill[hidden],.sync button[hidden]{display:none}

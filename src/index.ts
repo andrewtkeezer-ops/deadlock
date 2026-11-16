@@ -55,6 +55,9 @@ app.post("/api/ingest/notify", async (c) => {
 /** Uploader (no login — it runs on the author's PC under their Steam session): builds flagged for in-game sync that are new or edited since the last publish. */
 app.get("/api/sync/builds", async (c) => {
   const account = Number(c.req.query("account_id")); if (!account) return c.json([]);
+  // Remember that a build-capable uploader is running for this account (at most one KV write per 10 minutes), so the site can say whether "send to game" will happen.
+  const seenKey = `buildsync:${account}`, nowS = Math.floor(Date.now() / 1000);
+  if (nowS - (Number(await c.env.CACHE.get(seenKey)) || 0) > 600) c.executionCtx.waitUntil(c.env.CACHE.put(seenKey, String(nowS), { expirationTtl: 30 * 86400 }));
   const { results } = await c.env.DB.prepare("SELECT id, hero_id, title, description, details, ingame_build_id, ingame_version, updated_at, synced_at FROM builds WHERE account_id=? AND sync_wanted=1 AND (synced_at IS NULL OR COALESCE(updated_at,0) > synced_at) ORDER BY updated_at DESC LIMIT 20").bind(account).all<{ id: number; hero_id: number; title: string; description: string | null; details: string | null; ingame_build_id: number | null; ingame_version: number | null }>();
   return c.json(results.map((b) => { const d = b.details ? (JSON.parse(b.details) as { mod_categories?: { name: string; description?: string; mods: { ability_id: number; annotation?: string | null; imbue_target_ability_id?: number }[] }[] }) : {};
     return { id: b.id, hero_build_id: b.ingame_build_id, version: b.ingame_version, hero_id: b.hero_id, name: (b.title || "Soul Scribe build").slice(0, 60), description: (b.description || "").slice(0, 500),

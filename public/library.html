@@ -11,13 +11,17 @@
 .bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
 .bc{display:flex;gap:12px;padding:12px;background:var(--panel);border:1px solid var(--line);border-radius:14px;backdrop-filter:blur(10px);transition:transform .18s var(--ease),border-color .18s}.bc:hover{transform:translateY(-3px);border-color:rgba(232,199,106,.35)}
 .bc img.hero{width:64px;height:86px;object-fit:cover;border-radius:8px;flex:none}.bc .b{flex:1;min-width:0}.bc .b b{display:block;font-family:var(--fh);font-size:15px;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bc .b small{color:var(--muted);display:block}.bc .items{margin-top:6px}.bc .items img{width:22px;height:22px}.bc .foot{display:flex;justify-content:space-between;align-items:center;margin-top:6px;font-size:12px}
+.bc .gs{display:flex;gap:6px 8px;align-items:center;flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}.bc .gs button{font-size:11px;padding:5px 10px}.bc .gs .gdel{margin-left:auto;background:transparent;border-color:transparent;color:var(--muted);box-shadow:none}.bc .gs .gdel:hover{color:var(--loss)}
+#importGame[hidden]{display:none}
+.ig{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}@media(min-width:760px){.ig{min-width:560px}}@media(max-width:560px){.ig .r{flex-wrap:wrap}.ig div.r>div.n{flex:1 1 calc(100% - 50px)}.ig .r button,.ig .r a.btn{margin-left:auto}}.ig .r{display:flex;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:10px}.ig .r .n{flex:1;min-width:0}.ig .r .n b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ig .r small{color:var(--muted)}.ig .r button,.ig .r a.btn{flex:none;font-size:12px;padding:6px 12px}
+.ig .hd{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:4px}.ig .hd p{flex:1;margin:0;min-width:200px}.ig .byid{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;padding-top:12px;border-top:1px solid var(--line);font-size:13px}.ig .byid input{width:130px}
 .empty{text-align:center;padding:30px}.empty p{color:var(--muted)}
 /* v8: the build list comes first; on phones the hero grid is a compact five-across */
 #listTitle{margin-top:6px}
 @media(max-width:860px){.hgrid{grid-template-columns:repeat(5,1fr);gap:6px}.hgrid .nm{font-size:8px;letter-spacing:.02em}.hgrid .cnt{transform:scale(.85);transform-origin:top right}}
 </style></head>
 <body><main>
-<div class="top"><h1>Builds</h1><div class="tabs"><button id="tabMine" class="on">My builds</button><button id="tabSquad">Squad builds</button></div><span class="sp"></span><span id="authorWrap" hidden>By: <select id="author"><option value="">Anyone</option></select></span><a class="dl" style="padding:9px 16px;font-size:14px" href="/editor.html">+ New build</a><a class="btn" href="/builds.html">Wizard</a></div>
+<div class="top"><h1>Builds</h1><div class="tabs"><button id="tabMine" class="on">My builds</button><button id="tabSquad">Squad builds</button></div><span class="sp"></span><span id="authorWrap" hidden>By: <select id="author"><option value="">Anyone</option></select></span><button id="importGame" type="button" hidden title="Bring the builds you published in Deadlock into Soul Scribe">⇩ Import from game</button><a class="dl" style="padding:9px 16px;font-size:14px" href="/editor.html">+ New build</a><a class="btn" href="/builds.html">Wizard</a></div>
 <h2 id="listTitle">Your builds</h2>
 <div id="list" class="bgrid"></div>
 <h2>Start from a hero</h2>
@@ -25,18 +29,40 @@
 <div id="hgrid" class="hgrid"></div>
 </main>
 <script type="module">
-import { api, h, $, ago, heroes, items, itemImg, me, shell, showError } from "/js/app.js";
+import { api, h, $, ago, heroes, heroIcon, items, itemImg, me, modal, shell, showError, syncState, syncVerb } from "/js/app.js";
 shell("/library.html");
 const [hs, its, players, who] = await Promise.all([heroes(), items(), api("/players"), me()]);
 const hero = (id) => hs.find((x) => x.id === id), item = (id) => its.find((x) => x.id === id);
 let tab = who.account_id ? "mine" : "squad"; const superAdmin = who.super; $("#authorWrap").hidden = !superAdmin; players.forEach((p) => $("#author").append(new Option(p.name, p.account_id)));
 const setTab = (t) => { tab = t; $("#tabMine").className = t === "mine" ? "on" : ""; $("#tabSquad").className = t === "squad" ? "on" : ""; $("#listTitle").textContent = t === "mine" ? "Your builds" : "Squad builds"; load(); };
 $("#tabMine").onclick = () => setTab("mine"); $("#tabSquad").onclick = () => setTab("squad"); $("#author").onchange = load;
+let seen = null; if (who.account_id) { $("#importGame").hidden = false; api("/library/sync-status").then((r) => { seen = r.uploader_seen; if (seen) load(); }).catch(() => {}); }
+// Game row on my own cards: where the build stands in Deadlock, one button to send it, and delete (Soul Scribe copy only).
+function gameRow(b) { const st = syncState(b, seen);
+  const send = h("button", { type: "button", class: b.sync_wanted ? "" : "primary", title: b.sync_wanted ? "Stop sending changes to the game. The in-game build stays." : "Publish this build to your Deadlock build menu through your Soul Scribe uploader", onclick: async () => { send.disabled = true; try { await api(`/library/${b.id}/sync`, { method: "POST", body: { wanted: !b.sync_wanted } }); } catch (e) { alert(e.message); } load(); } }, syncVerb(b));
+  const del = h("button", { type: "button", class: "gdel", onclick: async () => { if (!confirm(`Delete "${b.title}" from Soul Scribe?${b.ingame_build_id ? "\n\nThe copy in your Deadlock build menu is not touched. You can bring it back later with Import from game." : ""}`)) return; try { await api(`/library/${b.id}`, { method: "DELETE" }); } catch (e) { alert(e.message); } load(); } }, "Delete");
+  return h("div", { class: "gs" }, h("span", { class: "gpill " + st.key, title: st.detail }, st.label), send, del); }
+$("#importGame").onclick = () => { const body = h("div", { class: "ig" }, h("p", { class: "muted" }, "Looking up the builds you published in Deadlock…")); modal("Import from game", body);
+  const draw = async () => { let rows; try { rows = await api("/library/ingame"); } catch (e) { return showError(body, e); }
+    const fresh = rows.filter((r) => r.state === "new");
+    const bring = async (r, btn) => { btn.disabled = true; btn.textContent = "Importing…"; try { await api("/library/import", { method: "POST", body: { ingame_build_id: r.ingame_build_id, hero_id: r.hero_id } }); } catch (e) { btn.textContent = e.message; return false; } return true; };
+    const all = h("button", { type: "button", class: "primary", onclick: async () => { all.disabled = true; let n = 0; for (const r of fresh) { all.textContent = `Importing ${++n} of ${fresh.length}…`; try { await api("/library/import", { method: "POST", body: { ingame_build_id: r.ingame_build_id, hero_id: r.hero_id } }); } catch {} } await draw(); load(); } }, `Import all ${fresh.length} new`);
+    const idIn = h("input", { type: "text", inputmode: "numeric", placeholder: "Build ID" }), idMsg = h("span", { class: "muted" });
+    const idBtn = h("button", { type: "button", onclick: async () => { const n = +idIn.value.replace(/\D/g, ""); if (!n) return; idBtn.disabled = true; try { const r = await api("/library/import", { method: "POST", body: { ingame_build_id: n } }); location.href = `/editor.html?id=${r.id}`; } catch (e) { idBtn.disabled = false; idMsg.textContent = e.message; } } }, "Copy to my builds");
+    body.replaceChildren(
+      h("div", { class: "hd" }, h("p", { class: "muted" }, rows.length ? `${rows.length} build${rows.length === 1 ? "" : "s"} published from your Steam account. Imported builds stay linked, so Send to game updates the same in-game build.` : "No published builds were found for your Steam account. Only builds you published yourself are listed; a brand-new one can take a little while to appear."), fresh.length > 1 ? all : ""),
+      ...rows.map((r) => { const hx = hero(r.hero_id);
+        const act = r.state === "new" ? h("button", { type: "button", class: "primary", onclick: async (e) => { if (await bring(r, e.target)) { await draw(); load(); } } }, "Import")
+          : r.state === "update" ? h("button", { type: "button", title: "The in-game build is newer than your Soul Scribe copy", onclick: async (e) => { if (!confirm(`Replace your Soul Scribe copy of "${r.name}" with the newer in-game version?`)) return; if (await bring(r, e.target)) { await draw(); load(); } } }, "Update from game")
+          : h("a", { class: "btn", href: `/editor.html?id=${r.local_id}` }, "✓ Imported · open");
+        return h("div", { class: "r" }, heroIcon(hx, 34), h("div", { class: "n" }, h("b", {}, r.name), h("small", {}, `${hx?.name ?? "?"} · ${r.item_count} items · v${r.version}${r.updated_at ? ` · updated ${ago(r.updated_at)}` : ""}`)), act); }),
+      h("div", { class: "byid" }, h("span", {}, "Someone else's build?"), idIn, idBtn, idMsg, h("small", { class: "muted", style: "flex-basis:100%" }, "Builds you only favourited aren't listed above (the game doesn't expose them). Copy one by its build ID, or use + Add on a hero's page."))); };
+  draw(); };
 async function load() {
   const q = new URLSearchParams(); if (tab === "mine") { if (!who.account_id) { $("#list").replaceChildren(h("div", { class: "empty card" }, h("p", {}, "Sign in through Steam (bottom left) to keep your own builds."))); renderGrid([]); return; } q.set("account_id", who.account_id); } else if (superAdmin && $("#author").value) q.set("account_id", $("#author").value);
   try { const rows = await api(`/library?${q}`); renderGrid(rows);
-    $("#list").replaceChildren(...(rows.length ? [...rows].sort((a, b) => (b.updated_at || b.created_at) - (a.updated_at || a.created_at)).map((b) => { const hx = hero(b.hero_id); return h("div", { class: "bc" }, hx?.images?.card ? h("img", { class: "hero", src: hx.images.card, alt: "" }) : "", h("div", { class: "b" }, h("a", { href: `/editor.html?id=${b.id}` }, h("b", {}, b.title)), h("small", {}, `${hx?.name ?? "?"} · ${b.author_name ?? b.author}${b.ingame_build_id ? " · in game" : ""}`), h("div", { class: "items" }, ...b.preview.slice(0, 10).map((id) => itemImg(item(id), 22))),
-      h("div", { class: "foot" }, h("span", { class: "muted" }, `${b.item_count} items · ${ago(b.updated_at || b.created_at)}`), h("span", {}, h("a", { href: `/editor.html?id=${b.id}` }, who.account_id === b.account_id ? "edit" : "view / fork"), " · ", h("a", { href: "#", onclick: async (e) => { e.preventDefault(); await api(`/library/${b.id}/vote`, { method: "POST" }); load(); } }, `▲ ${b.votes}`))))); })
+    $("#list").replaceChildren(...(rows.length ? [...rows].sort((a, b) => (b.updated_at || b.created_at) - (a.updated_at || a.created_at)).map((b) => { const hx = hero(b.hero_id); return h("div", { class: "bc" }, hx?.images?.card ? h("img", { class: "hero", src: hx.images.card, alt: "" }) : "", h("div", { class: "b" }, h("a", { href: `/editor.html?id=${b.id}` }, h("b", {}, b.title)), h("small", {}, `${hx?.name ?? "?"} · ${b.author_name ?? b.author}${b.ingame_build_id && who.account_id !== b.account_id ? " · in game" : ""}`), h("div", { class: "items" }, ...b.preview.slice(0, 10).map((id) => itemImg(item(id), 22))),
+      h("div", { class: "foot" }, h("span", { class: "muted" }, `${b.item_count} items · ${ago(b.updated_at || b.created_at)}`), h("span", {}, h("a", { href: `/editor.html?id=${b.id}` }, who.account_id === b.account_id ? "edit" : "view / fork"), " · ", h("a", { href: "#", onclick: async (e) => { e.preventDefault(); await api(`/library/${b.id}/vote`, { method: "POST" }); load(); } }, `▲ ${b.votes}`))), who.account_id && who.account_id === b.account_id ? gameRow(b) : "")); })
       : [h("div", { class: "empty card" }, h("p", {}, tab === "mine" ? "You haven't saved a build yet. Pick a hero above to start from a proven build, or use the wizard." : "Nobody has saved a build yet."))])); } catch (e) { showError($("#list"), e); } }
 function renderGrid(rows) { const counts = new Map(); for (const b of rows) counts.set(b.hero_id, (counts.get(b.hero_id) || 0) + 1);
   $("#hgrid").replaceChildren(...hs.map((x) => { const n = counts.get(x.id) || 0; return h("a", { class: "ht" + (n ? "" : " none"), href: `/hero.html?id=${x.id}#builds`, title: `${x.name}: ${n} build${n === 1 ? "" : "s"}` }, h("img", { src: x.images.card || x.images.icon, alt: x.name }), n ? h("span", { class: "cnt" }, String(n)) : "", h("div", { class: "nm" }, x.name)); })); }

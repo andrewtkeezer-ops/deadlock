@@ -53,7 +53,7 @@ const TOURS = {
   ],
   "/editor.html": [
     ["#title", "Name and hero", "Give it a name people will recognise in the squad library and in your in-game build menu."],
-    ["#syncRow", "Send to the game", "Flip this and your uploader publishes the build into Deadlock's build menu the next time it runs with the game closed."],
+    ["#syncRow", "Send to the game", "Press Send to game and your Soul Scribe uploader publishes the build into Deadlock's build menu the next time it runs with the game closed. The pill shows where it stands."],
     ["#coachCard", "Coach", "When you'll afford each phase at your own farm rate, slot limits, what to buy first, and whether the late phases are realistic."],
     ["#dpsCard", "Damage calculator", "Raw gun numbers for everything in the build: sustained and burst DPS, falloff at range, clip, reload, time to kill. Drag the sliders."],
     ["#tidy", "Tidy tools", "Rename phases to the standard Lane / Early / Mid / Late, sort by tier, clear removed items, add or remove a phase."],

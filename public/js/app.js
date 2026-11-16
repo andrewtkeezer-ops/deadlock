@@ -18,6 +18,15 @@ export const h = (tag, attrs = {}, ...kids) => {
 };
 export const pct = (x) => (x == null || Number.isNaN(x) ? "–" : (x * 100).toFixed(1) + "%");
 export const ago = (ts) => { if (!ts) return "never"; const s = Date.now() / 1000 - ts; return s < 3600 ? `${Math.round(s / 60)}m ago` : s < 86400 ? `${Math.round(s / 3600)}h ago` : ((d) => (d < 60 ? `${d}d ago` : d < 365 ? `${Math.round(d / 30)}mo ago` : `${Math.floor(d / 365)}y ago`))(Math.round(s / 86400)); };
+/** Where one of my builds stands with the game. `seen` = when my Soul Scribe uploader last asked for builds (unix seconds) or null. */
+export function syncState(b, seen) {
+  if (!b.sync_wanted) return b.ingame_build_id ? { key: "linked", label: "In game", detail: `Linked to in-game build #${b.ingame_build_id}. Changes you make here stay here until you turn on syncing.` } : { key: "off", label: "Not in game", detail: "Only on Soul Scribe so far." };
+  if (b.sync_error) return { key: "err", label: "Sync failed", detail: `Last attempt failed: ${b.sync_error}` };
+  if (b.synced_at && (b.updated_at || 0) <= b.synced_at) return { key: "ok", label: "In game \u2713", detail: `In your Deadlock build menu as build #${b.ingame_build_id ?? "?"}, in step since ${ago(b.synced_at)}. Saved changes are sent automatically.` };
+  if (seen && Date.now() / 1000 - seen < 3 * 86400) return { key: "wait", label: "Queued", detail: `Queued. Your uploader sends it the next time it runs with Deadlock closed (it last checked in ${ago(seen)}).` };
+  return { key: "nouploader", label: "Waiting for uploader", detail: `Queued, but no Soul Scribe uploader has checked in for your account${seen ? ` since ${ago(seen)}` : ""}. Only the Soul Scribe uploader can put builds into the game; the standard match uploader can't.` };
+}
+export const syncVerb = (b) => (b.sync_wanted ? "Stop syncing" : b.ingame_build_id ? "Sync changes to game" : "Send to game");
 export const dur = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 export const fmt = (n) => (n == null ? "–" : Math.round(n).toLocaleString());
 
