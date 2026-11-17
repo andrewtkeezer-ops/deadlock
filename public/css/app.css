@@ -985,3 +985,8 @@ div.ld,section.ld,p.ld{min-height:136px;border-radius:0;background:linear-gradie
 .gpill.wait{color:var(--accent);border-color:currentColor}.gpill.nouploader{color:var(--ink);border-color:currentColor}.gpill.err{color:var(--loss);border-color:currentColor}
 @media(prefers-reduced-motion:no-preference){.gpill.wait::before{animation:gpulse 1.4s ease-in-out infinite}}@keyframes gpulse{50%{opacity:.25}}
 .gpill[hidden],.sync button[hidden]{display:none}
+/* v10.4: scoreboard buttons are stickers, like the page eyebrow and the Weekly recap tag */
+.sbbtn{padding:7px 11px 6px;border:0;border-radius:3px;background:var(--ink);color:#170a04;font:700 10px/1 var(--fh);letter-spacing:.16em;box-shadow:2px 3px 0 #050606;transform:rotate(-1.5deg);transition:transform .18s var(--ease),background .18s,box-shadow .18s}
+tr:nth-child(even) .sbbtn{transform:rotate(1.5deg)}.sbbtn .go{color:inherit}
+.sbbtn:hover,tr:hover .sbbtn:hover,tr.rowlink:hover .sbbtn{background:var(--lane-y);border-color:transparent;color:#141000;transform:rotate(0deg) translate(-1px,-1px);box-shadow:3px 4px 0 #050606}
+@media(prefers-reduced-motion:reduce){.sbbtn{transition:none}}
