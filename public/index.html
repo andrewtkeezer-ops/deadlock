@@ -106,12 +106,16 @@ main.tourpage h1.t-title{margin:0;font:400 clamp(54px,9vw,128px)/.92 var(--fd);l
 .frame{position:relative;display:block;border:4px solid var(--cream);box-shadow:10px 12px 0 #000;background:#1b2a2e;transform:rotate(-1deg);overflow:hidden;transition:transform .3s var(--snap),box-shadow .3s}
 .frame.r{transform:rotate(1.5deg)}.frame:hover{transform:rotate(0deg) scale(1.015);box-shadow:14px 18px 0 #000}
 .frame img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 22%}
+.frame img.bg{filter:brightness(.72) saturate(1.1)}
+.frame img.hp{inset:auto 7% 8% auto;width:auto;height:84%;max-width:46%;object-fit:cover;object-position:top;border:3px solid var(--cream);box-shadow:6px 8px 0 #000;transform:rotate(3deg)}
+.frame img.snap{inset:10% auto auto 7%;width:32%;height:auto;aspect-ratio:1;object-fit:cover;border:4px solid var(--cream);border-bottom-width:16px;box-shadow:6px 8px 0 #000;transform:rotate(-5deg)}
+.frame.solo img.hp{inset:7% 12% auto 12%;width:76%;max-width:none;height:auto;aspect-ratio:3/4.2;transform:rotate(-2deg)}
 .frame .cap{position:absolute;left:10px;bottom:10px;max-width:calc(100% - 20px);padding:6px 9px;background:#0f0f10;color:var(--cream);font:600 11px/1.2 var(--fh);letter-spacing:.12em;text-transform:uppercase}
 .lead{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:34px;align-items:center}
 .lead .frame{aspect-ratio:16/10;width:100%}
 .lead .tx{min-width:0;display:flex;flex-direction:column;gap:12px}
 @media(max-width:900px){.lead{grid-template-columns:minmax(0,1fr);gap:24px}}
-.lead .nm{font:400 clamp(36px,5vw,60px)/1 var(--fd);color:var(--cream)}.lead .nm:hover{color:var(--lane-y)}
+.lead .nm{font:400 clamp(28px,3.4vw,46px)/1.02 var(--fd);color:var(--cream);overflow-wrap:anywhere}.lead .nm:hover{color:var(--lane-y)}
 .lead .deck{margin:0;color:var(--muted);font-size:16px}
 .lead .stand,.lu .stand{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13px;min-height:32px}
 .lead .kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:14px}
@@ -123,7 +127,7 @@ main.tourpage h1.t-title{margin:0;font:400 clamp(54px,9vw,128px)/.92 var(--fd);l
 .lu .art .clip{position:absolute;inset:0;overflow:hidden}.lu .art img.h{width:100%;height:100%;object-fit:cover;object-position:top;display:block;transition:transform .5s var(--ease)}.lu:hover .art img.h{transform:scale(1.07)}
 .lu .art .ini{position:absolute;inset:0;display:grid;place-items:center;font:400 64px/1 var(--fd);color:var(--dim)}
 .lu .rk{position:absolute;top:-18px;left:-14px;z-index:2;width:54px;height:54px;border-radius:50%;display:grid;place-items:center;font:400 28px/1 var(--fd);color:#0f0f10;border:3px solid #0f0f10;background:var(--lc)}
-.lu .av{position:absolute;top:8px;right:8px;z-index:2;width:38px;height:38px;border-radius:50%;border:2px solid var(--cream);object-fit:cover;background:#0f0f10}
+.lu .av{position:absolute;top:-12px;right:-10px;z-index:2;width:50px;height:50px;border-radius:50%;border:3px solid var(--cream);box-shadow:3px 4px 0 #000;object-fit:cover;background:#0f0f10}
 .lu .plate{position:absolute;left:-10px;right:-10px;bottom:-16px;z-index:2;padding:8px 12px;border-radius:999px;background:#0f0f10;border:4px solid var(--lc);font:800 14px/1.15 var(--fh);letter-spacing:.04em;text-transform:uppercase;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lu.you .plate{box-shadow:0 0 0 3px var(--cream)}
 .lu .big{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-top:16px}.lu .big b{font:400 38px/1 var(--fd)}.lu .big span{font:600 11px/1 var(--fh);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
@@ -239,10 +243,12 @@ async function render(fresh = false) {
   const LC = ["l-y", "l-b", "l-g", "l-p", "l-o"], TILT = [-2, 1.5, -1.5, 2, -1];
   const formDots = (p) => h("div", { class: "form", "aria-label": "Last results, newest first" }, ...(p.form || []).map((w) => h("i", { class: w ? "w" : "l", title: w ? "Win" : "Loss" }, w ? "W" : "L")));
   const ratioTxt = (p) => (sortKey === "kd" ? kdOf(p.kills, p.deaths) : kdaOf(p.kills, p.deaths, p.assists)).toFixed(2);
-  const lead = players[0], lh = heroOf(lead.top_hero_id), lwr = wrOf(lead), lart = lh?.images?.background || lh?.images?.card || lead.avatar_url;
+  const lead = players[0], lh = heroOf(lead.top_hero_id), lwr = wrOf(lead);
+  // the frame is a small collage: the hero's backdrop, their card pinned on it, and the player's Steam picture as a snapshot
+  const collage = (hx, avatar, pri) => [hx?.images?.background ? h("img", { class: "bg", src: hx.images.background, alt: "", ...(pri ? { fetchpriority: "high" } : { loading: "lazy" }), decoding: "async" }) : "", hx?.images?.card ? h("img", { class: "hp", src: hx.images.card, alt: "" }) : "", avatar ? h("img", { class: "snap", src: avatar, alt: "" }) : ""];
   const kv = (label, val, hi) => h("span", {}, h("b", { class: hi ? "hi" : "" }, val), label);
   $("#lead").replaceChildren(
-    h("a", { class: "frame", href: `/player.html?id=${lead.account_id}`, "aria-label": `${lead.name}'s profile` }, lart ? h("img", { src: lart, alt: "", fetchpriority: "high", decoding: "async" }) : "", h("span", { class: "cap" }, lh ? `${lh.name} · ${lead.name}'s most played` : "No games in this window")),
+    h("a", { class: "frame", href: `/player.html?id=${lead.account_id}`, "aria-label": `${lead.name}'s profile` }, ...collage(lh, lead.avatar_url, true), h("span", { class: "cap" }, lh ? `${lh.name} · ${lead.name}'s most played` : "No games in this window")),
     h("div", { class: "tx" }, h("a", { class: "nm", href: `/player.html?id=${lead.account_id}` }, lead.name, lead.account_id === myId ? h("span", { class: "youtag" }, "You") : ""),
       h("p", { class: "deck" }, lwr != null && lwr >= .5 ? "Runs this town. Rivals left reeling." : "Tops the standings despite a rough run of form.", lh ? ` Mostly seen on ${lh.name}.` : ""),
       lead.mmr_score != null ? h("div", { class: "stand" }, await standing(lead, true)) : "",
@@ -341,7 +347,7 @@ load();
     if (wireItems.length) { $("#wire").hidden = false; $("#wireTrack").replaceChildren(...wireItems, ...wireItems.map((x) => x.cloneNode(true))); $("#wire").style.setProperty("--dur", `${Math.max(30, wireItems.length * 6)}s`); }
     // v12: each game is a ticket stub; the framed art beside the list is the hero from the newest game
     const m0 = all[0], h0 = hs.find((x) => x.id === m0.hero_id), art0 = h0?.images?.background || h0?.images?.card, frame = $("#recentArt");
-    if (art0) { frame.href = `/match.html?id=${m0.match_id}`; frame.replaceChildren(h("img", { src: art0, alt: "", loading: "lazy" }), h("span", { class: "cap" }, `${m0.player.name} as ${h0.name} · ${ago(m0.start_time)}`)); }
+    if (art0) { frame.href = `/match.html?id=${m0.match_id}`; frame.classList.add("solo"); frame.replaceChildren(h0.images.background ? h("img", { class: "bg", src: h0.images.background, alt: "", loading: "lazy" }) : "", h0.images.card ? h("img", { class: "hp", src: h0.images.card, alt: "", loading: "lazy" }) : "", h("span", { class: "cap" }, `${m0.player.name} as ${h0.name} · ${ago(m0.start_time)}`)); }
     el.replaceChildren(...all.map((m, i) => { const hx = hs.find((x) => x.id === m.hero_id);
         return rowLink(h("div", { class: "tk" + (i >= FIRST ? " extra" : ""), hidden: i >= FIRST ? "" : undefined, style: `--i:${Math.min(i, FIRST)}` },
           h("span", { class: "stub " + (m.won ? "w" : "l") }, m.won ? "Win" : "Loss"),
