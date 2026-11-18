@@ -291,7 +291,7 @@ function pageHeader() {
 /** Site-wide "alive" layer: pointer spotlight + tilt on glass, scroll reveals, loading shimmer, cursor halo. (Searchlight beams are pure CSS in .atmo.) */
 function alive() {
   const fine = matchMedia("(hover:hover) and (pointer:fine)").matches;
-  const SURF = ".card,.sec,.ab,.st,.tile,.hcard", TILT = ".ab,.st,.tile";
+  const SURF = ".card,.sec,.ab,.st,.tile,.hcard,.bc", TILT = ".ab,.st,.tile";
   if (fine) {
     const halo = h("div", { class: "halo" }); document.body.append(halo);
     let hx = innerWidth / 2, hy = innerHeight / 2, tx = hx, ty = hy;
@@ -311,7 +311,11 @@ function alive() {
   const shimmer = (root) => { mark(root); root.querySelectorAll?.("*").forEach(mark); };
   const mo = new MutationObserver((ms) => ms.forEach((m) => { m.addedNodes.forEach((n) => { if (n.nodeType === 1) { watch(n); shimmer(n); } });
     if (m.type === "childList") { const t = m.target; if (t.classList?.contains("ld")) { if (t.textContent.trim() !== "Loading…") t.classList.remove("ld"); } else mark(t); } }));
-  const page = document.querySelector(".page"); watch(page); shimmer(page); mo.observe(page, { childList: true, subtree: true });
+  // v11: a result cell that only says Win / Loss becomes a small tag (same sticker language as the page labels)
+  const tag = (el) => { if (el.childElementCount) return; const t = el.textContent.trim(); if (t === "Win" || t === "Loss") el.replaceChildren(h("span", { class: "rtag " + (t === "Win" ? "win" : "loss") }, t)); };
+  const tags = (root) => { if (root.matches?.("td.win,td.loss")) tag(root); root.querySelectorAll?.("td.win,td.loss").forEach(tag); };
+  new MutationObserver((ms) => ms.forEach((m) => m.addedNodes.forEach((n) => { if (n.nodeType === 1) tags(n); }))).observe(document.querySelector(".page"), { childList: true, subtree: true });
+  const page = document.querySelector(".page"); tags(page); watch(page); shimmer(page); mo.observe(page, { childList: true, subtree: true });
   document.body.append(h("div", { class: "progress" }));
   // numbers tick up the first time they appear (stat tiles, podium, hero header)
   const NUMS = ".tile b:not(.kda b),.stat b,.pd .kv b:not(.kda b),.kv b:not(.kda b),.tile .ratio,.mhead .score .amber,.mhead .score .sapph,.rec b";

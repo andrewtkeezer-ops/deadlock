@@ -20,7 +20,7 @@ main{--hero:var(--accent);--hero-soft:color-mix(in srgb,var(--hero) 18%,transpar
 .hero-head .stats{display:flex;gap:22px;margin-top:18px}.hero-head .stat b{display:block;font-family:var(--fh);font-size:22px;letter-spacing:.02em;text-shadow:0 2px 8px #000}.hero-head .stat span{color:var(--muted);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
 
 /* ---- section panels ---- */
-.sec{position:relative;background:rgba(14,16,22,.72);border:1px solid var(--line);border-radius:16px;padding:18px 20px 20px;margin:0 0 16px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 14px 40px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.05);overflow:hidden}
+main .sec{position:relative;background:rgba(14,16,22,.72);border:1px solid var(--line);border-radius:16px;padding:18px 20px 20px;margin:0 0 16px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 14px 40px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.05);overflow:hidden}
 .sec>h2{margin:0 0 16px;display:flex;align-items:center;gap:14px;font:600 22px/1.1 var(--fh);letter-spacing:.01em;color:var(--cream)}.sec>h2::after{content:"";order:1;height:0;width:70px;flex:none;border-top:2px dotted var(--hero)}
 .sec>h2 .sub{order:2;font:400 12px/1.3 var(--fb);letter-spacing:.08em;color:var(--muted);text-transform:uppercase;flex:1;margin-left:4px}
 .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}.cols .sec{margin:0}.cols{margin-bottom:16px}
@@ -88,6 +88,7 @@ main [data-nav]{scroll-margin-top:70px}
 .bc .act button.ord{background:transparent;color:var(--lc);border:1px solid color-mix(in srgb,var(--lc) 60%,transparent)}.bc .act button.ord:hover{background:color-mix(in srgb,var(--lc) 14%,transparent)}
 .bc .act button.add{gap:6px;box-shadow:none}.bc .act button.add .pl{width:16px;height:16px;font-size:13px}
 .nostart{margin:10px 0 0;font-size:13px}
+.cb-bar{display:flex;gap:10px 14px;align-items:center;flex-wrap:wrap;margin-bottom:14px}.cb-bar form{display:flex;gap:8px;flex:1;min-width:240px}.cb-bar input{flex:1;min-width:0}.cb-bar .n{color:var(--muted);font-size:13px}.bc .src{position:absolute;top:10px;right:10px;padding:3px 7px 2px;border-radius:3px;font:700 9px/1 var(--fh);letter-spacing:.14em;text-transform:uppercase;background:var(--lane-g);color:#0e1a08;box-shadow:1px 2px 0 #050606;transform:rotate(2deg)}.bc .src.fresh{background:var(--lane-b);color:#06181c}.bc .src.search{background:var(--text);color:#1b130b}
 </style></head>
 <body><main data-ph="off">
 <div class="hnavrow"><a class="back" href="/heroes.html">← All heroes</a><span class="sp"></span><span id="hstep" style="display:contents"></span></div>
@@ -109,11 +110,11 @@ main [data-nav]{scroll-margin-top:70px}
 <section class="sec mu good"><h2>Best teammates</h2><div class="fade"></div><div id="synergy" class="rows">Loading…</div></section>
 </div>
 <section class="sec" id="builds" data-nav="Builds"><h2>Starter builds <span class="sub">The most-favourited community build for each playstyle, from the in-game library. Add one to your builds and adjust it.</span></h2><div id="starters" class="starters">Loading…</div></section>
-<details class="sec"><summary>More community builds</summary><div class="inner"><div id="cbuilds">Loading…</div></div></details>
+<details class="sec" id="more"><summary>More community builds</summary><div class="inner"><div class="cb-bar" id="cbBar"></div><div id="cbuilds">Loading…</div></div></details>
 <details class="sec"><summary>Lore</summary><div class="inner"><p id="lore" class="muted" style="max-width:none;font-size:15px;line-height:1.7"></p></div></details>
 </main>
 <script type="module">
-import { api, h, $, pct, ago, heroes, itemImg, abilityTooltip, withTipBuilder, shell, showError, visit, modal } from "/js/app.js";
+import { api, h, $, pct, ago, heroes, itemImg, abilityTooltip, withTipBuilder, shell, showError, visit, modal, segmented } from "/js/app.js";
 import { buildPath, pathPanel } from "/js/path.js";
 import { mountSkillOrder, mountBuildPath, mountLaning } from "/js/hero-extras.js";
 shell("/heroes.html");
@@ -191,17 +192,27 @@ const toBuild = (b) => ({ hero_id: id, details: { mod_categories: b.categories.m
 function showOrder(b) { let slots = "auto"; const box = h("div", {}), src = toBuild(b);
   const draw = () => { try { box.replaceChildren(pathPanel(buildPath(src, items, { slots }), { onSlots: (v) => { slots = v; draw(); } })); } catch (e) { showError(box, e); } }; draw(); modal(`Buy order: ${b.name}`, box); }
 const LEAN = { weapon: "Weapon / Gun", spirit: "Spirit", vitality: "Survivability", balanced: "Balanced" };
+const SRC = { rising: "Rising", fresh: "Updated", search: "Found" }, SRC_TIP = { rising: "Most favourited among builds updated in the last 90 days", fresh: "Its author is still updating it (edited recently, 10+ revisions)", search: "From your search of the in-game library" };
 // A card shows the same two things for every build, however its author grouped it: the core you buy first and what you end on.
 const buildCard = (lean, b) => { let plan = null; try { plan = buildPath(toBuild(b), items); } catch {}
   const set = (label, list) => h("div", { class: "set" }, h("span", { class: "lb" }, label), h("div", { class: "items" }, ...list.map((it) => itemImg(it, 26))));
   const core = plan ? (plan.core?.items ?? plan.final) : [], swaps = plan ? plan.steps.slice(0, plan.mainSteps).filter((s) => s.type === "swap").length : 0;
-  return h("div", { class: "bc " + lean }, h("div", { class: "lean" }, b.lean_label ?? LEAN[lean] ?? lean), h("b", { class: "title", title: b.name }, b.name), h("div", { class: "fav" }, `+${b.favorites.toLocaleString()} favourites · updated ${ago(b.updated)}`), mixBar(b.share),
+  return h("div", { class: "bc " + lean }, h("div", { class: "lean" }, b.lean_label ?? LEAN[lean] ?? lean), h("b", { class: "title", title: b.name }, b.name), b.source && b.source !== "popular" ? h("span", { class: "src " + b.source, title: SRC_TIP[b.source] }, SRC[b.source]) : "", h("div", { class: "fav" }, `${b.favorites ? `+${b.favorites.toLocaleString()} favourites · ` : b.version > 1 ? `v${b.version} · ` : ""}updated ${ago(b.updated)}`), mixBar(b.share),
     plan && !plan.empty ? [set(`Core · ${core.length}`, core), set(`Ends as · ${plan.final.length}`, plan.final), h("div", { class: "sum" }, swaps ? `${swaps} swap${swaps === 1 ? "" : "s"} along the way` : "No selling needed", ` · ${Math.round(plan.mainPaid / 1000)}k souls`)]
       : h("div", { class: "items" }, ...b.categories.flatMap((c) => c.items).slice(0, 24).map((i) => itemImg(item(i), 26))),
     h("div", { class: "act" }, h("button", { class: "ord", type: "button", title: "Core build, then what to sell for what", onclick: () => showOrder(b) }, "Buy order"), h("button", { class: "add", type: "button", title: "Add to my builds", onclick: (e) => importBuild(b, e.currentTarget) }, h("span", { class: "pl" }, "+"), "Add"))); };
 (async () => { try { const st = await api(`/heroes/${id}/starter-builds`); const kinds = ["weapon", "spirit", "vitality", "balanced"], have = kinds.filter((k) => st[k]), none = kinds.filter((k) => !st[k]).map((k) => (st.labels?.[k] ?? LEAN[k]).toLowerCase());
   $("#starters").replaceChildren(...(have.length ? have.map((k) => buildCard(k, st[k])) : [h("p", { class: "muted" }, "No community builds found for this hero yet.")]));
   $("#starters").parentElement.querySelector(".nostart")?.remove(); if (have.length && none.length) $("#starters").after(h("p", { class: "nostart muted" }, `No clear ${none.join(" or ")} build among the current top builds.`)); } catch (e) { showError($("#starters"), e); } })();
-(async () => { try { const b = await api(`/heroes/${id}/builds`);
-  $("#cbuilds").replaceChildren(h("div", { class: "starters" }, ...b.slice(0, 12).map((r) => buildCard(r.lean, r)))); } catch (e) { showError($("#cbuilds"), e); } })();
+// More community builds: the popular list plus this season's risers and builds still being updated; filter by kind, or search the whole in-game library.
+(async () => { const box = $("#cbuilds"), PAGE = 12; let all = [], kind = "all", shown = PAGE, found = null;
+  const draw = () => { const list = found ?? (kind === "all" ? all : all.filter((r) => r.source === kind)); count.textContent = found ? `${list.length} found` : `${list.length} builds`;
+    box.replaceChildren(list.length ? h("div", { class: "starters" }, ...list.slice(0, shown).map((r) => buildCard(r.lean, r))) : h("p", { class: "muted" }, found ? "Nothing in the in-game library matches that. Try part of the build's name, or paste its ID or link." : "No builds of this kind right now."),
+      list.length > shown ? h("button", { class: "morebtn ghost", type: "button", onclick: () => { shown += PAGE; draw(); } }, `Show ${Math.min(PAGE, list.length - shown)} more`) : ""); };
+  const count = h("span", { class: "n" }), input = h("input", { type: "search", placeholder: "Search every in-game build by name, or paste an ID or link", "aria-label": "Search in-game builds" });
+  const seg = segmented([["all", "All"], ["popular", "Most favourited"], ["rising", "Rising"], ["fresh", "Still updated"]], kind, (v) => { kind = v; shown = PAGE; found = null; input.value = ""; draw(); }, "Which builds");
+  const form = h("form", { onsubmit: async (e) => { e.preventDefault(); const q = input.value.trim(); if (!q) { found = null; return draw(); } box.textContent = "Loading…"; try { found = await api(`/heroes/${id}/builds?q=${encodeURIComponent(q)}`); shown = PAGE; draw(); } catch (err) { showError(box, err); } } }, input, h("button", { type: "submit" }, "Search"));
+  input.addEventListener("input", () => { if (!input.value && found) { found = null; draw(); } });
+  $("#cbBar").replaceChildren(seg, form, count);
+  try { all = await api(`/heroes/${id}/builds`); draw(); } catch (e) { showError(box, e); } })();
 </script></body></html>

@@ -114,4 +114,19 @@ function next() {
   el.addEventListener("click", close); setTimeout(close, RM ? 3500 : 4600);
 }
 
-export function start() { city(); boot(); wipes(); hud(); }
+/* ---------------- v11: a few sparks fly from whatever you press ---------------- */
+function sparks() {
+  if (RM) return;
+  const COL = ["var(--ink)", "var(--lane-y)", "var(--text)"];
+  document.addEventListener("click", (e) => {
+    if (!e.detail) return; // keyboard / scripted clicks have no pointer position
+    const t = e.target.closest?.("button,.btn,a.dl,.sbbtn,.ht,.rowlink"); if (!t || t.disabled) return;
+    const big = t.matches(".primary,a.dl,.sbbtn,.add,.btn.primary"), n = big ? 9 : 5;
+    const el = h("div", { class: "spark", "aria-hidden": "true" }); el.style.left = `${e.clientX}px`; el.style.top = `${e.clientY}px`;
+    for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2 + Math.random() * .7, d = (big ? 30 : 18) + Math.random() * 18, p = h("i");
+      p.style.setProperty("--dx", `${(Math.cos(a) * d).toFixed(1)}px`); p.style.setProperty("--dy", `${(Math.sin(a) * d).toFixed(1)}px`); p.style.setProperty("--c", COL[i % 3]); el.append(p); }
+    document.body.append(el); setTimeout(() => el.remove(), 600);
+  }, { passive: true });
+}
+
+export function start() { city(); boot(); wipes(); hud(); sparks(); }

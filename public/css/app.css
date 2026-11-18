@@ -990,3 +990,26 @@ div.ld,section.ld,p.ld{min-height:136px;border-radius:0;background:linear-gradie
 tr:nth-child(even) .sbbtn{transform:rotate(1.5deg)}.sbbtn .go{color:inherit}
 .sbbtn:hover,tr:hover .sbbtn:hover,tr.rowlink:hover .sbbtn{background:var(--lane-y);border-color:transparent;color:#141000;transform:rotate(0deg) translate(-1px,-1px);box-shadow:3px 4px 0 #050606}
 @media(prefers-reduced-motion:reduce){.sbbtn{transition:none}}
+
+/* v11 "Tactile": one shared layer for every page. Things light up under the cursor, press like stickers, and answer a click. */
+/* surfaces: warmer pointer glow, and a lit edge that follows the cursor */
+.card::after,.sec::after,.ab::after,.st::after,.tile::after,.bc::after{background:radial-gradient(340px circle at var(--mx) var(--my),rgba(221,102,56,.11),rgba(255,225,77,.035) 42%,transparent 66%)}
+.bc{position:relative;--mx:50%;--my:50%}.bc::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .3s}.bc:hover::after{opacity:1}
+.card::before,.bc::before{content:"";display:block;position:absolute;inset:0;border-radius:inherit;padding:1.5px;pointer-events:none;opacity:0;transition:opacity .3s;background:radial-gradient(240px circle at var(--mx) var(--my),var(--ink),rgba(255,225,77,.55) 38%,transparent 72%);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0)}
+.card:hover::before,.bc:hover::before{opacity:.85}
+@media(hover:none){.card::before,.bc::before,.bc::after{display:none}}
+/* results as tags */
+.rtag{display:inline-block;padding:4px 6px 3px;border-radius:3px;font:700 9.5px/1 var(--fh);letter-spacing:.1em;text-transform:uppercase;white-space:nowrap}
+.rtag.win{background:var(--win);color:#0e1a08;box-shadow:1px 2px 0 #050606}.rtag.loss{color:var(--loss);box-shadow:inset 0 0 0 1.5px currentColor}
+/* secondary buttons press like the primary ones */
+.btn:hover,.morebtn:hover{transform:translate(-1px,-1px);box-shadow:3px 4px 0 #050606;border-color:var(--text)}.btn:active,.morebtn:active{transform:translate(1px,1px);box-shadow:1px 1px 0 #050606}
+/* icons and names answer the cursor */
+img.iimg.weapon:hover{box-shadow:0 0 0 2px var(--weapon),0 8px 18px rgba(0,0,0,.6)}img.iimg.spirit:hover{box-shadow:0 0 0 2px var(--spirit),0 8px 18px rgba(0,0,0,.6)}img.iimg.vitality:hover{box-shadow:0 0 0 2px var(--vitality),0 8px 18px rgba(0,0,0,.6)}
+img.hicon{transition:transform .2s var(--snap)}tr:hover img.hicon,a:hover>img.hicon{transform:scale(1.14) rotate(-3deg)}
+main td a:not([class]){background:linear-gradient(currentColor,currentColor) 0 100%/0 1.5px no-repeat;transition:background-size .25s var(--ease)}main td a:not([class]):hover{background-size:100% 1.5px;text-decoration:none}
+tr:hover .kda .b i{filter:brightness(1.35)}
+.sticker{transition:transform .2s var(--snap)}a:hover>.sticker,.sticker:hover{transform:rotate(1.5deg) scale(1.05)}
+/* click sparks */
+.spark{position:fixed;z-index:9999;width:0;height:0;pointer-events:none}.spark i{position:absolute;left:-3px;top:-3px;width:6px;height:6px;border-radius:1px;background:var(--c,var(--ink));transform:rotate(45deg);animation:sparkfly .55s var(--ease) forwards}
+@keyframes sparkfly{to{transform:translate(var(--dx),var(--dy)) rotate(220deg) scale(.15);opacity:0}}
+@media(prefers-reduced-motion:reduce){.spark{display:none}.sticker,img.hicon{transition:none}}

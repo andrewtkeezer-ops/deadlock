@@ -14,7 +14,7 @@
 .bc .gs{display:flex;gap:6px 8px;align-items:center;flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}.bc .gs button{font-size:11px;padding:5px 10px}.bc .gs .gdel{margin-left:auto;background:transparent;border-color:transparent;color:var(--muted);box-shadow:none}.bc .gs .gdel:hover{color:var(--loss)}
 #importGame[hidden]{display:none}
 .ig{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}@media(min-width:760px){.ig{min-width:560px}}@media(max-width:560px){.ig .r{flex-wrap:wrap}.ig div.r>div.n{flex:1 1 calc(100% - 50px)}.ig .r button,.ig .r a.btn{margin-left:auto}}.ig .r{display:flex;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:10px}.ig .r .n{flex:1;min-width:0}.ig .r .n b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ig .r small{color:var(--muted)}.ig .r button,.ig .r a.btn{flex:none;font-size:12px;padding:6px 12px}
-.ig .hd{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:4px}.ig .hd p{flex:1;margin:0;min-width:200px}.ig .byid{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;padding-top:12px;border-top:1px solid var(--line);font-size:13px}.ig .byid input{width:130px}
+.ig .hd{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:4px}.ig .hd p{flex:1;margin:0;min-width:200px}.ig .byid{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;padding-top:12px;border-top:1px solid var(--line);font-size:13px}.ig .byid input{width:190px}
 .empty{text-align:center;padding:30px}.empty p{color:var(--muted)}
 /* v8: the build list comes first; on phones the hero grid is a compact five-across */
 #listTitle{margin-top:6px}
@@ -42,13 +42,14 @@ function gameRow(b) { const st = syncState(b, seen);
   const send = h("button", { type: "button", class: b.sync_wanted ? "" : "primary", title: b.sync_wanted ? "Stop sending changes to the game. The in-game build stays." : "Publish this build to your Deadlock build menu through your Soul Scribe uploader", onclick: async () => { send.disabled = true; try { await api(`/library/${b.id}/sync`, { method: "POST", body: { wanted: !b.sync_wanted } }); } catch (e) { alert(e.message); } load(); } }, syncVerb(b));
   const del = h("button", { type: "button", class: "gdel", onclick: async () => { if (!confirm(`Delete "${b.title}" from Soul Scribe?${b.ingame_build_id ? "\n\nThe copy in your Deadlock build menu is not touched. You can bring it back later with Import from game." : ""}`)) return; try { await api(`/library/${b.id}`, { method: "DELETE" }); } catch (e) { alert(e.message); } load(); } }, "Delete");
   return h("div", { class: "gs" }, h("span", { class: "gpill " + st.key, title: st.detail }, st.label), send, del); }
+let preset = new URLSearchParams(location.search).get("import") || "";
 $("#importGame").onclick = () => { const body = h("div", { class: "ig" }, h("p", { class: "muted" }, "Looking up the builds you published in Deadlock…")); modal("Import from game", body);
   const draw = async () => { let rows; try { rows = await api("/library/ingame"); } catch (e) { return showError(body, e); }
     const fresh = rows.filter((r) => r.state === "new");
     const bring = async (r, btn) => { btn.disabled = true; btn.textContent = "Importing…"; try { await api("/library/import", { method: "POST", body: { ingame_build_id: r.ingame_build_id, hero_id: r.hero_id } }); } catch (e) { btn.textContent = e.message; return false; } return true; };
     const all = h("button", { type: "button", class: "primary", onclick: async () => { all.disabled = true; let n = 0; for (const r of fresh) { all.textContent = `Importing ${++n} of ${fresh.length}…`; try { await api("/library/import", { method: "POST", body: { ingame_build_id: r.ingame_build_id, hero_id: r.hero_id } }); } catch {} } await draw(); load(); } }, `Import all ${fresh.length} new`);
-    const idIn = h("input", { type: "text", inputmode: "numeric", placeholder: "Build ID" }), idMsg = h("span", { class: "muted" });
-    const idBtn = h("button", { type: "button", onclick: async () => { const n = +idIn.value.replace(/\D/g, ""); if (!n) return; idBtn.disabled = true; try { const r = await api("/library/import", { method: "POST", body: { ingame_build_id: n } }); location.href = `/editor.html?id=${r.id}`; } catch (e) { idBtn.disabled = false; idMsg.textContent = e.message; } } }, "Copy to my builds");
+    const idIn = h("input", { type: "text", placeholder: "Build ID or link", value: preset || "" }), idMsg = h("span", { class: "muted" }); preset = "";
+    const idBtn = h("button", { type: "button", onclick: async () => { const n = +(/(\d{4,})\D*$/.exec(idIn.value.trim())?.[1] ?? 0); if (!n) { idMsg.textContent = "That doesn't look like a build ID or link."; return; } idBtn.disabled = true; try { const r = await api("/library/import", { method: "POST", body: { ingame_build_id: n } }); location.href = `/editor.html?id=${r.id}`; } catch (e) { idBtn.disabled = false; idMsg.textContent = e.message; } } }, "Copy to my builds");
     body.replaceChildren(
       h("div", { class: "hd" }, h("p", { class: "muted" }, rows.length ? `${rows.length} build${rows.length === 1 ? "" : "s"} published from your Steam account. Imported builds stay linked, so Send to game updates the same in-game build.` : "No published builds were found for your Steam account. Only builds you published yourself are listed; a brand-new one can take a little while to appear."), fresh.length > 1 ? all : ""),
       ...rows.map((r) => { const hx = hero(r.hero_id);
@@ -56,7 +57,7 @@ $("#importGame").onclick = () => { const body = h("div", { class: "ig" }, h("p",
           : r.state === "update" ? h("button", { type: "button", title: "The in-game build is newer than your Soul Scribe copy", onclick: async (e) => { if (!confirm(`Replace your Soul Scribe copy of "${r.name}" with the newer in-game version?`)) return; if (await bring(r, e.target)) { await draw(); load(); } } }, "Update from game")
           : h("a", { class: "btn", href: `/editor.html?id=${r.local_id}` }, "✓ Imported · open");
         return h("div", { class: "r" }, heroIcon(hx, 34), h("div", { class: "n" }, h("b", {}, r.name), h("small", {}, `${hx?.name ?? "?"} · ${r.item_count} items · v${r.version}${r.updated_at ? ` · updated ${ago(r.updated_at)}` : ""}`)), act); }),
-      h("div", { class: "byid" }, h("span", {}, "Someone else's build?"), idIn, idBtn, idMsg, h("small", { class: "muted", style: "flex-basis:100%" }, "Builds you only favourited aren't listed above (the game doesn't expose them). Copy one by its build ID, or use + Add on a hero's page."))); };
+      h("div", { class: "byid" }, h("span", {}, "Someone else's build?"), idIn, idBtn, idMsg, h("small", { class: "muted", style: "flex-basis:100%" }, "Builds you only favourited aren't listed above (the game doesn't expose them). Paste its build ID or a link that ends in the ID (deadlocklabs.gg build pages do), or use + Add on a hero's page."))); };
   draw(); };
 async function load() {
   const q = new URLSearchParams(); if (tab === "mine") { if (!who.account_id) { $("#list").replaceChildren(h("div", { class: "empty card" }, h("p", {}, "Sign in through Steam (bottom left) to keep your own builds."))); renderGrid([]); return; } q.set("account_id", who.account_id); } else if (superAdmin && $("#author").value) q.set("account_id", $("#author").value);
@@ -67,4 +68,5 @@ async function load() {
 function renderGrid(rows) { const counts = new Map(); for (const b of rows) counts.set(b.hero_id, (counts.get(b.hero_id) || 0) + 1);
   $("#hgrid").replaceChildren(...hs.map((x) => { const n = counts.get(x.id) || 0; return h("a", { class: "ht" + (n ? "" : " none"), href: `/hero.html?id=${x.id}#builds`, title: `${x.name}: ${n} build${n === 1 ? "" : "s"}` }, h("img", { src: x.images.card || x.images.icon, alt: x.name }), n ? h("span", { class: "cnt" }, String(n)) : "", h("div", { class: "nm" }, x.name)); })); }
 setTab(tab);
+if (preset && who.account_id) $("#importGame").click();
 </script></body></html>

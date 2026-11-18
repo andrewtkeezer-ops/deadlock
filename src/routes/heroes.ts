@@ -138,25 +138,63 @@ function profileBuild(b: InGameBuild, byId: Map<number, ItemAsset>, maxPerStat: 
 
 const looksEnglish = (name: string) => !/[\u3040-\u30ff\u3400-\u9fff\u0400-\u04ff\u0600-\u06ff\uac00-\ud7af]/.test(name);
 
-async function communityBuilds(env: Env, id: number) {
-  const api = new DeadlockApi(env);
-  // Most-favourited of all time is mostly builds from before the shop rework; ask for ones updated in the last year first.
-  const q = { hero_id: id, limit: 40, sort_by: "favorites", sort_direction: "desc", only_latest: "true" };
-  const since = Math.floor(Date.now() / 86400000) * 86400 - 365 * 86400;
-  const [recent, its] = await Promise.all([api.get<InGameBuild[]>(`/v1/builds`, { ...q, min_unix_timestamp: since }, 6 * 3600), api.items()]);
-  const rows = recent.length >= 8 ? recent : await api.get<InGameBuild[]>(`/v1/builds`, q, 6 * 3600);
+type BuildSource = "popular" | "rising" | "fresh" | "search";
+/** Trim in-game builds to what the hero page needs, with their lean. `english` drops names in other scripts (the browse lists); a search keeps them. */
+async function shapeBuilds(api: DeadlockApi, rows: InGameBuild[], source: BuildSource, english = true) {
+  const its = await api.items();
   const byId = new Map(its.map((i) => [i.id, i])); const maxPerStat: Record<string, number> = {};
   for (const it of its) for (const [st, def] of Object.entries(STAT_MAP)) maxPerStat[st] = Math.max(maxPerStat[st] ?? 0, def.keys.reduce((a, k) => a + (it.properties[k] ?? 0), 0));
-  const out = rows.filter((b) => looksEnglish(b.hero_build.name) && (b.hero_build.details?.mod_categories?.length ?? 0) > 0).map((b) => { const p = profileBuild(b, byId, maxPerStat);
-    return { id: b.hero_build.hero_build_id, name: b.hero_build.name, author: b.hero_build.author_account_id, favorites: b.num_favorites ?? 0, updated: b.hero_build.last_updated_timestamp, lean: p.lean, lean_label: LEAN_LABEL[p.lean], share: p.share, item_count: p.ids.length,
+  return rows.filter((b) => (!english || looksEnglish(b.hero_build.name)) && (b.hero_build.details?.mod_categories?.length ?? 0) > 0).map((b) => { const p = profileBuild(b, byId, maxPerStat);
+    return { id: b.hero_build.hero_build_id, name: b.hero_build.name, author: b.hero_build.author_account_id, favorites: b.num_favorites ?? 0, updated: b.hero_build.last_updated_timestamp, version: b.hero_build.version ?? 1, source, lean: p.lean, lean_label: LEAN_LABEL[p.lean], share: p.share, item_count: p.ids.length,
       // description + per-item notes feed the hero page's "Buy order" (the author's own sell hints live there)
       categories: (b.hero_build.details?.mod_categories ?? []).map((cat) => ({ name: cat.name, description: cat.description ? String(cat.description).slice(0, 300) : undefined, items: cat.mods.map((m) => m.ability_id).filter((i) => byId.has(i)),
         notes: Object.fromEntries(cat.mods.filter((m) => m.annotation && byId.has(m.ability_id)).map((m) => [m.ability_id, String(m.annotation).slice(0, 200)])) })) }; });
-  return out;
+}
+const BUILD_Q = { limit: 40, sort_direction: "desc", only_latest: "true" };
+
+/** The most-favourited builds (the starter picks come from these). */
+async function communityBuilds(env: Env, id: number) {
+  const api = new DeadlockApi(env);
+  // Most-favourited of all time is mostly builds from before the shop rework; ask for ones updated in the last year first.
+  const q = { ...BUILD_Q, hero_id: id, sort_by: "favorites" };
+  const since = Math.floor(Date.now() / 86400000) * 86400 - 365 * 86400;
+  const recent = await api.get<InGameBuild[]>(`/v1/builds`, { ...q, min_unix_timestamp: since }, 6 * 3600);
+  const rows = recent.length >= 8 ? recent : await api.get<InGameBuild[]>(`/v1/builds`, q, 6 * 3600);
+  return shapeBuilds(api, rows, "popular");
 }
 
-/** Top community builds (most favourited, English-named), with their lean. */
-r.get("/:id/builds", async (c) => c.json(await communityBuilds(c.env, Number(c.req.param("id")))));
+/**
+ * A wider sweep for the "More community builds" list: the popular set, plus two lists the favourites ranking buries:
+ *  - rising: most-favourited among builds updated in the last 90 days (this season's builds haven't had a year to collect favourites)
+ *  - fresh: builds their authors are still updating (edited most recently, at least 10 revisions, not somebody's "Copy of …")
+ * Either extra list failing just means a shorter page.
+ */
+async function widerBuilds(env: Env, id: number) {
+  const api = new DeadlockApi(env);
+  const day = Math.floor(Date.now() / 86400000) * 86400;
+  const [popular, risingRaw, freshRaw] = await Promise.all([
+    communityBuilds(env, id),
+    api.get<InGameBuild[]>(`/v1/builds`, { ...BUILD_Q, hero_id: id, sort_by: "favorites", min_unix_timestamp: day - 90 * 86400 }, 6 * 3600).catch(() => [] as InGameBuild[]),
+    api.get<InGameBuild[]>(`/v1/builds`, { ...BUILD_Q, hero_id: id, sort_by: "updated_at" }, 3600).catch(() => [] as InGameBuild[]),
+  ]);
+  const seen = new Set(popular.map((b) => b.id));
+  const fresh1 = freshRaw.filter((b) => (b.hero_build.version ?? 1) >= 10 && !/^\s*copy of/i.test(b.hero_build.name));
+  const take = <T extends { id: number }>(list: T[]) => list.filter((b) => (seen.has(b.id) ? false : (seen.add(b.id), true)));
+  const rising = take((await shapeBuilds(api, risingRaw, "rising")).filter((b) => b.favorites >= 5));
+  const fresh = take(await shapeBuilds(api, fresh1, "fresh"));
+  return [...popular, ...rising, ...fresh];
+}
+
+/** Community builds for the hero page. ?q= searches the whole in-game library by name, or fetches one build from a pasted ID or link. */
+r.get("/:id/builds", async (c) => {
+  const id = Number(c.req.param("id")), q = (c.req.query("q") ?? "").trim().slice(0, 120);
+  if (!q) return c.json(await widerBuilds(c.env, id));
+  const api = new DeadlockApi(c.env), byId = /(\d{4,})\/?$/.exec(q);
+  const rows = byId
+    ? await api.get<InGameBuild[]>(`/v1/builds`, { build_id: Number(byId[1]), only_latest: "true", limit: 1 }, 600)
+    : await api.get<InGameBuild[]>(`/v1/builds`, { ...BUILD_Q, limit: 30, hero_id: id, search_name: q.slice(0, 60), sort_by: "favorites" }, 600);
+  return c.json(await shapeBuilds(api, rows, "search", false));
+});
 
 /** Starter picks: the most-favourited build for each lean (weapon / spirit / survivability) plus the best balanced one. */
 r.get("/:id/starter-builds", async (c) => {
