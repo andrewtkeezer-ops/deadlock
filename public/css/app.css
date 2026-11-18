@@ -1025,3 +1025,5 @@ main:not(.tourpage) .card .card,main:not(.tourpage) .sec .card,main:not(.tourpag
 main:not(.tourpage) .card:hover,main:not(.tourpage) .sec:hover{box-shadow:8px 10px 0 #000}
 main:not(.tourpage) details.sec,main:not(.tourpage) details.card{box-shadow:4px 5px 0 #000}
 @media(max-width:860px){main:not(.tourpage){margin-top:10px;padding-top:98px}main:not(.tourpage) h1,main:not(.tourpage) .ph h1{-webkit-text-stroke-width:2px;text-shadow:3px 3px 0 var(--ink);transform:rotate(-2deg)}main:not(.tourpage) .card,main:not(.tourpage) .sec,main:not(.tourpage) .tile{box-shadow:4px 5px 0 #000}}
+/* v12.3: a page that is one full-bleed stage with its own art (Heroes) keeps the titles and frames but not the map panel, which washed its backdrop out */
+main.stagepage:not(.tourpage){margin-top:0;padding-top:0;background:none;clip-path:none}
