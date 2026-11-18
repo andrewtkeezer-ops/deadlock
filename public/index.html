@@ -74,14 +74,110 @@
 @media(min-width:1221px) and (max-width:1340px){table.lb th:nth-child(11),table.lb td:nth-child(11){display:none}table.lb th,table.lb td{padding-left:8px;padding-right:8px}}
 @media(max-width:1100px){.recent table{display:block;overflow-x:auto;white-space:nowrap;scrollbar-width:thin}}
 .recent td.sd small{display:block;white-space:nowrap;margin-top:2px;color:var(--muted);font:400 11.5px/1 var(--fb);font-variant-numeric:tabular-nums}
+/* v12 "Cursed Apple": the leaderboard as a guided tour (postcard title, skyline, numbered stops on a route line, subway-sign plates, framed game art) */
+main.tourpage{--tl:#10262b;--gut:clamp(22px,3.4vw,48px)}
+.t-head{display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;padding:6px 0 0}
+.t-eyebrow{font:600 12px/1 var(--fh);letter-spacing:.28em;text-transform:uppercase;color:var(--muted)}
+main.tourpage h1.t-title{margin:0;font:400 clamp(54px,9vw,128px)/.92 var(--fd);letter-spacing:.01em;text-transform:uppercase;color:var(--bg);-webkit-text-stroke:3px var(--cream);text-shadow:6px 6px 0 var(--ink);transform:rotate(-3deg);animation:tIn .7s var(--snap) both}
+@keyframes tIn{from{opacity:0;transform:rotate(-9deg) scale(.84)}}
+.t-head .sticker{transform:rotate(-3deg);margin-top:4px}
+.t-lead{margin:8px 0 0;max-width:560px;color:var(--muted)}.t-lead b{color:var(--text)}
+.t-ctl{display:flex;flex-wrap:wrap;gap:10px 18px;justify-content:center;align-items:center;margin-top:6px}
+.t-win{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.t-win button{min-height:40px;padding:0 18px;border-radius:999px;border:2px solid var(--cream);background:transparent;color:var(--cream);font:700 12px/1 var(--fh);letter-spacing:.12em}
+.t-win button:hover{background:rgba(247,233,213,.12);border-color:var(--cream)}.t-win button[aria-checked=true]{background:var(--cream);color:#0f0f10}
+.t-ban{margin-top:18px}
+.t-sky{height:84px;margin:22px 0 0;background:var(--tl);clip-path:polygon(0 100%,0 62%,4% 62%,4% 38%,9% 38%,9% 70%,13% 70%,13% 22%,15% 22%,15% 10%,17% 10%,17% 22%,19% 22%,19% 56%,25% 56%,25% 34%,31% 34%,31% 64%,36% 64%,36% 16%,41% 16%,41% 48%,47% 48%,47% 0,49% 0,49% 30%,54% 30%,54% 60%,60% 60%,60% 26%,66% 26%,66% 52%,71% 52%,71% 12%,75% 12%,75% 44%,81% 44%,81% 66%,86% 66%,86% 30%,91% 30%,91% 54%,96% 54%,96% 40%,100% 40%,100% 100%)}
+.tour{background:var(--tl);background-image:linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px);background-size:40px 40px;padding:44px clamp(14px,3vw,40px) 56px;border-radius:0 0 18px 18px}
+.route{position:relative;margin-left:22px;padding-left:calc(var(--gut) + 3px);display:flex;flex-direction:column;gap:64px}
+/* v12.1: a dim dashed track, and a lit line that draws itself down the page as you scroll (--drawn is set from index's script) */
+.route::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:repeating-linear-gradient(180deg,#4d7178 0 10px,transparent 10px 18px);opacity:.5}
+.route::after{content:"";position:absolute;left:0;top:0;width:3px;height:var(--drawn,100%);background:repeating-linear-gradient(180deg,var(--lane-y) 0 10px,transparent 10px 18px);filter:drop-shadow(0 0 6px rgba(255,225,77,.55));transition:height .18s linear}
+.stop{min-width:0}
+.st-h{position:relative;z-index:1;display:flex;flex-wrap:wrap;align-items:center;gap:12px 14px;margin:0 0 24px calc(-1*var(--gut) - 24.5px)}
+.st-n{flex:none;width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font:400 26px/1 var(--fd);color:#0f0f10;border:3px solid #0f0f10;background:var(--lc);box-shadow:0 0 0 4px var(--tl)}
+.st-t{font:400 clamp(28px,3.4vw,40px)/1 var(--fd);color:var(--cream)}.st-s{color:var(--muted);font-size:14px}
+.st-strip{padding:6px 12px;background:var(--lc);color:#141000;font:400 20px/1.1 var(--fd);transform:rotate(-2deg)}
+.st-tag{padding:6px 11px;background:var(--lc);color:#141000;font:700 11px/1 var(--fh);letter-spacing:.14em;text-transform:uppercase;transform:rotate(2deg)}
+.sign{display:inline-flex;align-items:center;gap:12px;padding:7px 22px 7px 9px;border-radius:999px;background:#0f0f10;border:5px solid var(--lc);color:var(--cream)}
+.sign i{flex:none;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:var(--lc);color:#0f0f10;font:800 24px/1 var(--fh);font-style:normal}
+.sign b{font:800 clamp(22px,3.4vw,40px)/1 var(--fh);letter-spacing:.04em;text-transform:uppercase}
+.l-y{--lc:var(--lane-y)}.l-b{--lc:var(--lane-b)}.l-g{--lc:var(--lane-g)}.l-o{--lc:var(--ink)}.l-p{--lc:#c9a4ff}
+.frame{position:relative;display:block;border:4px solid var(--cream);box-shadow:10px 12px 0 #000;background:#1b2a2e;transform:rotate(-1deg);overflow:hidden;transition:transform .3s var(--snap),box-shadow .3s}
+.frame.r{transform:rotate(1.5deg)}.frame:hover{transform:rotate(0deg) scale(1.015);box-shadow:14px 18px 0 #000}
+.frame img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 22%}
+.frame .cap{position:absolute;left:10px;bottom:10px;max-width:calc(100% - 20px);padding:6px 9px;background:#0f0f10;color:var(--cream);font:600 11px/1.2 var(--fh);letter-spacing:.12em;text-transform:uppercase}
+.lead{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:34px;align-items:center}
+.lead .frame{aspect-ratio:16/10;width:100%}
+.lead .tx{min-width:0;display:flex;flex-direction:column;gap:12px}
+@media(max-width:900px){.lead{grid-template-columns:minmax(0,1fr);gap:24px}}
+.lead .nm{font:400 clamp(36px,5vw,60px)/1 var(--fd);color:var(--cream)}.lead .nm:hover{color:var(--lane-y)}
+.lead .deck{margin:0;color:var(--muted);font-size:16px}
+.lead .stand,.lu .stand{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13px;min-height:32px}
+.lead .kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:14px}
+.lead .kv span{font:600 11px/1.3 var(--fh);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}.lead .kv b{display:block;font:400 40px/1 var(--fd);letter-spacing:0;color:var(--cream)}.lead .kv b.hi{color:var(--lane-y)}
+.lineup{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:34px 24px;align-items:start;margin-bottom:28px}
+.lu{display:flex;flex-direction:column;gap:9px;color:var(--text);text-decoration:none;min-width:0;max-width:270px}.lu:hover{color:var(--text)}
+.lu .art{position:relative;aspect-ratio:3/4.3;border:3px solid var(--cream);box-shadow:8px 10px 0 #000;background:#1b2a2e;transform:rotate(var(--tilt,0deg));transition:transform .3s var(--snap),box-shadow .3s}
+.lu:hover .art,.lu:focus-visible .art{transform:rotate(0deg) translateY(-6px);box-shadow:12px 16px 0 #000}
+.lu .art .clip{position:absolute;inset:0;overflow:hidden}.lu .art img.h{width:100%;height:100%;object-fit:cover;object-position:top;display:block;transition:transform .5s var(--ease)}.lu:hover .art img.h{transform:scale(1.07)}
+.lu .art .ini{position:absolute;inset:0;display:grid;place-items:center;font:400 64px/1 var(--fd);color:var(--dim)}
+.lu .rk{position:absolute;top:-18px;left:-14px;z-index:2;width:54px;height:54px;border-radius:50%;display:grid;place-items:center;font:400 28px/1 var(--fd);color:#0f0f10;border:3px solid #0f0f10;background:var(--lc)}
+.lu .av{position:absolute;top:8px;right:8px;z-index:2;width:38px;height:38px;border-radius:50%;border:2px solid var(--cream);object-fit:cover;background:#0f0f10}
+.lu .plate{position:absolute;left:-10px;right:-10px;bottom:-16px;z-index:2;padding:8px 12px;border-radius:999px;background:#0f0f10;border:4px solid var(--lc);font:800 14px/1.15 var(--fh);letter-spacing:.04em;text-transform:uppercase;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lu.you .plate{box-shadow:0 0 0 3px var(--cream)}
+.lu .big{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-top:16px}.lu .big b{font:400 38px/1 var(--fd)}.lu .big span{font:600 11px/1 var(--fh);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.lu .trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;font-size:11.5px;color:var(--muted)}.lu .trio b{display:block;font:600 16px/1.25 var(--fh);color:var(--text)}
+.form{display:flex;gap:5px;min-height:24px}.form i{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font:700 11px/1 var(--fh);font-style:normal}.form i.w{background:var(--lane-g);color:#0e1a08}.form i.l{color:#ff9d84;box-shadow:inset 0 0 0 2px #ff9d84}
+.t-table>summary{cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:10px;min-height:40px;padding:0 18px;border:2px solid var(--cream);border-radius:999px;font:700 12px/1 var(--fh);letter-spacing:.14em;text-transform:uppercase;color:var(--cream)}
+.t-table>summary::-webkit-details-marker{display:none}.t-table>summary::after{content:"+";font-size:18px}.t-table[open]>summary{background:var(--cream);color:#0f0f10;margin-bottom:10px}.t-table[open]>summary::after{content:"\2212"}
+.g-wrap{display:flex;flex-wrap:wrap;gap:30px;align-items:flex-start}.tix{flex:999 1 520px;min-width:0;display:flex;flex-direction:column;gap:10px}
+.g-wrap .frame{flex:1 1 260px;max-width:360px;aspect-ratio:4/5}.g-wrap .frame:empty{display:none}
+.tk{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;min-height:62px;padding:8px 14px 8px 0;background:#0f0f10;border:2px solid var(--cream);color:var(--text);transition:transform .18s var(--ease),box-shadow .18s}
+.tk[hidden]{display:none}.tk:hover,.tk:focus-visible{transform:translate(-2px,-2px);box-shadow:5px 6px 0 #000}
+.tk .stub{align-self:stretch;min-width:78px;display:grid;place-items:center;font:400 19px/1 var(--fd);text-transform:uppercase;border-right:2px dashed var(--cream)}.tk .stub.w{background:var(--lane-g);color:#0e1a08}.tk .stub.l{background:#2a1512;color:#ff9d84}
+.tk .who{flex:1 1 210px;min-width:0;display:flex;flex-direction:column;gap:3px}.tk .who .l1{font:600 16px/1.2 var(--fh);display:flex;align-items:center;gap:7px;flex-wrap:wrap}.tk .who .as{color:var(--muted);font-weight:400}.tk .who small{color:var(--muted);font-size:12.5px}
+.tk .kd{display:flex;gap:5px;font:400 24px/1 var(--fd)}.tk .kd .k{color:var(--lane-y)}.tk .kd .d{color:#ff9d84}.tk .kd .a{color:var(--lane-b)}.tk .kd i{color:var(--dim);font-style:normal}.tk .kd b{font-weight:400}
+.tk .sd{display:flex;flex-direction:column;align-items:flex-end;min-width:92px;font-size:12.5px;color:var(--muted)}.tk .sd b{font:600 15px/1.2 var(--fh);color:var(--text)}
+.tk:hover .sbbtn{background:var(--lane-y);color:#141000;transform:rotate(0deg) translate(-1px,-1px)}
+.duos2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(340px,100%),1fr));gap:16px 36px}
+.dq{display:flex;align-items:center;gap:12px;min-width:0}.dq .n{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font:700 14px/1 var(--fh);color:#0f0f10;background:var(--lc)}
+.dq .b{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}.dq .t{display:flex;justify-content:space-between;gap:10px;font-size:14px}.dq .t span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dq .t b{font:600 15px/1 var(--fh)}
+.dq .bar2{position:relative;height:8px;border-radius:999px;background:#0f0f10}.dq .bar2 i{position:absolute;inset:0 auto 0 0;border-radius:999px;background:var(--ink);animation:grow .9s var(--ease) both}.dq .bar2 i.hi{background:var(--lane-g)}.dq .bar2::after{content:"";position:absolute;left:50%;top:-4px;bottom:-4px;width:2px;background:var(--cream)}
+.t-key{margin:14px 0 0;font-size:12px;color:var(--muted)}
+@media(max-width:700px){.route{margin-left:12px}.st-h{margin-left:calc(-1*var(--gut) - 20.5px)}.st-n{width:38px;height:38px;font-size:21px}.lineup{grid-template-columns:repeat(2,minmax(0,1fr));gap:32px 20px}.lu .big b{font-size:28px}.lu .trio{gap:4px;font-size:10px}.lu .back .hr span em{display:none}.lu .back{padding:28px 8px 24px}.lu .trio b{font-size:14px}.lu .rk{width:44px;height:44px;font-size:22px;left:-10px;top:-14px}.sign b{font-size:20px}.sign i{width:34px;height:34px;font-size:19px}.tk .kd{font-size:20px}}
+/* v12.1: stops arrive as you reach them; their dot pops and their cards, tickets and duos rise in one after another */
+main.tourfx .stop{opacity:0;transform:translateY(28px);transition:opacity .6s var(--ease),transform .6s var(--ease)}main.tourfx .stop.in{opacity:1;transform:none}
+main.tourfx .stop.in .st-n{animation:stPop .55s var(--snap) .12s backwards}@keyframes stPop{from{transform:scale(0)}}
+main.tourfx .stop.in .lineup.first .lu,main.tourfx .stop.in .tk,main.tourfx .stop.in .dq{animation:rise .55s var(--ease) backwards;animation-delay:calc(var(--i,0)*65ms + .15s)}@keyframes rise{from{opacity:0;transform:translateY(22px)}}
+/* v12.1: a card's back: that player's three most-played heroes. Slides up on hover or keyboard focus; the corner button toggles it on touch. */
+.lu{cursor:pointer}.lu .back{position:absolute;left:0;right:0;bottom:0;z-index:1;display:flex;flex-direction:column;gap:7px;padding:34px 10px 26px;background:linear-gradient(180deg,transparent,rgba(15,15,16,.9) 26%,rgba(15,15,16,.97));opacity:0;transform:translateY(18%);transition:opacity .25s var(--ease),transform .3s var(--ease);pointer-events:none}
+.lu:hover .back,.lu:focus-visible .back,.lu.open .back{opacity:1;transform:none}
+.lu .back .ttl{font:700 10px/1 var(--fh);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.lu .back .hr{display:flex;align-items:center;gap:8px;font-size:12.5px;line-height:1.2;min-width:0}.lu .back .hr b{font:600 13px/1.2 var(--fh);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lu .back .hr span{margin-left:auto;white-space:nowrap;color:var(--muted)}.lu .back .hr span i,.lu .back .hr span em{font-style:normal}.lu .back .hr span i{color:var(--text)}
+.lu .flipb{position:absolute;right:6px;bottom:22px;z-index:3;width:34px;height:34px;padding:0;border-radius:50%;border:2px solid var(--cream);background:#0f0f10;color:var(--cream);font:700 15px/1 var(--fh);display:none}
+@media(hover:none){.lu .flipb{display:grid;place-items:center}}.lu.open .flipb{background:var(--cream);color:#0f0f10}
+@media(prefers-reduced-motion:reduce){main.tourpage h1.t-title{animation:none}.route::after{transition:none}.lu .back{transition:none}.frame,.lu .art,.lu .art img.h,.tk{transition:none}}
 </style></head>
-<body><main>
-<div class="hdr"><h1>Leaderboard</h1><span class="muted" id="count" style="align-self:flex-end;margin-bottom:28px"></span><div class="seg" id="sortSeg" role="radiogroup" aria-label="Sort standings by" style="align-self:flex-end;margin-bottom:26px;margin-left:auto"><span class="thumb" aria-hidden="true"></span><button type="button" role="radio" data-k="mmr">MMR</button><button type="button" role="radio" data-k="kda">KDA</button><button type="button" role="radio" data-k="kd">KD</button></div><select id="days" style="align-self:flex-end;margin-bottom:26px"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option><option value="3650">All time</option></select></div>
-<div id="patchBanner"></div><div id="recapBanner"></div><div class="wire" id="wire" hidden><div class="track" id="wireTrack"></div></div>
-<div id="podium" class="podium"></div>
-<p class="muted" id="rankNote" style="text-align:center;font-size:12px;margin:-6px 0 14px">Standings: <span class="term" id="rankNoteMmr" tabindex="0">MMR</span> (your rank as a number) first; players without an MMR yet are ordered by win rate (smoothed so one game can't carry you), then KDA, then games played. Win rate, KDA and souls/min use the selected window.</p>
-<div id="out" class="card">Loading…</div>
-<div class="two"><div><h2>Squad duos <span class="muted" style="font:400 13px var(--fb);letter-spacing:0;text-transform:none">· who wins together</span></h2><div id="duos" class="card">Loading…</div></div><div><h2>Recent games</h2><div id="recent" class="card recent">Loading…</div></div></div>
+<body><main data-ph="off" class="tourpage">
+<header class="t-head"><span class="t-eyebrow">Soul Scribe presents</span><h1 class="t-title">The squad<br>standings</h1><span class="sticker" id="edition">This week's edition</span>
+<p class="t-lead"><b>A visitor's guide to who's running these streets.</b> Four stops. <span id="count"></span></p>
+<div class="t-ctl"><div class="t-win" id="winSeg" role="radiogroup" aria-label="Time window"><button type="button" role="radio" data-d="7">7 days</button><button type="button" role="radio" data-d="30">30 days</button><button type="button" role="radio" data-d="90">90 days</button><button type="button" role="radio" data-d="3650">All time</button></div>
+<div class="seg" id="sortSeg" role="radiogroup" aria-label="Sort standings by"><span class="thumb" aria-hidden="true"></span><button type="button" role="radio" data-k="mmr">MMR</button><button type="button" role="radio" data-k="kda">KDA</button><button type="button" role="radio" data-k="kd">KD</button></div>
+<select id="days" hidden aria-hidden="true"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option><option value="3650">All time</option></select></div></header>
+<div class="t-ban"><div id="patchBanner"></div><div id="recapBanner"></div><div class="wire" id="wire" hidden><div class="track" id="wireTrack"></div></div></div>
+<div class="t-sky" aria-hidden="true"></div>
+<div class="tour"><div class="route">
+<section class="stop l-y" aria-label="Top of the standings"><div class="st-h"><span class="st-n">1</span><span class="st-strip">First stop: the top of the</span><span class="sign"><i>Y</i><b>Yellow line</b></span></div><div id="lead" class="lead">Loading…</div></section>
+<section class="stop l-b" aria-label="Standings"><div class="st-h"><span class="st-n">2</span><div class="st-t" role="heading" aria-level="2">The line-up</div><span class="st-s">Everyone, in order, on their most-played hero. Pick a card for the full profile.</span></div>
+<div id="lineup" class="lineup"></div>
+<p class="muted" id="rankNote" style="font-size:12px;margin:0 0 14px">Standings: <span class="term" id="rankNoteMmr" tabindex="0">MMR</span> (your rank as a number) first; players without an MMR yet are ordered by win rate (smoothed so one game can't carry you), then KDA, then games played. Win rate, KDA and souls/min use the selected window.</p>
+<details class="t-table" id="tableBox"><summary>The full timetable</summary><div id="out" class="card">Loading…</div></details></section>
+<section class="stop l-g" aria-label="Recent games"><div class="st-h"><span class="st-n">3</span><div class="st-t" role="heading" aria-level="2">Last night's games</div><span class="st-tag l-b">Hot off the streets</span></div>
+<div class="g-wrap"><div id="recent" class="tix">Loading…</div><a id="recentArt" class="frame r"></a></div></section>
+<section class="stop l-o" aria-label="Duo win rates"><div class="st-h"><span class="st-n">4</span><div class="st-t" role="heading" aria-level="2">Partners in crime</div><span class="st-tag">Who wins together</span></div>
+<div id="duos" class="duos2">Loading…</div><p class="t-key">The number is games together. The bar runs from 30% to 70% win rate; the cream line is 50%.</p></section>
+</div></div>
 </main>
 <script type="module">
 import { api, h, $, pct, ago, dur, fmt, heroes, hero, rankBadge, heroIcon, shell, showError, kda, ratio, kdOf, kdaOf, KD, KDA, term, rowLink, me } from "/js/app.js";
@@ -98,6 +194,7 @@ const SORTS = {
   last: { label: "Last played", note: () => "Sorted by who played most recently." },
 };
 const SEG_KEYS = ["mmr", "kda", "kd"];
+const REDUCE = matchMedia("(prefers-reduced-motion: reduce)").matches;
 let myId = null; me().then((m) => { myId = m.account_id ?? null; if (data.length) render(); }).catch(() => {});
 const kdaP = (p) => (p.games ? kdaOf(p.kills, p.deaths, p.assists) : -1), kdP = (p) => (p.games ? kdOf(p.kills, p.deaths) : -1);
 const sorters = {
@@ -128,7 +225,7 @@ async function load() {
   try {
     const [{ players }] = await Promise.all([api(`/players/leaderboard?days=${$("#days").value}`), heroes()]);
     $("#count").textContent = players.length ? `${players.length} tracked` : "";
-    if (!players.length) { $("#podium").replaceChildren(); return out.replaceChildren(h("div", { class: "empty" }, h("h2", {}, "Nobody here yet"), h("p", {}, "Sign in through Steam to add yourself, then install the uploader so your games flow in."), h("a", { class: "dl", href: "/api/auth/steam/login" }, "Sign in through Steam"))); }
+    if (!players.length) { $("#lineup").replaceChildren(); $("#lead").replaceChildren(h("p", { class: "muted" }, "Nobody on the board yet.")); $("#tableBox").open = true; return out.replaceChildren(h("div", { class: "empty" }, h("h2", {}, "Nobody here yet"), h("p", {}, "Sign in through Steam to add yourself, then install the uploader so your games flow in."), h("a", { class: "dl", href: "/api/auth/steam/login" }, "Sign in through Steam"))); }
     data = players; await render(true);
   } catch (e) { showError(out, e); }
 }
@@ -137,20 +234,38 @@ async function render(fresh = false) {
   $("#rankNote").replaceChildren(SORTS[sortKey].note());
   // FLIP: remember where each row was so the table can slide into the new order
   const before = new Map([...out.querySelectorAll("tbody tr[data-id]")].map((tr) => [tr.dataset.id, tr.getBoundingClientRect().top]));
-  const top = players.slice(0, 3); const order = top.length === 3 ? [top[1], top[0], top[2]] : top;
-  const LANES = ["l-y", "l-b", "l-g"]; // 1st Yellow line, 2nd Broadway, 3rd Greenwich
-  $("#podium").replaceChildren(h("div", { class: "dust", "aria-hidden": "true" }), ...await Promise.all(order.map(async (p) => { const i = players.indexOf(p); const wr = p.games ? p.wins / p.games : null; const kdaV = kdaOf(p.kills, p.deaths, p.assists), kdV = kdOf(p.kills, p.deaths);
-      const deck = i === 0 ? (wr != null && wr >= .5 ? "Runs this town. Rivals left reeling." : "Tops the standings despite a rough run of form.") : i === 1 ? "A close second; the gap is closing." : "Rounds out the podium and vows to climb.";
-      const ini = p.name.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
-      return h("a", { class: `pd ${LANES[i]}` + (i === 0 ? " first" : ""), href: `/player.html?id=${p.account_id}` },
-        h("div", { class: "print" }, h("span", { class: "tape" }), p.avatar_url ? h("img", { src: p.avatar_url, alt: "" }) : h("span", { class: "ph0" }, ini), h("span", { class: "cap" }, `${p.name}, pictured recently`)),
-        i === 0 ? h("span", { class: "stamp" }, "Squad leader") : "",
-        h("div", { class: "stop" }, h("b", {}, String(i + 1)), h("span", { class: "nm" }, p.name)),
-        h("p", { class: "deck" }, deck),
-        h("div", { class: "r" }, await standing(p, true)),
-        h("div", { class: "kv" }, h("div", {}, h("span", {}, "Win rate"), h("b", { class: wr == null ? "" : wr >= .5 ? "win" : "loss" }, wr == null ? "–" : pct(wr))),
-          h("div", { class: sortKey === "kd" ? "on" : "" }, h("span", {}, sortKey === "kd" ? "KD" : "KDA"), sortKey === "kd" ? h("b", { class: kdV >= KD.good ? "win" : kdV < KD.even ? "loss" : "" }, p.games ? kdV.toFixed(2) : "–") : h("b", { class: kdaV >= KDA.good ? "win" : kdaV < KDA.even ? "loss" : "" }, p.games ? kdaV.toFixed(2) : "–")),
-          h("div", {}, h("span", {}, "Games"), h("b", {}, String(p.games))), h("div", {}, h("span", {}, "Souls/min"), h("b", {}, fmt(p.souls_per_min))))); })));
+  // v12: stop 1 is the leader on their most-played hero's art; stop 2 is everyone as a portrait card.
+  const HS = await heroes(), heroOf = (id) => HS.find((x) => x.id === id), wrOf = (p) => (p.games ? p.wins / p.games : null);
+  const LC = ["l-y", "l-b", "l-g", "l-p", "l-o"], TILT = [-2, 1.5, -1.5, 2, -1];
+  const formDots = (p) => h("div", { class: "form", "aria-label": "Last results, newest first" }, ...(p.form || []).map((w) => h("i", { class: w ? "w" : "l", title: w ? "Win" : "Loss" }, w ? "W" : "L")));
+  const ratioTxt = (p) => (sortKey === "kd" ? kdOf(p.kills, p.deaths) : kdaOf(p.kills, p.deaths, p.assists)).toFixed(2);
+  const lead = players[0], lh = heroOf(lead.top_hero_id), lwr = wrOf(lead), lart = lh?.images?.background || lh?.images?.card || lead.avatar_url;
+  const kv = (label, val, hi) => h("span", {}, h("b", { class: hi ? "hi" : "" }, val), label);
+  $("#lead").replaceChildren(
+    h("a", { class: "frame", href: `/player.html?id=${lead.account_id}`, "aria-label": `${lead.name}'s profile` }, lart ? h("img", { src: lart, alt: "", fetchpriority: "high", decoding: "async" }) : "", h("span", { class: "cap" }, lh ? `${lh.name} · ${lead.name}'s most played` : "No games in this window")),
+    h("div", { class: "tx" }, h("a", { class: "nm", href: `/player.html?id=${lead.account_id}` }, lead.name, lead.account_id === myId ? h("span", { class: "youtag" }, "You") : ""),
+      h("p", { class: "deck" }, lwr != null && lwr >= .5 ? "Runs this town. Rivals left reeling." : "Tops the standings despite a rough run of form.", lh ? ` Mostly seen on ${lh.name}.` : ""),
+      lead.mmr_score != null ? h("div", { class: "stand" }, await standing(lead, true)) : "",
+      h("div", { class: "kv" }, kv("win rate", lwr == null ? "–" : pct(lwr), true), kv(sortKey === "kd" ? "KD" : "KDA", lead.games ? ratioTxt(lead) : "–"), kv("games", String(lead.games)), kv("souls / min", lead.games ? fmt(lead.souls_per_min) : "–")),
+      formDots(lead)));
+  const lineup = $("#lineup"), luBefore = new Map([...lineup.querySelectorAll(".lu[data-id]")].map((el) => [el.dataset.id, el.getBoundingClientRect()]));
+  lineup.classList.toggle("first", fresh);
+  lineup.replaceChildren(...await Promise.all(players.map(async (p, i) => { const hx = heroOf(p.top_hero_id), wr = wrOf(p), img = hx?.images?.card || hx?.images?.vertical;
+    const ini = p.name.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+    const tops = (p.top_heroes || []).map((t) => ({ ...t, hero: heroOf(t.hero_id) })).filter((t) => t.hero);
+    const back = tops.length ? h("div", { class: "back" }, h("span", { class: "ttl" }, "Most played"), ...tops.map((t) => h("div", { class: "hr" }, heroIcon(t.hero, 26), h("b", {}, t.hero.name), h("span", { title: `${t.games} game${t.games === 1 ? "" : "s"}, ${pct(t.wins / t.games)} won` }, h("em", {}, `${t.games} · `), h("i", {}, `${Math.round(t.wins / t.games * 100)}%`))))) : "";
+    const card = rowLink(h("div", { class: `lu ${LC[i % LC.length]}` + (p.account_id === myId ? " you" : ""), "data-id": String(p.account_id), style: `--tilt:${TILT[i % TILT.length]}deg;--i:${Math.min(i, 9)}`, "aria-label": `${p.name}, rank ${i + 1}. Open profile.` },
+      h("div", { class: "art" }, h("span", { class: "rk" }, String(i + 1)), h("div", { class: "clip" }, img ? h("img", { class: "h", src: img, alt: "", loading: "lazy" }) : h("span", { class: "ini" }, ini), back), p.avatar_url ? h("img", { class: "av", src: p.avatar_url, alt: "" }) : "",
+        tops.length ? h("button", { class: "flipb", type: "button", "aria-label": `Show ${p.name}'s most-played heroes`, onclick: (e) => { e.stopPropagation(); card.classList.toggle("open"); } }, "↻") : "",
+        h("span", { class: "plate" }, p.name, p.account_id === myId ? " · you" : "")),
+      h("div", { class: "big" }, h("b", { class: wr == null ? "" : wr >= .5 ? "win" : "loss" }, wr == null ? "–" : pct(wr)), h("span", {}, "win rate")),
+      h("div", { class: "stand" }, p.mmr_score != null ? [await standing(p, false), h("span", { class: "muted" }, "·")] : "", h("span", { class: "muted" }, `${p.games} game${p.games === 1 ? "" : "s"}${p.mmr_score != null ? "" : " · no rank yet"}`)),
+      h("div", { class: "trio" }, h("span", {}, h("b", {}, p.games ? ratioTxt(p) : "–"), sortKey === "kd" ? "KD" : "KDA"), h("span", {}, h("b", {}, p.games ? fmt(p.souls_per_min) : "–"), "souls/min"), h("span", { title: p.avg_damage != null ? `${fmt(p.avg_damage)} average hero damage` : "No games with a full match record in this window" }, h("b", {}, p.avg_damage != null ? `${(p.avg_damage / 1000).toFixed(1)}k` : "–"), "dmg/game")),
+      formDots(p)), `/player.html?id=${p.account_id}`);
+    return card; })));
+  // cards slide from where they were to their new rank
+  if (!fresh && !REDUCE) for (const el of lineup.querySelectorAll(".lu[data-id]")) { const was = luBefore.get(el.dataset.id); if (!was) continue; const now = el.getBoundingClientRect(), dx = was.left - now.left, dy = was.top - now.top; if (!dx && !dy) continue;
+    el.animate([{ transform: `translate(${dx}px,${dy}px)` }, { transform: "none" }], { duration: 620, easing: "cubic-bezier(.34,1.3,.64,1)" }); }
   const col = { mmr: 2, games: 3, wr: 4, kd: 6, kda: 7, spm: 8, dmg: 9, last: 10 }[sortKey];
   const rows = await Promise.all(players.map(async (p, i) => {
       const wr = p.games ? p.wins / p.games : null;
@@ -183,7 +298,20 @@ async function render(fresh = false) {
     tr.classList.add("cas"); tr.dataset.cas = "1"; tr.style.animation = "none";
     tr.animate([{ transform: `translateY(${dy}px)` }, { transform: "none" }], { duration: 650, easing: "cubic-bezier(.34,1.3,.64,1)" }); }
 }
-$("#days").addEventListener("change", load); load();
+$("#days").addEventListener("change", load);
+// v12: the window is a row of pills (the select stays as the value holder), the edition sticker carries today's date, and the timetable remembers if you opened it
+const winSeg = $("#winSeg"), markWin = () => winSeg.querySelectorAll("button").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.d === $("#days").value)));
+winSeg.addEventListener("click", (e) => { const b = e.target.closest("button[data-d]"); if (!b || b.dataset.d === $("#days").value) return; $("#days").value = b.dataset.d; markWin(); load(); }); markWin();
+$("#edition").textContent = `${new Date().toLocaleDateString(undefined, { month: "long", day: "numeric" })} edition`;
+const tableBox = $("#tableBox"); try { tableBox.open = localStorage.getItem("ss.lb.table") === "1"; } catch {} tableBox.addEventListener("toggle", () => { try { localStorage.setItem("ss.lb.table", tableBox.open ? "1" : "0"); } catch {} });
+// v12.1: stops arrive as you reach them, and the lit route line follows you down the page
+{ const route = document.querySelector(".route"), stops = [...document.querySelectorAll(".stop")];
+  if (REDUCE || !("IntersectionObserver" in window)) stops.forEach((x) => x.classList.add("in"));
+  else { document.querySelector("main").classList.add("tourfx");
+    const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { rootMargin: "0px 0px -15% 0px", threshold: .04 }); stops.forEach((x) => io.observe(x));
+    let raf = 0; const draw = () => { raf = 0; const r = route.getBoundingClientRect(); route.style.setProperty("--drawn", `${(Math.max(0, Math.min(1, (innerHeight * .7 - r.top) / Math.max(1, r.height))) * 100).toFixed(2)}%`); };
+    const ask = () => { if (!raf) raf = requestAnimationFrame(draw); }; addEventListener("scroll", ask, { passive: true }); addEventListener("resize", ask); new ResizeObserver(ask).observe(route); draw(); } }
+load();
 
 // Weekly recap: for the first three days of a new week, point at last week's awards.
 (async () => { try { const r = await api("/squad/recap?offset=1"); if (!r.totals.games || Date.now() / 1000 - r.end > 3 * 86400) return; const mvp = r.awards.find((a) => a.key === "mvp"), who = mvp && r.players.find((p) => p.account_id === mvp.account_id);
@@ -196,24 +324,32 @@ $("#days").addEventListener("change", load); load();
 (async () => { const el = $("#duos"); try { const [duos, list] = await Promise.all([api("/players/duos"), api("/players")]); const P = new Map(list.map((p) => [p.account_id, p]));
   const rows = duos.filter((d) => d.games >= 2).slice(0, 10);
   if (!rows.length) return el.replaceChildren(h("p", { class: "muted", style: "margin:0" }, "No shared games yet. Once two tracked friends play on the same team, their duo shows up here."));
-  el.replaceChildren(...rows.map((d) => { const a = P.get(d.a), b = P.get(d.b), wr = d.wins / d.games; return h("div", { class: "duo" }, h("div", { class: "avs" }, a?.avatar_url ? h("img", { src: a.avatar_url, alt: "" }) : "", b?.avatar_url ? h("img", { src: b.avatar_url, alt: "" }) : ""),
-    h("div", { class: "nm" }, h("span", {}, `${a?.name ?? d.a} +`), " ", h("span", {}, String(b?.name ?? d.b)), h("small", { title: "Kills / deaths / assists per game, both players combined" }, `${d.games} games · ${d.kills.toFixed(0)}/${d.deaths.toFixed(0)}/${d.assists.toFixed(0)} combined`)), h("div", {}, h("div", { class: "wr " + (wr >= .5 ? "win" : "loss") }, pct(wr)), h("div", { class: "bar" }, h("i", { style: `width:${wr * 100}%;background:${wr >= .5 ? "var(--win)" : "var(--loss)"}` })))); })); } catch (e) { showError(el, e); } })();
+  const LC = ["l-y", "l-b", "l-g"];
+  el.replaceChildren(...rows.map((d, i) => { const a = P.get(d.a), b = P.get(d.b), wr = d.wins / d.games, pos = Math.max(0, Math.min(1, (wr - .3) / .4));
+    return h("div", { class: `dq ${LC[i % 3]}`, style: `--i:${i}`, title: `${d.games} games together · ${d.kills.toFixed(0)}/${d.deaths.toFixed(0)}/${d.assists.toFixed(0)} kills / deaths / assists per game, combined` }, h("span", { class: "n" }, String(d.games)),
+      h("div", { class: "b" }, h("div", { class: "t" }, h("span", {}, `${a?.name ?? d.a} + ${b?.name ?? d.b}`), h("b", { class: wr >= .5 ? "win" : "loss" }, pct(wr))),
+        h("div", { class: "bar2" }, h("i", { class: wr >= .5 ? "hi" : "", style: `width:${(pos * 100).toFixed(1)}%` })))); })); } catch (e) { showError(el, e); } })();
 (async () => {
   const el = $("#recent");
   try {
     // One request for the squad's newest games (this used to load every player's whole profile, one request each).
-    const [rows, hs] = await Promise.all([api("/players/recent?limit=25"), heroes()]); const FIRST = 10;
+    const [rows, hs] = await Promise.all([api("/players/recent?limit=25"), heroes()]); const FIRST = 8;
     if (!rows.length) return (el.textContent = "No games yet.");
     const all = rows.map((m) => ({ ...m, player: { account_id: m.account_id, name: m.name } })), brawlTag = (m) => (m.game_mode === 4 ? h("span", { class: "brawltag", title: "Street Brawl: listed here, never counted in the stats" }, "Brawl") : "");
     // the wire: a slow ticker of the latest results
     const wireItems = all.slice(0, 12).map((m) => { const hx = hs.find((x) => x.id === m.hero_id); return h("span", { class: "w" }, heroIcon(hx, 20), h("a", { href: `/player.html?id=${m.player.account_id}` }, h("b", {}, m.player.name)), h("span", { class: "res " + (m.won ? "win" : "loss") }, m.won ? "Win" : "Loss"), brawlTag(m), `${hx?.name ?? ""} ${m.kills}/${m.deaths}/${m.assists}`, h("span", { style: "color:var(--dim)" }, ago(m.start_time))); });
     if (wireItems.length) { $("#wire").hidden = false; $("#wireTrack").replaceChildren(...wireItems, ...wireItems.map((x) => x.cloneNode(true))); $("#wire").style.setProperty("--dur", `${Math.max(30, wireItems.length * 6)}s`); }
-    el.replaceChildren(h("div", { class: "rscroll" }, h("table", {}, h("thead", {}, h("tr", {}, ...["When", "Player", "Hero", "Result", "K / D / A", "KDA", "Souls / damage", ""].map((t) => h("th", {}, t)))),
-      h("tbody", {}, ...all.map((m, i) => { const hx = hs.find((x) => x.id === m.hero_id); return rowLink(h("tr", { class: i >= FIRST ? "extra" : "", hidden: i >= FIRST ? "" : undefined }, h("td", { class: "muted wl" }, ago(m.start_time), h("small", { title: "Match length" }, dur(m.duration_s))), h("td", {}, h("a", { href: `/player.html?id=${m.player.account_id}` }, m.player.name)),
-        h("td", {}, h("div", { class: "hero" }, heroIcon(hx), h("a", { href: `/hero.html?id=${m.hero_id}` }, hx?.name ?? m.hero_id), brawlTag(m))),
-        h("td", { class: m.won ? "win" : "loss" }, m.won ? "Win" : "Loss"), h("td", {}, kda(m.kills, m.deaths, m.assists, { size: "sm" })), h("td", { class: "num" }, ratio(kdaOf(m.kills, m.deaths, m.assists), KDA)),
-        h("td", { class: "num sd" }, fmt(m.net_worth), h("small", { title: m.hero_damage != null ? "Hero damage dealt" : "No full match record for this game, so no damage figure" }, m.hero_damage != null ? `${fmt(m.hero_damage)} dmg` : "– dmg")), h("td", {}, h("a", { class: "sbbtn", href: `/match.html?id=${m.match_id}`, title: "Open this match's scoreboard" }, "Scoreboard", h("span", { class: "go", "aria-hidden": "true" }, "→")))), `/match.html?id=${m.match_id}`); })))),
-      all.length > FIRST ? h("button", { class: "morebtn ghost", type: "button", onclick: (e) => { el.querySelectorAll("tr.extra").forEach((tr) => (tr.hidden = false)); e.currentTarget.remove(); } }, `Show ${all.length - FIRST} more games`) : "");
+    // v12: each game is a ticket stub; the framed art beside the list is the hero from the newest game
+    const m0 = all[0], h0 = hs.find((x) => x.id === m0.hero_id), art0 = h0?.images?.background || h0?.images?.card, frame = $("#recentArt");
+    if (art0) { frame.href = `/match.html?id=${m0.match_id}`; frame.replaceChildren(h("img", { src: art0, alt: "", loading: "lazy" }), h("span", { class: "cap" }, `${m0.player.name} as ${h0.name} · ${ago(m0.start_time)}`)); }
+    el.replaceChildren(...all.map((m, i) => { const hx = hs.find((x) => x.id === m.hero_id);
+        return rowLink(h("div", { class: "tk" + (i >= FIRST ? " extra" : ""), hidden: i >= FIRST ? "" : undefined, style: `--i:${Math.min(i, FIRST)}` },
+          h("span", { class: "stub " + (m.won ? "w" : "l") }, m.won ? "Win" : "Loss"),
+          h("div", { class: "who" }, h("div", { class: "l1" }, heroIcon(hx, 26), h("a", { href: `/player.html?id=${m.player.account_id}` }, m.player.name), h("span", { class: "as" }, "as"), h("a", { href: `/hero.html?id=${m.hero_id}` }, hx?.name ?? String(m.hero_id)), brawlTag(m)), h("small", {}, `${ago(m.start_time)} · ${dur(m.duration_s)} long`)),
+          h("span", { class: "kd", title: "Kills / deaths / assists" }, h("b", { class: "k" }, String(m.kills)), h("i", {}, "/"), h("b", { class: "d" }, String(m.deaths)), h("i", {}, "/"), h("b", { class: "a" }, String(m.assists))),
+          h("span", { class: "sd" }, h("b", { title: "Souls" }, fmt(m.net_worth)), h("span", { title: m.hero_damage != null ? "Hero damage dealt" : "No full match record for this game, so no damage figure" }, m.hero_damage != null ? `${fmt(m.hero_damage)} dmg` : "– dmg")),
+          h("a", { class: "sbbtn", href: `/match.html?id=${m.match_id}`, title: "Open this match's scoreboard" }, "Scoreboard", h("span", { class: "go", "aria-hidden": "true" }, "→"))), `/match.html?id=${m.match_id}`); }),
+      all.length > FIRST ? h("button", { class: "morebtn ghost", type: "button", onclick: (e) => { el.querySelectorAll(".tk.extra").forEach((t) => (t.hidden = false)); e.currentTarget.remove(); } }, `Show ${all.length - FIRST} more games`) : "");
   } catch (e) { showError(el, e); }
 })();
 </script></body></html>

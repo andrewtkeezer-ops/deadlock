@@ -245,6 +245,7 @@ export const openPalette = () => import("/js/palette.js").then((m) => m.open()).
 
 /** Latest official uploader release, via the Worker (cached). */
 export const uploaderLatest = () => api("/uploader/latest");
+export const uploaderFork = () => api("/uploader/fork");
 const ACK = "ss.uploader.ack";
 /** "New uploader version" notice. We can't see which version someone has installed, so it shows once per release until
  *  they download it or say they're up to date (remembered per browser). */

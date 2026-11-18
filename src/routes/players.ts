@@ -36,7 +36,18 @@ r.get("/leaderboard", async (c) => {
                (COALESCE(SUM(m.kills),0) + COALESCE(SUM(m.assists),0)) * 1.0 / MAX(COALESCE(SUM(m.deaths),0), 1) DESC,
                COUNT(m.match_id) DESC`
   ).bind(since).all();
-  return c.json({ days, players: results.map((p) => ({ ...p, avatar_url: bigAvatar(p.avatar_url as string | null) })) });
+  // v12: the standings show each player on their most-played hero of the window (latest game wins a tie) with their last five results.
+  const [heroRes, formRes] = await c.env.DB.batch([
+    c.env.DB.prepare(`SELECT m.account_id, m.hero_id, COUNT(*) AS n, COALESCE(SUM(m.won),0) AS w, MAX(m.start_time) AS t FROM player_matches m WHERE m.start_time>=? AND ${std("m")} GROUP BY m.account_id, m.hero_id`).bind(since),
+    c.env.DB.prepare(`SELECT account_id, won FROM (SELECT m.account_id, m.won, m.start_time, ROW_NUMBER() OVER (PARTITION BY m.account_id ORDER BY m.start_time DESC) AS rn FROM player_matches m WHERE ${std("m")}) WHERE rn<=5 ORDER BY account_id, start_time DESC`),
+  ]);
+  type HeroRow = { account_id: number; hero_id: number; n: number; w: number; t: number };
+  const byPlayer = new Map<number, HeroRow[]>();
+  for (const r of heroRes.results as HeroRow[]) byPlayer.set(r.account_id, [...(byPlayer.get(r.account_id) ?? []), r]);
+  for (const list of byPlayer.values()) list.sort((a, b) => b.n - a.n || b.t - a.t);
+  const form = new Map<number, number[]>();
+  for (const r of formRes.results as { account_id: number; won: number }[]) form.set(r.account_id, [...(form.get(r.account_id) ?? []), r.won ? 1 : 0]);
+  return c.json({ days, players: results.map((p) => ({ ...p, avatar_url: bigAvatar(p.avatar_url as string | null), top_hero_id: byPlayer.get(p.account_id as number)?.[0]?.hero_id ?? null, top_heroes: (byPlayer.get(p.account_id as number) ?? []).slice(0, 3).map((r) => ({ hero_id: r.hero_id, games: r.n, wins: r.w })), form: form.get(p.account_id as number) ?? [] })) });
 });
 
 /** Squad duos: two tracked friends on the same team in the same match. ?days= */
