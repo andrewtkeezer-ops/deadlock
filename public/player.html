@@ -70,7 +70,7 @@
 </div></div>
 </main>
 <script type="module">
-import { api, h, $, pct, ago, dur, fmt, heroes, rankBadge, heroIcon, items, itemImg, shell, showError, kda, ratio, kdOf, kdaOf, KD, KDA, me as whoAmI, term, crumb, rowLink, segmented } from "/js/app.js";
+import { fitText, api, h, $, pct, ago, dur, fmt, heroes, rankBadge, heroIcon, items, itemImg, shell, showError, kda, ratio, kdOf, kdaOf, KD, KDA, me as whoAmI, term, crumb, rowLink, segmented } from "/js/app.js";
 $("#mmrHead")?.replaceWith(term("MMR"));
 import { mountAchievements, mountTrends, mountBench, mountCurve, mountLanes } from "/js/profile.js";
 import { achievementToast } from "/js/game.js";
@@ -86,7 +86,7 @@ try {
   if (d.brawl_games > 0 || BRAWL) { const go = (v) => { const u = new URLSearchParams(location.search); v === "brawl" ? u.set("mode", "brawl") : u.delete("mode"); location.href = `${location.pathname}?${u}`; };
     $("#modebar").replaceChildren(segmented([["standard", "Standard"], ["brawl", `Street Brawl (${d.brawl_games})`]], BRAWL ? "brawl" : "standard", go, "Game mode"), h("span", { class: "note" }, BRAWL ? "Street Brawl games only." : "Street Brawl games are kept separate and never count in these numbers.")); }
   const tier = p.mmr_rank ? Math.floor(p.mmr_rank / 10) : 0; const rinfo = p.mmr_rank ? assets.ranks.find((r) => r.tier === tier) : null;
-  $("#head").replaceChildren(p.avatar_url ? h("div", { class: "avw" }, h("img", { class: "av", src: p.avatar_url, alt: "" })) : "", h("div", { style: "flex:1" }, h("h1", {}, p.name), h("div", { class: "muted" }, `Synced ${ago(p.last_sync_at)}`, d.ingest?.active ? ` · uploader active, last upload ${ago(d.ingest.last_upload_at)}` : "")),
+  $("#head").replaceChildren(p.avatar_url ? h("div", { class: "avw" }, h("img", { class: "av", src: p.avatar_url, alt: "" })) : "", h("div", { style: "flex:1;min-width:0" }, fitText(h("h1", {}, p.name), { min: 20 }), h("div", { class: "muted" }, `Synced ${ago(p.last_sync_at)}`, d.ingest?.active ? ` · uploader active, last upload ${ago(d.ingest.last_upload_at)}` : "")),
     h("div", { class: "rank" }, await rankBadge(p.mmr_rank, "large"), h("div", {}, h("b", {}, rinfo ? `${rinfo.name} ${p.mmr_rank % 10 || ""}` : "Unranked"), h("span", {}, ...(p.mmr_score != null ? [term("MMR"), ` ${Math.round(p.mmr_score)}`] : ["placements not played yet"])))));
   if (qs.has("welcome")) $("#banner").append(h("div", { class: "card banner" }, h("strong", {}, "You're in. "), `Imported ${qs.get("welcome")} matches so far. `, h("a", { href: "/setup.html" }, "Install the match uploader"), " to get the rest."));
   if (d.coverage && d.coverage.checked && d.coverage.with_stats < d.coverage.checked && me?.account_id === p.account_id) $("#banner").append(h("div", { class: "card banner" }, h("strong", {}, `${d.coverage.checked - d.coverage.with_stats} of your last ${d.coverage.checked} games have no detailed stats yet. `), "Keep the uploader running after you quit the game, or open those games in Match History → Watch Replay. ", h("a", { href: "/setup.html" }, "Setup")));

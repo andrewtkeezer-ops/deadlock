@@ -27,6 +27,19 @@ export function syncState(b, seen) {
   return { key: "nouploader", label: "Waiting for uploader", detail: `Queued, but no Soul Scribe uploader has checked in for your account${seen ? ` since ${ago(seen)}` : ""}. Only the Soul Scribe uploader can put builds into the game; the standard match uploader can't.` };
 }
 export const syncVerb = (b) => (b.sync_wanted ? "Stop syncing" : b.ingame_build_id ? "Sync changes to game" : "Send to game");
+/** Shrink an element's text until it fits on one line inside its own box, and re-fit whenever that box changes width (rotation, fonts loading).
+ *  Below `min` px it stops shrinking and lets the text wrap instead. */
+export function fitText(el, { min = 14, slack = .95 } = {}) {
+  let lastW = -1;
+  const fit = (force) => { const w = el.clientWidth; if (!w || (!force && w === lastW)) return; lastW = w;
+    el.style.whiteSpace = "nowrap"; el.style.overflowWrap = ""; el.style.fontSize = "";
+    const cs = getComputedStyle(el), pad = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight), avail = (w - pad) * slack, need = el.scrollWidth - pad; if (need <= avail) return;
+    const size = parseFloat(cs.fontSize) * avail / need;
+    if (size >= min) el.style.fontSize = `${size.toFixed(1)}px`; else { el.style.fontSize = `${min}px`; el.style.whiteSpace = "normal"; el.style.overflowWrap = "anywhere"; } };
+  requestAnimationFrame(() => fit(true)); document.fonts?.ready.then(() => fit(true));
+  if ("ResizeObserver" in window) new ResizeObserver(() => fit(false)).observe(el);
+  return el;
+}
 export const dur = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 export const fmt = (n) => (n == null ? "–" : Math.round(n).toLocaleString());
 

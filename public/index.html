@@ -115,7 +115,7 @@ main.tourpage h1.t-title{margin:0;font:400 clamp(54px,9vw,128px)/.92 var(--fd);l
 .lead .frame{aspect-ratio:16/10;width:100%}
 .lead .tx{min-width:0;display:flex;flex-direction:column;gap:12px}
 @media(max-width:900px){.lead{grid-template-columns:minmax(0,1fr);gap:24px}}
-.lead .nm{font:400 clamp(28px,3.4vw,46px)/1.02 var(--fd);color:var(--cream);overflow-wrap:anywhere}.lead .nm:hover{color:var(--lane-y)}
+.lead .nm{display:block;font:400 clamp(28px,3.4vw,46px)/1.02 var(--fd);color:var(--cream)}.lead .nm:hover{color:var(--lane-y)}
 .lead .deck{margin:0;color:var(--muted);font-size:16px}
 .lead .stand,.lu .stand{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13px;min-height:32px}
 .lead .kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:14px}
@@ -184,7 +184,7 @@ main.tourfx .stop.in .lineup.first .lu,main.tourfx .stop.in .tk,main.tourfx .sto
 </div></div>
 </main>
 <script type="module">
-import { api, h, $, pct, ago, dur, fmt, heroes, hero, rankBadge, heroIcon, shell, showError, kda, ratio, kdOf, kdaOf, KD, KDA, term, rowLink, me } from "/js/app.js";
+import { api, h, $, pct, ago, dur, fmt, heroes, hero, rankBadge, heroIcon, shell, showError, kda, ratio, kdOf, kdaOf, KD, KDA, term, rowLink, me, fitText } from "/js/app.js";
 $("#rankNoteMmr")?.replaceWith(term("MMR"));
 shell("/");
 const SORTS = {
@@ -249,7 +249,7 @@ async function render(fresh = false) {
   const kv = (label, val, hi) => h("span", {}, h("b", { class: hi ? "hi" : "" }, val), label);
   $("#lead").replaceChildren(
     h("a", { class: "frame", href: `/player.html?id=${lead.account_id}`, "aria-label": `${lead.name}'s profile` }, ...collage(lh, lead.avatar_url, true), h("span", { class: "cap" }, lh ? `${lh.name} · ${lead.name}'s most played` : "No games in this window")),
-    h("div", { class: "tx" }, h("a", { class: "nm", href: `/player.html?id=${lead.account_id}` }, lead.name, lead.account_id === myId ? h("span", { class: "youtag" }, "You") : ""),
+    h("div", { class: "tx" }, fitText(h("a", { class: "nm", href: `/player.html?id=${lead.account_id}` }, lead.name), { min: 20 }), lead.account_id === myId ? h("span", { class: "youtag", style: "align-self:flex-start" }, "You") : "",
       h("p", { class: "deck" }, lwr != null && lwr >= .5 ? "Runs this town. Rivals left reeling." : "Tops the standings despite a rough run of form.", lh ? ` Mostly seen on ${lh.name}.` : ""),
       lead.mmr_score != null ? h("div", { class: "stand" }, await standing(lead, true)) : "",
       h("div", { class: "kv" }, kv("win rate", lwr == null ? "–" : pct(lwr), true), kv(sortKey === "kd" ? "KD" : "KDA", lead.games ? ratioTxt(lead) : "–"), kv("games", String(lead.games)), kv("souls / min", lead.games ? fmt(lead.souls_per_min) : "–")),
@@ -263,7 +263,7 @@ async function render(fresh = false) {
     const card = rowLink(h("div", { class: `lu ${LC[i % LC.length]}` + (p.account_id === myId ? " you" : ""), "data-id": String(p.account_id), style: `--tilt:${TILT[i % TILT.length]}deg;--i:${Math.min(i, 9)}`, "aria-label": `${p.name}, rank ${i + 1}. Open profile.` },
       h("div", { class: "art" }, h("span", { class: "rk" }, String(i + 1)), h("div", { class: "clip" }, img ? h("img", { class: "h", src: img, alt: "", loading: "lazy" }) : h("span", { class: "ini" }, ini), back), p.avatar_url ? h("img", { class: "av", src: p.avatar_url, alt: "" }) : "",
         tops.length ? h("button", { class: "flipb", type: "button", "aria-label": `Show ${p.name}'s most-played heroes`, onclick: (e) => { e.stopPropagation(); card.classList.toggle("open"); } }, "↻") : "",
-        h("span", { class: "plate" }, p.name, p.account_id === myId ? " · you" : "")),
+        fitText(h("span", { class: "plate" }, p.name, p.account_id === myId ? " · you" : ""), { min: 9, slack: 1 })),
       h("div", { class: "big" }, h("b", { class: wr == null ? "" : wr >= .5 ? "win" : "loss" }, wr == null ? "–" : pct(wr)), h("span", {}, "win rate")),
       h("div", { class: "stand" }, p.mmr_score != null ? [await standing(p, false), h("span", { class: "muted" }, "·")] : "", h("span", { class: "muted" }, `${p.games} game${p.games === 1 ? "" : "s"}${p.mmr_score != null ? "" : " · no rank yet"}`)),
       h("div", { class: "trio" }, h("span", {}, h("b", {}, p.games ? ratioTxt(p) : "–"), sortKey === "kd" ? "KD" : "KDA"), h("span", {}, h("b", {}, p.games ? fmt(p.souls_per_min) : "–"), "souls/min"), h("span", { title: p.avg_damage != null ? `${fmt(p.avg_damage)} average hero damage` : "No games with a full match record in this window" }, h("b", {}, p.avg_damage != null ? `${(p.avg_damage / 1000).toFixed(1)}k` : "–"), "dmg/game")),
