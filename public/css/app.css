@@ -1013,17 +1013,3 @@ tr:hover .kda .b i{filter:brightness(1.35)}
 .spark{position:fixed;z-index:9999;width:0;height:0;pointer-events:none}.spark i{position:absolute;left:-3px;top:-3px;width:6px;height:6px;border-radius:1px;background:var(--c,var(--ink));transform:rotate(45deg);animation:sparkfly .55s var(--ease) forwards}
 @keyframes sparkfly{to{transform:translate(var(--dx),var(--dy)) rotate(220deg) scale(.15);opacity:0}}
 @media(prefers-reduced-motion:reduce){.spark{display:none}.sticker,img.hicon{transition:none}}
-/* v12 site-wide "Cursed Apple": every page stands in the leaderboard's world. The leaderboard itself (main.tourpage) has its own layout in index.html. */
-/* the page is the teal night-map panel, rising out of a skyline */
-main:not(.tourpage){position:relative;margin-top:26px;padding-top:122px;background-color:#10262b;background-image:linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px);background-size:40px 40px;clip-path:polygon(0 100%,0 52px,4% 52px,4% 32px,9% 32px,9% 59px,13% 59px,13% 18px,15% 18px,15% 8px,17% 8px,17% 18px,19% 18px,19% 47px,25% 47px,25% 29px,31% 29px,31% 54px,36% 54px,36% 13px,41% 13px,41% 40px,47% 40px,47% 0,49% 0,49% 25px,54% 25px,54% 50px,60% 50px,60% 22px,66% 22px,66% 44px,71% 44px,71% 10px,75% 10px,75% 37px,81% 37px,81% 55px,86% 55px,86% 25px,91% 25px,91% 45px,96% 45px,96% 34px,100% 34px,100% 100%)}
-/* postcard titles: dark letters, cream outline, orange shadow, tilted */
-main:not(.tourpage) h1,main:not(.tourpage) .ph h1{color:#0f0f10;-webkit-text-stroke:2.5px var(--cream);text-shadow:5px 5px 0 var(--ink);text-transform:uppercase;transform:rotate(-2.5deg);letter-spacing:.01em;padding-right:.1em}
-main:not(.tourpage) h2{font:400 clamp(24px,2.6vw,32px)/1.05 var(--fd);letter-spacing:.01em}
-/* panels are framed like the game-art frames and ticket stubs: black, cream edge, hard shadow */
-main:not(.tourpage) .card,main:not(.tourpage) .sec,main:not(.tourpage) .tile{background:#0f0f10;border:2px solid var(--cream);border-radius:4px;box-shadow:6px 7px 0 #000;backdrop-filter:none;-webkit-backdrop-filter:none}
-main:not(.tourpage) .card .card,main:not(.tourpage) .sec .card,main:not(.tourpage) .card .tile,main:not(.tourpage) .sec .tile{border:1px solid var(--line2);box-shadow:none;background:#15191a}
-main:not(.tourpage) .card:hover,main:not(.tourpage) .sec:hover{box-shadow:8px 10px 0 #000}
-main:not(.tourpage) details.sec,main:not(.tourpage) details.card{box-shadow:4px 5px 0 #000}
-@media(max-width:860px){main:not(.tourpage){margin-top:10px;padding-top:98px}main:not(.tourpage) h1,main:not(.tourpage) .ph h1{-webkit-text-stroke-width:2px;text-shadow:3px 3px 0 var(--ink);transform:rotate(-2deg)}main:not(.tourpage) .card,main:not(.tourpage) .sec,main:not(.tourpage) .tile{box-shadow:4px 5px 0 #000}}
-/* v12.3: a page that is one full-bleed stage with its own art (Heroes) keeps the titles and frames but not the map panel, which washed its backdrop out */
-main.stagepage:not(.tourpage){margin-top:0;padding-top:0;background:none;clip-path:none}

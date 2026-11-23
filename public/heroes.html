@@ -42,7 +42,7 @@ main{max-width:none;padding:0;height:100vh;display:flex;flex-direction:column;ov
 .stage .toTop{display:none}
 @media(max-width:860px){.hfind{flex:1 1 100%;width:100%}.stage{scroll-margin-top:8px}.stage .toTop{display:inline-flex;margin:0 0 12px}.topbar .hint{display:block;flex-basis:100%;white-space:normal}}
 </style></head>
-<body><main class="stagepage">
+<body><main>
 <div class="topbar"><h1>Select hero</h1><span class="hint"><span class="hint-hover">Hover to preview · click to lock · double-click or Enter to open</span><span class="hint-touch">Tap a hero to preview · tap again to open</span></span><span class="sp"></span>
 <input type="search" id="hfind" class="hfind" data-slash placeholder="Find a hero…  /" aria-label="Find a hero" autocomplete="off"><div class="filters" id="filters"></div><select id="band" aria-label="Rank band for win rates"><option value="">All ranks</option><option value="1,60">Initiate–Arcanist</option><option value="61,90">Oracle–Phantom</option><option value="91,116">Ascendant–Eternus</option></select><button id="metaBtn">Meta table</button></div>
 <div class="select"><div class="gridwrap"><div class="grid-h" id="grid"></div></div><div id="stage" class="stage"><div class="layout"><div class="info muted">Loading heroes…</div></div></div></div>
