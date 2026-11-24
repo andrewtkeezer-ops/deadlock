@@ -193,11 +193,14 @@ $("#days").addEventListener("change", load); load();
   const sq = new Map(); for (const s of squad) for (const x of s.heroes) if (p.heroes.some((c) => c.id === x.hero_id)) sq.set(x.hero_id, (sq.get(x.hero_id) || 0) + 1);
   const names = [...sq.keys()].map((id) => hs.find((x) => x.id === id)?.name).filter(Boolean);
   $("#patchBanner").replaceChildren(h("a", { class: "patchbanner", href: "/patches.html" }, h("span", { class: "sticker" }, "New patch"), h("span", {}, h("b", {}, p.title), names.length ? ` changes ${names.slice(0, 4).join(", ")}${names.length > 4 ? ` and ${names.length - 4} more` : ""} from the squad's pool.` : ` · ${p.heroes.length} heroes, ${p.items.length} items changed.`), h("span", { class: "go" }, "Patch watch →"))); } catch {} })();
-(async () => { const el = $("#duos"); try { const [duos, list] = await Promise.all([api("/players/duos"), api("/players")]); const P = new Map(list.map((p) => [p.account_id, p]));
+// Squad duos follow the leaderboard's time window (#days), so switching to 7 days shows the last 7 days of duos.
+let duoSeq = 0;
+async function loadDuos() { const el = $("#duos"), seq = ++duoSeq, days = $("#days").value; el.classList.add("ld"); try { const [duos, list] = await Promise.all([api(`/players/duos?days=${days}`), api("/players")]); if (seq !== duoSeq) return; el.classList.remove("ld"); const P = new Map(list.map((p) => [p.account_id, p]));
   const rows = duos.filter((d) => d.games >= 2).slice(0, 10);
-  if (!rows.length) return el.replaceChildren(h("p", { class: "muted", style: "margin:0" }, "No shared games yet. Once two tracked friends play on the same team, their duo shows up here."));
+  if (!rows.length) return el.replaceChildren(h("p", { class: "muted", style: "margin:0" }, days === "3650" ? "No shared games yet. Once two tracked friends play on the same team, their duo shows up here." : "No duo has played 2+ games together in this window. Try a longer one."));
   el.replaceChildren(...rows.map((d) => { const a = P.get(d.a), b = P.get(d.b), wr = d.wins / d.games; return h("div", { class: "duo" }, h("div", { class: "avs" }, a?.avatar_url ? h("img", { src: a.avatar_url, alt: "" }) : "", b?.avatar_url ? h("img", { src: b.avatar_url, alt: "" }) : ""),
-    h("div", { class: "nm" }, h("span", {}, `${a?.name ?? d.a} +`), " ", h("span", {}, String(b?.name ?? d.b)), h("small", { title: "Kills / deaths / assists per game, both players combined" }, `${d.games} games · ${d.kills.toFixed(0)}/${d.deaths.toFixed(0)}/${d.assists.toFixed(0)} combined`)), h("div", {}, h("div", { class: "wr " + (wr >= .5 ? "win" : "loss") }, pct(wr)), h("div", { class: "bar" }, h("i", { style: `width:${wr * 100}%;background:${wr >= .5 ? "var(--win)" : "var(--loss)"}` })))); })); } catch (e) { showError(el, e); } })();
+    h("div", { class: "nm" }, h("span", {}, `${a?.name ?? d.a} +`), " ", h("span", {}, String(b?.name ?? d.b)), h("small", { title: "Kills / deaths / assists per game, both players combined" }, `${d.games} games · ${d.kills.toFixed(0)}/${d.deaths.toFixed(0)}/${d.assists.toFixed(0)} combined`)), h("div", {}, h("div", { class: "wr " + (wr >= .5 ? "win" : "loss") }, pct(wr)), h("div", { class: "bar" }, h("i", { style: `width:${wr * 100}%;background:${wr >= .5 ? "var(--win)" : "var(--loss)"}` })))); })); } catch (e) { if (seq === duoSeq) { el.classList.remove("ld"); showError(el, e); } } }
+$("#days").addEventListener("change", loadDuos); loadDuos();
 (async () => {
   const el = $("#recent");
   try {
