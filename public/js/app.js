@@ -309,13 +309,14 @@ function alive() {
   if (fine) {
     const halo = h("div", { class: "halo" }); document.body.append(halo);
     let hx = innerWidth / 2, hy = innerHeight / 2, tx = hx, ty = hy;
+    let haloRaf = 0; // runs only while the halo is catching up to the cursor, then stops (it used to run every frame forever)
+    const haloStep = () => { hx += (tx - hx) * .12; hy += (ty - hy) * .12; halo.style.transform = `translate3d(${hx}px,${hy}px,0)`; haloRaf = Math.abs(tx - hx) + Math.abs(ty - hy) > .5 ? requestAnimationFrame(haloStep) : 0; };
     document.addEventListener("pointermove", (e) => {
-      tx = e.clientX; ty = e.clientY;
+      tx = e.clientX; ty = e.clientY; if (!haloRaf) haloRaf = requestAnimationFrame(haloStep);
       const s = e.target.closest?.(SURF); if (s) { const r = s.getBoundingClientRect(); s.style.setProperty("--mx", `${e.clientX - r.left}px`); s.style.setProperty("--my", `${e.clientY - r.top}px`);
         if (s.matches(TILT)) { s.classList.add("tilt", "on"); const dx = (e.clientX - r.left) / r.width - .5, dy = (e.clientY - r.top) / r.height - .5; s.style.transform = `perspective(900px) rotateX(${(-dy * 6).toFixed(2)}deg) rotateY(${(dx * 8).toFixed(2)}deg) translateY(-3px)`; } }
     }, { passive: true });
     document.addEventListener("pointerout", (e) => { const s = e.target.closest?.(TILT); if (s && !s.contains(e.relatedTarget)) { s.classList.remove("on"); s.style.transform = ""; } }, { passive: true });
-    (function loop() { hx += (tx - hx) * .12; hy += (ty - hy) * .12; halo.style.transform = `translate3d(${hx}px,${hy}px,0)`; requestAnimationFrame(loop); })();
   }
   // scroll reveal for nested cards (top-level sections already stagger in)
   const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { rootMargin: "0px 0px -8% 0px", threshold: .08 });

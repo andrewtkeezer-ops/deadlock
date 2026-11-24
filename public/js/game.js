@@ -83,7 +83,9 @@ function city() {
   if (RM) return;
   let raf = 0; const onScroll = () => { if (raf) return; raf = requestAnimationFrame(() => { raf = 0; atmo.style.setProperty("--sy", String(Math.min(scrollY, 3000))); }); };
   addEventListener("scroll", onScroll, { passive: true }); onScroll();
-  document.addEventListener("visibilitychange", () => root.classList.toggle("paused", document.hidden));
+  // pause the remaining animations when the tab is hidden or the window isn't focused (e.g. you're in a video call)
+  const pause = () => root.classList.toggle("paused", document.hidden || !document.hasFocus());
+  document.addEventListener("visibilitychange", pause); addEventListener("blur", pause); addEventListener("focus", pause);
 }
 
 /* ---------------- HUD: glare tilt on prints and tiles ---------------- */
