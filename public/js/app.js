@@ -263,7 +263,7 @@ const ACK = "ss.uploader.ack";
 /** "New uploader version" notice. We can't see which version someone has installed, so it shows once per release until
  *  they download it or say they're up to date (remembered per browser). */
 async function uploaderNotice() {
-  let rel; try { rel = await uploaderLatest(); } catch { return; } if (!rel?.version) return;
+  let rel; try { rel = await uploaderFork(); if (!rel?.available) rel = await uploaderLatest(); } catch { return; } if (!rel?.version) return; // our uploader first, the official one until ours has a release
   let ack = null; try { ack = localStorage.getItem(ACK); } catch {}
   if (ack === rel.version || document.querySelector(".upnote") || pageKey() === "/setup.html") return;
   const done = () => { try { localStorage.setItem(ACK, rel.version); } catch {} box.classList.add("gone"); setTimeout(() => box.remove(), 400); };

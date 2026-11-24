@@ -36,14 +36,14 @@ app.get("/api/uploader/latest", async (c) => {
 });
 /** Newest release of our own uploader (the fork that can also publish builds into the game). { available:false } until one exists. */
 app.get("/api/uploader/fork", async (c) => {
-  const cacheKey = new Request("https://cache.soulscribe.internal/uploader-fork-v1");
+  const cacheKey = new Request("https://cache.soulscribe.internal/uploader-fork-v2");
   const hit = await caches.default.match(cacheKey); if (hit) return new Response(hit.body, hit);
   const r = await fetch("https://api.github.com/repos/andrewtkeezer-ops/deadlock-uploader/releases/latest", { headers: { "user-agent": "soul-scribe", accept: "application/vnd.github+json" } });
   const rel = r.ok ? await r.json<{ tag_name: string; published_at: string; html_url: string; assets: { name: string; size: number; browser_download_url: string }[] }>() : null;
   const exe = rel?.assets.find((a) => a.name === "soul-scribe-setup.exe");
   const body = exe && rel ? { available: true, version: rel.tag_name.replace(/^v/, ""), published_at: rel.published_at, notes_url: rel.html_url, download_url: exe.browser_download_url, size: exe.size } : { available: false };
-  // keep looking every 10 minutes until the first release lands, then cache like the official one
-  const res = new Response(JSON.stringify(body), { headers: { "content-type": "application/json", "cache-control": `public, max-age=${body.available ? 10800 : 600}` } });
+  // 10-minute cache so a new release reaches the Setup page and the update notice quickly
+  const res = new Response(JSON.stringify(body), { headers: { "content-type": "application/json", "cache-control": "public, max-age=600" } });
   c.executionCtx.waitUntil(caches.default.put(cacheKey, res.clone()));
   return res;
 });

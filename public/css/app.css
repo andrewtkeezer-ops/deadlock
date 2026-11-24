@@ -1018,9 +1018,22 @@ tr:hover .kda .b i{filter:brightness(1.35)}
    The background used to move all the time (blurred beams, fog, grain, city drift) and dozens of bars and
    stickers shimmered on loops. That kept the GPU repainting the full screen every frame, which starved
    other apps (video calls). The scene keeps its look, standing still; decorative shines play once. */
-.atmo .fog,.atmo .beams i,.atmo .grain,.atmo .mark,.rail::before,
-.city .clouds,.city .lights i,.city .blimp,.city .blimp::after,.city .far .dr,.city .mid .dr,.city .near .dr,
-.city .win.a,.city .win.b,.city .win.c,.city .fogband{animation:none!important}
+/* Motion stays, the expensive parts go. Every moving layer now only animates transform or opacity and carries
+   no filter and no blend mode, so the browser paints it once and the GPU just slides it around.
+   - Searchlights: soft-edged cones drawn with gradients + a mask, not clip-path + blur(22px) + mix-blend-mode.
+   - Fog, clouds, fog band: their gradients are already soft, so the blur filters are dropped.
+   - Grain no longer jitters or blends (it re-blended the whole screen 4x a second); the big logo no longer spins.
+   - Everything still pauses when the tab is hidden or the window loses focus (html.paused). */
+.atmo .beams,.city .lights,.atmo .grain{mix-blend-mode:normal}
+.atmo .beams i,.city .lights i{filter:none;clip-path:none;will-change:transform;
+  -webkit-mask-image:linear-gradient(to top,#000 0%,rgba(0,0,0,.55) 45%,transparent 92%);mask-image:linear-gradient(to top,#000 0%,rgba(0,0,0,.55) 45%,transparent 92%)}
+.atmo .beams i.main{background:conic-gradient(from -14deg at 50% 100%,transparent 0deg,rgba(240,205,120,.20) 9deg,rgba(240,205,120,.30) 14deg,rgba(240,205,120,.20) 19deg,transparent 28deg,transparent 360deg)}
+.atmo .beams i.trail{background:conic-gradient(from -12deg at 50% 100%,transparent 0deg,rgba(120,230,160,.12) 9deg,rgba(120,230,160,.16) 12deg,rgba(120,230,160,.12) 15deg,transparent 24deg,transparent 360deg)}
+.atmo .beams i.main::after{filter:none;background:radial-gradient(circle,rgba(255,240,200,.35),transparent 70%)}
+.city .lights i:nth-child(1){background:conic-gradient(from -16deg at 50% 100%,transparent 0deg,rgba(255,225,150,.18) 12deg,rgba(255,225,150,.24) 16deg,rgba(255,225,150,.18) 20deg,transparent 32deg,transparent 360deg)}
+.city .lights i:nth-child(2){background:conic-gradient(from -16deg at 50% 100%,transparent 0deg,rgba(96,205,227,.16) 12deg,rgba(96,205,227,.22) 16deg,rgba(96,205,227,.16) 20deg,transparent 32deg,transparent 360deg)}
+.atmo .fog,.city .clouds,.city .fogband{filter:none;will-change:transform}
+.atmo .grain,.atmo .mark,.rail::before{animation:none!important}
 .bar>i::after,.kda .b::after,.sticker::after,.ach-m.t3 .medal::after,img.rank,.phead .rank::before,
 .rail .brand img.word,.rail nav a.active .ix::after,.rail nav a.active .ic,.boot .b-bar i::after{animation-iteration-count:1!important}
 .tile,.btn{backdrop-filter:none;-webkit-backdrop-filter:none}
